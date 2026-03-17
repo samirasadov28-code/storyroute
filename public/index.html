@@ -75,7 +75,11 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const DUBLIN = [53.3438, -6.2546];
-const TYPE_ICON = { monument:'🏛', church:'⛪', castle:'🏰', street:'🛤', building:'🏢', bridge:'🌉', park:'🌿', museum:'🎭', other:'📍' };
+const TYPE_ICON = {
+  monument:'🏛', church:'⛪', castle:'🏰', street:'🛤',
+  building:'🏢', bridge:'🌉', park:'🌿', museum:'🎭',
+  neighbourhood:'🏘', person:'👤', nature:'🌊', pub:'🍺', other:'📍'
+};
 let map, markers = {}, visited = new Set(), currentStoryText = '', fetched = new Set();
 let currentMode = 'explore';
 
@@ -126,10 +130,17 @@ async function fetchLandmarks(lat, lng) {
   setStatus('Finding landmarks…');
   try {
     const txt = await askAI(
-      `List up to 8 historically interesting landmarks within 1km of (${lat.toFixed(4)}, ${lng.toFixed(4)}).
-Return ONLY a raw JSON array: [{"title":"Exact landmark name","type":"monument"}]
-Types: monument, church, castle, street, building, bridge, park, museum, other
-Use the exact official name. Only real places you are certain exist.`
+      `List up to 12 interesting points of interest within 2km of (${lat.toFixed(4)}, ${lng.toFixed(4)}).
+Be broad and varied — include a mix of:
+- Historical landmarks (monuments, castles, churches, bridges)
+- Neighbourhoods and village areas (e.g. Howth, Baldoyle, Clontarf)
+- Named streets or roads with historical significance
+- Famous or notable people who were born, lived or died nearby (format as "Home of [Name]" or "[Name]'s Birthplace")
+- Parks, coastal features, natural landmarks
+- Pubs, markets or buildings with strong local history
+Return ONLY a raw JSON array: [{"title":"Exact name","type":"monument"}]
+Types: monument, church, castle, street, building, bridge, park, museum, neighbourhood, person, nature, pub, other
+Use exact official names. Only include real places or people you are certain about.`
     );
     const arr = JSON.parse(txt.replace(/```json|```/g,'').trim());
 
