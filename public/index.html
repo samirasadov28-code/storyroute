@@ -34,29 +34,34 @@ body { font-family:sans-serif; overflow:hidden; }
 .r-btn { width:100%; padding:11px; background:#f0a500; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
 .r-btn:disabled { background:#ccc; color:#888; cursor:not-allowed; }
 
-/* Start/Stop bar */
-#tour-bar {
-  position:fixed; bottom:16px; left:16px; right:16px; z-index:1001;
-  display:flex; gap:10px; align-items:center;
-  background:#fff; border:1px solid rgba(0,0,0,0.1);
-  border-radius:14px; padding:10px 14px;
-  box-shadow:0 4px 16px rgba(0,0,0,0.1);
-  transition:bottom .3s;
+/* Bottom controls */
+#bottom-bar {
+  position:fixed; bottom:0; left:0; right:0; z-index:1002;
+  background:#fff; border-top:1px solid rgba(0,0,0,0.08);
+  padding:12px 16px 20px;
+  box-shadow:0 -4px 16px rgba(0,0,0,0.08);
+  transition:transform .3s;
 }
-#tour-bar.raised { bottom:200px; }
-#start-tour-btn {
-  flex:1; padding:12px; background:#f0a500; color:#fff;
-  border:none; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:8px;
-}
-#start-tour-btn.stop { background:#e53935; }
-#tour-status { font-size:11px; color:#999; text-align:center; margin-top:6px; }
+#bottom-bar.hidden { transform:translateY(100%); }
 
-#zoom { position:fixed; bottom:100px; right:14px; z-index:1000; display:flex; flex-direction:column; gap:6px; }
-.zbtn { width:40px; height:40px; background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:8px; color:#333; font-size:22px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; }
+#start-tour-btn {
+  width:100%; padding:14px; border:none; border-radius:12px;
+  font-weight:800; font-size:17px; cursor:pointer; letter-spacing:.3px;
+  background:#22c55e; color:#fff;
+  box-shadow:0 4px 14px rgba(34,197,94,0.35);
+  transition:background .2s, box-shadow .2s;
+}
+#start-tour-btn.stop {
+  background:#e53935;
+  box-shadow:0 4px 14px rgba(229,57,53,0.35);
+}
+
+/* Zoom — top right, well away from bottom bar */
+#zoom { position:fixed; top:110px; right:14px; z-index:1000; display:flex; flex-direction:column; gap:6px; }
+.zbtn { width:40px; height:40px; background:rgba(255,255,255,0.95); border:1px solid rgba(0,0,0,0.15); border-radius:8px; color:#333; font-size:22px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; }
 .zbtn:hover { background:#f0a500; color:#fff; border-color:#f0a500; }
 
-#story { position:fixed; bottom:0; left:0; right:0; padding:14px 16px 100px; background:#fff; border-top:1px solid rgba(0,0,0,0.08); display:none; z-index:1000; box-shadow:0 -4px 20px rgba(0,0,0,0.08); }
+#story { position:fixed; bottom:0; left:0; right:0; padding:14px 16px 16px; background:#fff; border-top:1px solid rgba(0,0,0,0.08); display:none; z-index:1001; box-shadow:0 -4px 20px rgba(0,0,0,0.08); }
 #story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:4px; }
 #story-text { font-size:14px; line-height:1.7; color:#222; margin-bottom:10px; }
 #story-btns { display:flex; gap:8px; }
@@ -106,8 +111,8 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="next-preview"></div>
 </div>
 
-<!-- Start / Stop tour bar -->
-<div id="tour-bar">
+<!-- Persistent bottom bar with Start/Stop -->
+<div id="bottom-bar">
   <button id="start-tour-btn" onclick="toggleTour()">▶ Start Listening</button>
 </div>
 
@@ -155,23 +160,32 @@ function initApp() {
 
 // ── GPS ───────────────────────────────────────────────────────
 function startGPS() {
-  setStatus('Getting location…');
-  if (!navigator.geolocation) { usePosition(DUBLIN[0],DUBLIN[1]); return; }
+  setStatus('Getting your location…');
+  if (!navigator.geolocation) { usePosition(DUBLIN[0],DUBLIN[1],'Dublin (no GPS)'); return; }
+  // Show a locating indicator while waiting
+  const locIcon=L.divIcon({html:'<div style="width:20px;height:20px;background:rgba(74,158,255,0.3);border:3px solid #4a9eff;border-radius:50%;animation:ping 1s infinite"></div><style>@keyframes ping{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.8);opacity:0.3}}</style>',iconSize:[20,20],iconAnchor:[10,10],className:''});
+  const tempMarker=L.marker(DUBLIN,{icon:locIcon}).addTo(map);
   navigator.geolocation.getCurrentPosition(
-    p => usePosition(p.coords.latitude, p.coords.longitude),
-    ()  => usePosition(DUBLIN[0], DUBLIN[1]),
-    {enableHighAccuracy:true, timeout:12000}
+    p => {
+      map.removeLayer(tempMarker);
+      usePosition(p.coords.latitude, p.coords.longitude, 'GPS active');
+    },
+    () => {
+      map.removeLayer(tempMarker);
+      usePosition(DUBLIN[0], DUBLIN[1], 'Location unavailable — using Dublin');
+    },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:0}
   );
 }
 
-function usePosition(lat,lng) {
+function usePosition(lat,lng,statusMsg='GPS active') {
   userLatLng={lat,lng};
-  map.setView([lat,lng],15);
+  // Fly to real position — not Dublin centre
+  map.flyTo([lat,lng],15,{duration:1.2});
   const dot=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
   const um=L.marker([lat,lng],{icon:dot}).addTo(map);
-  setStatus('Loading landmarks…');
-  doFetchLandmarks(lat,lng).then(()=>{ landmarksLoaded=true; });
-  // Watch position
+  setStatus(statusMsg+' — loading landmarks…');
+  doFetchLandmarks(lat,lng).then(()=>{ landmarksLoaded=true; setStatus(Object.keys(markers).length+' landmarks found'); });
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(p=>{
       userLatLng={lat:p.coords.latitude,lng:p.coords.longitude};
@@ -206,7 +220,6 @@ function stopTour() {
   const btn=document.getElementById('start-tour-btn');
   btn.textContent='▶ Start Listening';
   btn.classList.remove('stop');
-  document.getElementById('tour-bar').classList.remove('raised');
   hideStory();
   hideNextPreview();
   setStatus(Object.keys(markers).length+' landmarks on map');
@@ -416,11 +429,11 @@ function showStory(name,text) {
   document.getElementById('story-name').textContent=name;
   document.getElementById('story-text').textContent=text;
   document.getElementById('story').style.display='block';
-  document.getElementById('tour-bar').classList.add('raised');
+  // Push story panel above bottom bar
+  document.getElementById('story').style.paddingBottom='80px';
 }
 function hideStory() {
   document.getElementById('story').style.display='none';
-  document.getElementById('tour-bar').classList.remove('raised');
 }
 function showNextPreview(html){const el=document.getElementById('next-preview');el.innerHTML=html;el.style.display='block';}
 function hideNextPreview(){document.getElementById('next-preview').style.display='none';}
