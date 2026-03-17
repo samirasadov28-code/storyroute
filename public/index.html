@@ -130,7 +130,16 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="next-preview">⏳ Loading next: <span id="next-name">…</span></div>
 </div>
 
-<div id="notice">📍 Tap a landmark or start moving — stories play automatically</div>
+<div id="notice">📍 Driving nearby landmarks will play automatically</div>
+
+<!-- Start overlay — unlocks iOS audio -->
+<div id="start-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,0.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:30px;">
+  <img src="/icon-512.png" style="width:100px;height:100px;border-radius:22px;box-shadow:0 4px 20px rgba(0,0,0,0.15)" onerror="this.style.display='none'"/>
+  <div style="font-size:26px;font-weight:800;color:#1a2240;">Story<span style="color:#f0a500;">Route</span></div>
+  <div style="font-size:14px;color:#888;text-align:center;max-width:260px;line-height:1.6;">Historical stories about places around you, told as you explore.</div>
+  <button onclick="startApp()" style="padding:16px 44px;background:#f0a500;color:#fff;border:none;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(240,165,0,0.4);">▶ Start Exploring</button>
+  <div style="font-size:11px;color:#bbb;">Allow location access when prompted</div>
+</div>
 <div id="spinner"><div class="spin"></div><span id="spin-txt">Loading…</span></div>
 
 <div id="zoom">
@@ -162,26 +171,48 @@ map = L.map('map', { zoomControl:false, attributionControl:false }).setView(DUBL
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
 map.on('moveend', fetchVisibleArea);
 
+
+let audioUnlocked = false;
+
+// ── Start button — unlocks iOS audio + kicks off GPS ──────────
+function startApp() {
+  // Unlock audio on iOS with a silent utterance triggered by user gesture
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  window.speechSynthesis.speak(u);
+  audioUnlocked = true;
+  document.getElementById('start-overlay').style.display = 'none';
+  initGPS();
+}
+
 // ── GPS ───────────────────────────────────────────────────────
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    p => {
-      userLatLng = { lat:p.coords.latitude, lng:p.coords.longitude };
-      map.setView([userLatLng.lat, userLatLng.lng], 15);
-      const uIcon = L.divIcon({ html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.6)"></div>', iconSize:[14,14], iconAnchor:[7,7], className:'' });
-      const uMarker = L.marker([userLatLng.lat, userLatLng.lng], { icon:uIcon }).addTo(map);
-      setStatus('GPS active');
-      fetchVisibleArea();
-      navigator.geolocation.watchPosition(pos => {
-        userLatLng = { lat:pos.coords.latitude, lng:pos.coords.longitude };
-        uMarker.setLatLng([userLatLng.lat, userLatLng.lng]);
-        maybeAdvance();
-      }, null, { enableHighAccuracy:true, maximumAge:4000, timeout:15000 });
-    },
-    () => { setStatus('Demo · Dublin'); fetchVisibleArea(); },
-    { enableHighAccuracy:true, timeout:8000 }
-  );
-} else { setStatus('Demo · Dublin'); fetchVisibleArea(); }
+function initGPS() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      p => {
+        userLatLng = { lat:p.coords.latitude, lng:p.coords.longitude };
+        map.setView([userLatLng.lat, userLatLng.lng], 15);
+        const uIcon = L.divIcon({ html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.6)"></div>', iconSize:[14,14], iconAnchor:[7,7], className:'' });
+        const uMarker = L.marker([userLatLng.lat, userLatLng.lng], { icon:uIcon }).addTo(map);
+        setStatus('GPS active — finding nearby landmarks…');
+        // *** Fetch around USER position first, not map centre ***
+        fetchLandmarks(userLatLng.lat, userLatLng.lng).then(() => maybeAdvance());
+        navigator.geolocation.watchPosition(pos => {
+          userLatLng = { lat:pos.coords.latitude, lng:pos.coords.longitude };
+          uMarker.setLatLng([userLatLng.lat, userLatLng.lng]);
+          maybeAdvance();
+        }, null, { enableHighAccuracy:true, maximumAge:4000, timeout:15000 });
+      },
+      () => {
+        setStatus('Location unavailable — using Dublin centre');
+        fetchLandmarks(DUBLIN[0], DUBLIN[1]).then(() => maybeAdvance());
+      },
+      { enableHighAccuracy:true, timeout:10000 }
+    );
+  } else {
+    fetchLandmarks(DUBLIN[0], DUBLIN[1]).then(() => maybeAdvance());
+  }
+}
 
 // ── AI ────────────────────────────────────────────────────────
 async function askAI(prompt) {
