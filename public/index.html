@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoryRoute</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; }
+#map { width:100vw; height:100vh; }
+#header { position:fixed; top:0; left:0; right:0; padding:12px 16px; background:linear-gradient(to bottom,rgba(0,0,0,0.85),transparent); display:flex; justify-content:space-between; align-items:center; z-index:1000; pointer-events:none; }
+#title { font-size:20px; font-weight:800; }
+#title span { color:#f0a500; }
+#status { font-size:11px; background:rgba(0,0,0,0.6); padding:4px 10px; border-radius:12px; color:rgba(255,255,255,0.5); }
+#story { position:fixed; bottom:0; left:0; right:0; padding:16px; background:rgba(10,10,22,0.97); border-top:1px solid rgba(255,255,255,0.1); display:none; z-index:1000; }
+#story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:6px; }
+#story-text { font-size:14px; line-height:1.7; color:rgba(255,255,255,0.9); margin-bottom:12px; }
+#story-btns { display:flex; gap:8px; }
+#play-btn { flex:1; padding:10px; background:#f0a500; color:#000; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
+#close-btn { padding:10px 14px; background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:8px; cursor:pointer; }
+#notice { position:fixed; bottom:16px; left:16px; right:16px; background:rgba(240,165,0,0.08); border:1px solid rgba(240,165,0,0.25); border-radius:10px; padding:8px 12px; font-size:11px; color:rgba(255,255,255,0.45); text-align:center; z-index:999; transition:bottom .3s; }
+#spinner { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,22,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:18px 28px; font-size:12px; color:rgba(255,255,255,0.6); display:none; z-index:2000; text-align:center; }
+.spin { width:28px; height:28px; border:3px solid rgba(240,165,0,0.2); border-top-color:#f0a500; border-radius:50%; animation:sp 1s linear infinite; margin:0 auto 8px; }
+@keyframes sp { to { transform:rotate(360deg); } }
+.lm-dot { width:16px; height:16px; background:#f0a500; border:3px solid #fff; border-radius:50%; box-shadow:0 0 10px rgba(240,165,0,0.5); }
+.lm-dot.visited { background:rgba(240,165,0,0.3); box-shadow:none; border-color:rgba(255,255,255,0.3); }
+.leaflet-tooltip { background:rgba(10,10,22,.95); border:1px solid rgba(240,165,0,.4); color:#fff; font-size:12px; font-weight:600; padding:4px 9px; border-radius:6px; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="header">
+  <div id="title">Story<span>Route</span></div>
+  <div id="status">Locating you…</div>
+</div>
+
+<div id="story">
+  <div id="story-name"></div>
+  <div id="story-text"></div>
+  <div id="story-btns">
+    <button id="play-btn" onclick="playStory()">▶ Play Audio</button>
+    <button id="close-btn" onclick="closeStory()">✕</button>
+  </div>
+</div>
+
+<div id="notice">📍 Click a gold dot to hear its story</div>
+<div id="spinner"><div class="spin"></div><span id="spin-txt">Loading…</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const DUBLIN = [53.3438, -6.2546];
+let map, lmMarkers = {}, visited = new Set(), currentStoryText = '', fetched = new Set();
+
+// ── Map init ──────────────────────────────────────────────────
+map = L.map('map', { zoomControl:false, attributionControl:false }).setView(DUBLIN, 15);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
+map.on('moveend', () => { const c = map.getCenter(); fetchLandmarks(c.lat, c.lng); });
+
+// ── GPS ───────────────────────────────────────────────────────
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    p => { map.setView([p.coords.latitude, p.coords.longitude], 15); setStatus('GPS active'); },
+    () => { setStatus('Demo · Dublin City Centre'); },
+    { enableHighAccuracy:true, timeout:8000 }
+  );
+} else { setStatus('Demo · Dublin City Centre'); }
+
+// ── Claude via Netlify Function ───────────────────────────────
+async function askClaude(prompt) {
+  const r = await fetch('/api/claude', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ messages:[{ role:'user', content:prompt }] })
+  });
+  const d = await r.json();
+  return d?.content?.[0]?.text || '';
+}
+
+// ── Landmarks ─────────────────────────────────────────────────
+async function fetchLandmarks(lat, lng) {
+  const key = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
+  if (fetched.has(key)) return;
+  fetched.add(key);
+  setStatus('Finding landmarks…');
+  try {
+    const txt = await askClaude(
+      `List up to 8 historically interesting landmarks within 1km of (${lat.toFixed(4)}, ${lng.toFixed(4)}).
+Return ONLY a raw JSON array: [{"title":"Name","lat":0.0,"lng":0.0,"type":"monument"}]
+Types: monument, church, castle, street, building, bridge, park, museum, other
+Only real, named places you are certain about.`
+    );
+    const arr = JSON.parse(txt.replace(/```json|```/g,'').trim());
+    arr.forEach(p => {
+      const id = p.title + '_' + p.lat.toFixed(3);
+      if (!lmMarkers[id]) {
+        const icon = L.divIcon({ html:'<div class="lm-dot"></div>', iconSize:[16,16], iconAnchor:[8,8], className:'' });
+        const m = L.marker([p.lat, p.lng], { icon }).addTo(map).bindTooltip(p.title, { direction:'top' });
+        m.on('click', () => triggerStory({ ...p, id }));
+        lmMarkers[id] = m;
+      }
+    });
+    setStatus(Object.keys(lmMarkers).length + ' landmarks · tap a dot');
+  } catch(e) { setStatus('Error loading landmarks'); }
+}
+
+// ── Story ─────────────────────────────────────────────────────
+async function triggerStory(p) {
+  if (visited.has(p.id)) { showStory(p.title, currentStoryText); return; }
+  visited.add(p.id);
+  const el = lmMarkers[p.id]?.getElement()?.querySelector('.lm-dot');
+  if (el) el.classList.add('visited');
+  showSpinner(`Uncovering "${p.title}"…`);
+  try {
+    const txt = await askClaude(
+      `You are a captivating GPS audio tour guide. Tell a vivid 3-sentence historical story about "${p.title}" (type: ${p.type}).
+Start with "As you approach…" or "You're now near…". Max 75 words. Return ONLY the story.`
+    );
+    currentStoryText = txt;
+    hideSpinner();
+    showStory(p.title, txt);
+    speak(txt);
+  } catch(e) { hideSpinner(); }
+}
+
+function showStory(name, text) {
+  document.getElementById('story-name').textContent = name;
+  document.getElementById('story-text').textContent = text;
+  document.getElementById('story').style.display = 'block';
+  document.getElementById('notice').style.bottom = '165px';
+}
+function closeStory() {
+  document.getElementById('story').style.display = 'none';
+  document.getElementById('notice').style.bottom = '16px';
+  window.speechSynthesis.cancel();
+}
+function playStory() { if (currentStoryText) speak(currentStoryText); }
+function speak(txt) {
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(txt);
+  u.rate = 0.9;
+  const voices = window.speechSynthesis.getVoices();
+  const v = voices.find(v=>v.lang==='en-GB') || voices.find(v=>v.lang.startsWith('en')) || voices[0];
+  if (v) u.voice = v;
+  window.speechSynthesis.speak(u);
+}
+
+function setStatus(t) { document.getElementById('status').textContent = t; }
+function showSpinner(t) { document.getElementById('spin-txt').textContent=t; document.getElementById('spinner').style.display='block'; }
+function hideSpinner() { document.getElementById('spinner').style.display='none'; }
+
+if (window.speechSynthesis.onvoiceschanged !== undefined) window.speechSynthesis.onvoiceschanged = () => {};
+fetchLandmarks(...DUBLIN);
+</script>
+</body>
+</html>
