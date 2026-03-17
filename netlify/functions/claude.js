@@ -16,58 +16,65 @@ export default async (req, context) => {
 
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "GROQ_API_KEY not set" }), {
-      status: 500, headers: { "Content-Type": "application/json" }
+    return new Response(JSON.stringify({ content: [{ text: "" }], error: "GROQ_API_KEY not set" }), {
+      status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   }
 
   let body;
-  try {
-    body = await req.json();
-  } catch(e) {
-    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-      status: 400, headers: { "Content-Type": "application/json" }
+  try { body = await req.json(); }
+  catch(e) {
+    return new Response(JSON.stringify({ content: [{ text: "" }], error: "Invalid JSON" }), {
+      status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   }
 
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 300,
-        temperature: 0.7,
-        messages: body.messages
-      })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      return new Response(JSON.stringify({ error: `Groq error ${response.status}: ${errText}` }), {
-        status: 502, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+  // Retry up to 3 times with backoff on rate limit
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",  // fastest Groq model
+          max_tokens: 300,
+          temperature: 0.7,
+          messages: body.messages
+        })
       });
-    }
 
-    const data = await response.json();
-    const text = data?.choices?.[0]?.message?.content || "";
-
-    return new Response(JSON.stringify({ content: [{ text }] }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+      // Rate limited — wait and retry
+      if (response.status === 429) {
+        const wait = (attempt + 1) * 2000;
+        await new Promise(r => setTimeout(r, wait));
+        continue;
       }
-    });
 
-  } catch(e) {
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
+      if (!response.ok) {
+        const errText = await response.text();
+        return new Response(JSON.stringify({ content: [{ text: "" }], error: `Groq ${response.status}: ${errText}` }), {
+          status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+
+      const data = await response.json();
+      const text = data?.choices?.[0]?.message?.content || "";
+      return new Response(JSON.stringify({ content: [{ text }] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+
+    } catch(e) {
+      if (attempt === 2) {
+        return new Response(JSON.stringify({ content: [{ text: "" }], error: e.message }), {
+          status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+      await new Promise(r => setTimeout(r, 1500));
+    }
   }
 };
 
