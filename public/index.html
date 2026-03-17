@@ -64,9 +64,11 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
   <div id="story-name"></div>
   <div id="story-text"></div>
   <div id="story-btns">
-    <button id="play-btn" onclick="playStory()">▶ Play Audio</button>
+    <button id="play-btn" onclick="playStory()">▶ Replay</button>
+    <button id="skip-btn" onclick="skipStory()" style="padding:10px 14px;background:rgba(255,255,255,0.08);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">⏭ Skip</button>
     <button id="close-btn" onclick="closeStory()">✕</button>
   </div>
+  <div id="queue-badge" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.35);text-align:center;"></div>
 </div>
 
 <div id="notice">📍 Click a landmark icon to hear its story</div>
@@ -82,24 +84,35 @@ const TYPE_ICON = {
 };
 let map, markers = {}, visited = new Set(), currentStoryText = '', fetched = new Set();
 let currentMode = 'explore';
+let userLatLng = null;
+let storyQueue = [];
+let isPlaying = false;
+const AUTO_TRIGGER_M = 300; // metres to auto-trigger a story
 
 // ── Map ───────────────────────────────────────────────────────
 map = L.map('map', { zoomControl:true, attributionControl:false }).setView(DUBLIN, 15);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
-map.on('moveend', () => { const c = map.getCenter(); fetchLandmarks(c.lat, c.lng); });
+map.on('moveend', () => fetchVisibleArea());
 
 // ── GPS ───────────────────────────────────────────────────────
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     p => {
       const ll = [p.coords.latitude, p.coords.longitude];
+      userLatLng = { lat: p.coords.latitude, lng: p.coords.longitude };
       map.setView(ll, 15);
       const userIcon = L.divIcon({ html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.7)"></div>', iconSize:[14,14], iconAnchor:[7,7], className:'' });
-      L.marker(ll, { icon:userIcon }).addTo(map);
+      const userMarker = L.marker(ll, { icon:userIcon }).addTo(map);
       setStatus('GPS active');
-      fetchLandmarks(...ll);
+      fetchVisibleArea();
+      // Watch position for driving auto-play
+      navigator.geolocation.watchPosition(pos => {
+        userLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        userMarker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+        checkProximity();
+      }, null, { enableHighAccuracy:true, maximumAge:5000, timeout:15000 });
     },
-    () => { setStatus('Demo · Dublin City Centre'); fetchLandmarks(...DUBLIN); },
+    () => { setStatus('Demo · Dublin City Centre'); fetchVisibleArea(); },
     { enableHighAccuracy:true, timeout:8000 }
   );
 } else { setStatus('Demo · Dublin City Centre'); fetchLandmarks(...DUBLIN); }
@@ -122,7 +135,24 @@ async function nominatimGeocode(q) {
   } catch { return null; }
 }
 
-// ── Fetch landmarks ───────────────────────────────────────────
+// ── Fetch landmarks across visible map area ───────────────────
+function fetchVisibleArea() {
+  const b = map.getBounds();
+  const z = map.getZoom();
+  // Number of grid points scales with zoom — more points when zoomed out
+  const steps = z >= 15 ? 1 : z >= 13 ? 2 : 3;
+  const lats = [], lngs = [];
+  for (let i = 0; i <= steps; i++) {
+    lats.push(b.getSouth() + (b.getNorth() - b.getSouth()) * (i / steps));
+    lngs.push(b.getWest()  + (b.getEast()  - b.getWest())  * (i / steps));
+  }
+  const points = [];
+  lats.forEach(lat => lngs.forEach(lng => points.push({ lat, lng })));
+  // Fire sequentially to avoid hammering the API
+  points.reduce((chain, pt) => chain.then(() => fetchLandmarks(pt.lat, pt.lng)), Promise.resolve());
+}
+
+
 async function fetchLandmarks(lat, lng) {
   const key = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
   if (fetched.has(key)) return;
@@ -158,7 +188,7 @@ Use exact official names. Only include real places or people you are certain abo
       if (!coords) continue;
       const emoji = TYPE_ICON[p.type] || '📍';
       const icon = L.divIcon({ html:`<div class="lm-marker" id="lm-${id}">${emoji}</div>`, iconSize:[28,28], iconAnchor:[14,14], className:'' });
-      const m = L.marker([coords.lat, coords.lng], { icon })
+      const m = L.marker([coords.lat, coords.lng], { icon, ptitle: p.title, ptype: p.type })
         .addTo(map)
         .bindTooltip(p.title, { direction:'top', permanent:false });
       m.on('click', () => triggerStory({ ...p, ...coords, id }));
@@ -168,7 +198,25 @@ Use exact official names. Only include real places or people you are certain abo
   } catch(e) { setStatus('Error loading landmarks'); }
 }
 
-// ── Story ─────────────────────────────────────────────────────
+// ── Proximity check (auto-play while driving) ─────────────────
+function distM(a, b) {
+  const R = 6371000, dLat = (b.lat-a.lat)*Math.PI/180, dLng = (b.lng-a.lng)*Math.PI/180;
+  const x = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+}
+function checkProximity() {
+  if (!userLatLng) return;
+  Object.entries(markers).forEach(([id, m]) => {
+    if (visited.has(id)) return;
+    const ll = m.getLatLng();
+    if (distM(userLatLng, { lat:ll.lat, lng:ll.lng }) < AUTO_TRIGGER_M) {
+      const type = m.options?.ptype || 'other';
+      triggerStory({ title: m.options?.ptitle || id.replace(/_/g,' '), type, lat: ll.lat, lng: ll.lng, id });
+    }
+  });
+}
+
+
 async function triggerStory(p) {
   if (visited.has(p.id)) { showStory(p.title, currentStoryText); return; }
   visited.add(p.id);
@@ -193,20 +241,36 @@ function showStory(name, text) {
   document.getElementById('story-text').textContent = text;
   document.getElementById('story').style.display = 'block';
   document.getElementById('notice').style.bottom = '165px';
+  updateQueueBadge();
 }
-function closeStory() {
+function hideStoryPanel() {
   document.getElementById('story').style.display = 'none';
   document.getElementById('notice').style.bottom = '16px';
-  window.speechSynthesis.cancel();
 }
-function playStory() { if (currentStoryText) speak(currentStoryText); }
-function speak(txt) {
+function updateQueueBadge() {
+  const badge = document.getElementById('queue-badge');
+  badge.textContent = storyQueue.length > 0 ? `+${storyQueue.length} queued` : '';
+}
+function closeStory() {
+  window.speechSynthesis.cancel();
+  isPlaying = false;
+  storyQueue = [];
+  hideStoryPanel();
+}
+function skipStory() {
+  window.speechSynthesis.cancel();
+  isPlaying = false;
+  setTimeout(playNextStory, 300);
+}
+function playStory() { if (currentStoryText) speak(currentStoryText, () => { isPlaying=false; setTimeout(playNextStory,1500); }); }
+function speak(txt, onEnd) {
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(txt);
   u.rate = 0.9;
   const voices = window.speechSynthesis.getVoices();
   const v = voices.find(v=>v.lang==='en-GB') || voices.find(v=>v.lang.startsWith('en')) || voices[0];
   if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
   window.speechSynthesis.speak(u);
 }
 
@@ -239,7 +303,7 @@ async function planRoute() {
     map.fitBounds(map.routeLine.getBounds(), { padding:[50,50] });
     // Fetch landmarks along route
     setLoaderText('Discovering landmarks…');
-    const samples = samplePoints(coords, 6);
+    const samples = samplePoints(coords, 10);
     for (const pt of samples) await fetchLandmarks(pt[1], pt[0]);
     hideSpinner(); btn.disabled=false;
     setMode('explore');
