@@ -16,83 +16,36 @@
 body { font-family:sans-serif; overflow:hidden; }
 #map { width:100vw; height:100vh; }
 .leaflet-control-container { display:none !important; }
-
-#header {
-  position:fixed; top:0; left:0; right:0; z-index:1000;
-  padding:10px 16px;
-  background:rgba(255,255,255,0.95);
-  border-bottom:1px solid rgba(0,0,0,0.08);
-  display:flex; justify-content:space-between; align-items:center;
-  box-shadow:0 2px 8px rgba(0,0,0,0.08);
-}
-#logo { height:40px; width:auto; }
+#header { position:fixed; top:0; left:0; right:0; z-index:1000; padding:10px 16px; background:rgba(255,255,255,0.95); border-bottom:1px solid rgba(0,0,0,0.08); display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
 #app-name { font-size:20px; font-weight:800; color:#1a2240; margin-left:10px; }
 #app-name span { color:#f0a500; }
-#status { font-size:11px; background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08); padding:4px 10px; border-radius:12px; color:#666; }
-
-#mode-toggle {
-  position:fixed; top:62px; left:50%; transform:translateX(-50%);
-  z-index:999; display:flex;
-  background:rgba(255,255,255,0.95); border:1px solid rgba(0,0,0,0.1);
-  border-radius:20px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1);
-}
+#status { font-size:11px; background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08); padding:4px 10px; border-radius:12px; color:#666; max-width:180px; text-align:right; }
+#mode-toggle { position:fixed; top:62px; left:50%; transform:translateX(-50%); z-index:999; display:flex; background:rgba(255,255,255,0.95); border:1px solid rgba(0,0,0,0.1); border-radius:20px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
 .mode-btn { padding:7px 18px; font-size:12px; font-weight:700; border:none; background:transparent; color:rgba(0,0,0,0.4); cursor:pointer; }
 .mode-btn.active { background:#f0a500; color:#fff; }
-
-#route-panel {
-  position:fixed; top:106px; left:16px; right:16px; z-index:999;
-  background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:14px;
-  padding:14px; display:none; box-shadow:0 4px 16px rgba(0,0,0,0.1);
-}
+#route-panel { position:fixed; top:106px; left:16px; right:16px; z-index:999; background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:14px; padding:14px; display:none; box-shadow:0 4px 16px rgba(0,0,0,0.1); }
 #route-panel.visible { display:block; }
 .r-input { width:100%; padding:10px 13px; background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.12); border-radius:8px; color:#222; font-size:14px; outline:none; margin-bottom:8px; }
 .r-input::placeholder { color:rgba(0,0,0,0.3); }
 .r-input:focus { border-color:#f0a500; }
 .r-btn { width:100%; padding:11px; background:#f0a500; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
 .r-btn:disabled { background:#ccc; color:#888; cursor:not-allowed; }
-
 #zoom { position:fixed; bottom:30px; right:14px; z-index:1000; display:flex; flex-direction:column; gap:6px; }
 .zbtn { width:40px; height:40px; background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:8px; color:#333; font-size:22px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; }
 .zbtn:hover { background:#f0a500; color:#fff; border-color:#f0a500; }
-
-#story {
-  position:fixed; bottom:0; left:0; right:0;
-  padding:16px; background:#fff;
-  border-top:1px solid rgba(0,0,0,0.08);
-  display:none; z-index:1000;
-  box-shadow:0 -4px 20px rgba(0,0,0,0.08);
-}
+#story { position:fixed; bottom:0; left:0; right:0; padding:16px; background:#fff; border-top:1px solid rgba(0,0,0,0.08); display:none; z-index:1000; box-shadow:0 -4px 20px rgba(0,0,0,0.08); }
 #story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:4px; }
 #story-text { font-size:14px; line-height:1.7; color:#222; margin-bottom:12px; }
-#story-btns { display:flex; gap:8px; align-items:center; }
+#story-btns { display:flex; gap:8px; }
 #play-btn  { flex:1; padding:10px; background:#f0a500; color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; }
 #skip-btn  { padding:10px 16px; background:rgba(0,0,0,0.06); color:#333; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
 #close-btn { padding:10px 14px; background:rgba(0,0,0,0.06); color:#333; border:none; border-radius:8px; cursor:pointer; font-size:14px; }
 #next-preview { margin-top:10px; padding:8px 12px; background:rgba(240,165,0,0.06); border:1px solid rgba(240,165,0,0.2); border-radius:8px; font-size:11px; color:#888; display:none; }
-#next-preview span { color:#f0a500; font-weight:700; }
-
-#notice {
-  position:fixed; bottom:16px; left:16px; right:16px;
-  background:rgba(255,255,255,0.95); border:1px solid rgba(240,165,0,0.4);
-  border-radius:10px; padding:8px 12px; font-size:11px; color:#666;
-  text-align:center; z-index:999; transition:bottom .3s;
-  box-shadow:0 2px 8px rgba(0,0,0,0.08);
-}
-
-#spinner {
-  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:12px;
-  padding:20px 30px; font-size:12px; color:#555; display:none;
-  z-index:2000; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.12);
-}
-.spin { width:28px; height:28px; border:3px solid rgba(240,165,0,0.2); border-top-color:#f0a500; border-radius:50%; animation:sp 1s linear infinite; margin:0 auto 10px; }
-@keyframes sp { to { transform:rotate(360deg); } }
-
+#next-preview b { color:#f0a500; }
+#notice { position:fixed; bottom:16px; left:16px; right:16px; background:rgba(255,255,255,0.95); border:1px solid rgba(240,165,0,0.4); border-radius:10px; padding:8px 12px; font-size:11px; color:#666; text-align:center; z-index:999; transition:bottom .3s; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
 .lm-marker { font-size:22px; cursor:pointer; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); transition:transform .2s; }
 .lm-marker:hover { transform:scale(1.2); }
 .lm-marker.visited { opacity:0.3; filter:grayscale(1); }
-.lm-marker.next-up { animation:bounce 1.2s infinite; }
-@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 .leaflet-tooltip { background:#fff; border:1px solid rgba(240,165,0,0.5); color:#222; font-size:12px; font-weight:600; padding:4px 9px; border-radius:6px; }
 </style>
 </head>
@@ -102,10 +55,10 @@ body { font-family:sans-serif; overflow:hidden; }
 
 <div id="header">
   <div style="display:flex;align-items:center;">
-    <img id="logo" src="/icon-512.png" alt="StoryRoute" style="height:40px;width:auto;"/>
+    <img src="/icon-512.png" style="height:40px;width:auto;" onerror="this.style.display='none'"/>
     <span id="app-name">Story<span>Route</span></span>
   </div>
-  <div id="status">Locating you…</div>
+  <div id="status">Starting…</div>
 </div>
 
 <div id="mode-toggle">
@@ -115,7 +68,7 @@ body { font-family:sans-serif; overflow:hidden; }
 
 <div id="route-panel">
   <input class="r-input" id="from-inp" placeholder="📍 From — e.g. Dublin Airport"/>
-  <input class="r-input" id="to-inp"   placeholder="🏁 To — e.g. Trinity College Dublin"/>
+  <input class="r-input" id="to-inp" placeholder="🏁 To — e.g. Trinity College"/>
   <button class="r-btn" id="route-btn" onclick="planRoute()">Plan Route & Discover Stories</button>
 </div>
 
@@ -123,325 +76,260 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="story-name"></div>
   <div id="story-text"></div>
   <div id="story-btns">
-    <button id="play-btn"  onclick="playStory()">▶ Replay</button>
-    <button id="skip-btn"  onclick="skipStory()">⏭ Skip</button>
+    <button id="play-btn" onclick="playStory()">▶ Replay</button>
+    <button id="skip-btn" onclick="skipStory()">⏭ Skip</button>
     <button id="close-btn" onclick="closeStory()">✕</button>
   </div>
-  <div id="next-preview">⏳ Loading next: <span id="next-name">…</span></div>
+  <div id="next-preview"></div>
 </div>
 
-<div id="notice">📍 Driving nearby landmarks will play automatically</div>
-
-<!-- Start overlay — unlocks iOS audio -->
-<div id="start-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,0.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:30px;">
-  <img src="/icon-512.png" style="width:100px;height:100px;border-radius:22px;box-shadow:0 4px 20px rgba(0,0,0,0.15)" onerror="this.style.display='none'"/>
-  <div style="font-size:26px;font-weight:800;color:#1a2240;">Story<span style="color:#f0a500;">Route</span></div>
-  <div style="font-size:14px;color:#888;text-align:center;max-width:260px;line-height:1.6;">Historical stories about places around you, told as you explore.</div>
-  <button onclick="startApp()" style="padding:16px 44px;background:#f0a500;color:#fff;border:none;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(240,165,0,0.4);">▶ Start Exploring</button>
-  <div style="font-size:11px;color:#bbb;">Allow location access when prompted</div>
-</div>
-<div id="spinner"><div class="spin"></div><span id="spin-txt">Loading…</span></div>
+<div id="notice">Tap Start to begin</div>
 
 <div id="zoom">
   <button class="zbtn" onclick="map.setZoom(map.getZoom()+1)">+</button>
   <button class="zbtn" onclick="map.setZoom(map.getZoom()-1)">−</button>
 </div>
 
+<!-- Start overlay -->
+<div id="overlay" style="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px;">
+  <img src="/icon-512.png" style="width:96px;height:96px;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.12)" onerror="this.style.display='none'"/>
+  <div style="font-size:28px;font-weight:800;color:#1a2240;">Story<span style="color:#f0a500;">Route</span></div>
+  <div style="font-size:14px;color:#999;text-align:center;max-width:260px;line-height:1.6;">Historical stories about places around you, as you explore.</div>
+  <button onclick="startApp()" style="padding:16px 48px;background:#f0a500;color:#fff;border:none;border-radius:14px;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(240,165,0,0.35);">▶ Start</button>
+  <div style="font-size:11px;color:#ccc;">Please allow location access when prompted</div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const DUBLIN = [53.3438, -6.2546];
-const TYPE_ICON = {
-  monument:'🏛', church:'⛪', castle:'🏰', street:'🛤',
-  building:'🏢', bridge:'🌉', park:'🌿', museum:'🎭',
-  neighbourhood:'🏘', person:'👤', nature:'🌊', pub:'🍺', other:'📍'
-};
+const TYPE_ICON = { monument:'🏛',church:'⛪',castle:'🏰',street:'🛤',building:'🏢',bridge:'🌉',park:'🌿',museum:'🎭',neighbourhood:'🏘',person:'👤',nature:'🌊',pub:'🍺',other:'📍' };
 
-let map, markers = {}, visited = new Set();
-let fetched = new Set(), currentMode = 'explore';
-let userLatLng = null;
+let map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
 
-// Story engine
-let currentStory   = null;   // playing now
-let nextStory      = null;   // pre-fetched, ready to skip to
-let prefetchingFor = null;   // landmark id being prefetched
-let isPlaying      = false;
+let markers={}, visited=new Set(), fetched=new Set();
+let userLatLng=null, currentMode='explore';
+let currentStory=null, nextStory=null, prefetchingId=null, isPlaying=false;
 
-// ── Map ───────────────────────────────────────────────────────
-map = L.map('map', { zoomControl:false, attributionControl:false }).setView(DUBLIN, 15);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
-map.on('moveend', fetchVisibleArea);
-
-
-let audioUnlocked = false;
-
-// ── Start button — unlocks iOS audio + kicks off GPS ──────────
+// ── Start ─────────────────────────────────────────────────────
 function startApp() {
-  // Unlock audio on iOS with a silent utterance triggered by user gesture
+  // Unlock iOS audio
   const u = new SpeechSynthesisUtterance(' ');
-  u.volume = 0;
-  window.speechSynthesis.speak(u);
-  audioUnlocked = true;
-  document.getElementById('start-overlay').style.display = 'none';
+  u.volume=0; window.speechSynthesis.speak(u);
+  document.getElementById('overlay').style.display='none';
+  setStatus('Getting location…');
   initGPS();
 }
 
 // ── GPS ───────────────────────────────────────────────────────
 function initGPS() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      p => {
-        userLatLng = { lat:p.coords.latitude, lng:p.coords.longitude };
-        map.setView([userLatLng.lat, userLatLng.lng], 15);
-        const uIcon = L.divIcon({ html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.6)"></div>', iconSize:[14,14], iconAnchor:[7,7], className:'' });
-        const uMarker = L.marker([userLatLng.lat, userLatLng.lng], { icon:uIcon }).addTo(map);
-        setStatus('GPS active — finding nearby landmarks…');
-        // *** Fetch around USER position first, not map centre ***
-        fetchLandmarks(userLatLng.lat, userLatLng.lng).then(() => maybeAdvance());
-        navigator.geolocation.watchPosition(pos => {
-          userLatLng = { lat:pos.coords.latitude, lng:pos.coords.longitude };
-          uMarker.setLatLng([userLatLng.lat, userLatLng.lng]);
-          maybeAdvance();
-        }, null, { enableHighAccuracy:true, maximumAge:4000, timeout:15000 });
-      },
-      () => {
-        setStatus('Location unavailable — using Dublin centre');
-        fetchLandmarks(DUBLIN[0], DUBLIN[1]).then(() => maybeAdvance());
-      },
-      { enableHighAccuracy:true, timeout:10000 }
-    );
-  } else {
-    fetchLandmarks(DUBLIN[0], DUBLIN[1]).then(() => maybeAdvance());
-  }
+  if (!navigator.geolocation) { fallback(); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLatLng = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+      map.setView([userLatLng.lat,userLatLng.lng],15);
+      // Blue user dot
+      const dot = L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
+      const um = L.marker([userLatLng.lat,userLatLng.lng],{icon:dot}).addTo(map);
+      setStatus('Finding nearest landmarks…');
+      // Fetch around exact user position
+      doFetchLandmarks(userLatLng.lat, userLatLng.lng);
+      // Watch for movement
+      navigator.geolocation.watchPosition(p=>{
+        userLatLng={lat:p.coords.latitude,lng:p.coords.longitude};
+        um.setLatLng([userLatLng.lat,userLatLng.lng]);
+        if (!isPlaying) maybePlay();
+      },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+    },
+    err => { setStatus('Location denied — using Dublin'); fallback(); },
+    {enableHighAccuracy:true,timeout:12000}
+  );
+}
+function fallback() {
+  userLatLng={lat:DUBLIN[0],lng:DUBLIN[1]};
+  doFetchLandmarks(DUBLIN[0],DUBLIN[1]);
 }
 
-// ── AI ────────────────────────────────────────────────────────
+// ── AI call ───────────────────────────────────────────────────
 async function askAI(prompt) {
-  const r = await fetch('/api/claude', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ messages:[{ role:'user', content:prompt }] })
+  const r = await fetch('/api/claude',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({messages:[{role:'user',content:prompt}]})
   });
+  if (!r.ok) throw new Error('API '+r.status);
   const d = await r.json();
-  return d?.content?.[0]?.text || '';
+  const txt = d?.content?.[0]?.text||'';
+  if (!txt) throw new Error('Empty response');
+  return txt;
 }
 
-async function nominatimGeocode(q) {
+// ── Geocode ───────────────────────────────────────────────────
+async function geocode(q) {
   try {
-    const d = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,{headers:{'Accept-Language':'en','User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
-    return d.length ? {lat:+d[0].lat,lng:+d[0].lon} : null;
+    const d = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
+    return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null;
   } catch { return null; }
 }
 
-// ── Landmark fetching ─────────────────────────────────────────
-function fetchVisibleArea() {
-  const b = map.getBounds(), z = map.getZoom();
-  const steps = z >= 15 ? 1 : z >= 13 ? 2 : 3;
-  const pts = [];
-  for (let i=0;i<=steps;i++) for (let j=0;j<=steps;j++) {
-    pts.push({
-      lat: b.getSouth()+(b.getNorth()-b.getSouth())*(i/steps),
-      lng: b.getWest() +(b.getEast() -b.getWest()) *(j/steps)
-    });
-  }
-  pts.reduce((ch,pt)=>ch.then(()=>fetchLandmarks(pt.lat,pt.lng)), Promise.resolve())
-     .then(()=>{ if (!isPlaying) maybeAdvance(); });
-}
-
-async function fetchLandmarks(lat, lng) {
-  const key = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
-  if (fetched.has(key)) return;
+// ── Fetch landmarks ───────────────────────────────────────────
+async function doFetchLandmarks(lat, lng) {
+  const key=`${lat.toFixed(2)}_${lng.toFixed(2)}`;
+  if (fetched.has(key)) { maybePlay(); return; }
   fetched.add(key);
-  setStatus('Finding landmarks…');
+  setStatus('Searching for landmarks…');
   try {
-    const txt = await askAI(
-      `List up to 12 interesting points of interest within 2km of (${lat.toFixed(4)}, ${lng.toFixed(4)}).
-Include a varied mix: historical landmarks, neighbourhoods, named streets, famous people who lived nearby (as "Home of [Name]"), parks, coastal features, pubs with history.
-Return ONLY a raw JSON array: [{"title":"Exact name","type":"monument"}]
-Types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,other
-Use exact official names. Only real places you are certain about.`
+    const raw = await askAI(
+      `List up to 10 historically or culturally interesting places within 2km of latitude ${lat.toFixed(4)}, longitude ${lng.toFixed(4)}.
+Include a varied mix: landmarks, neighbourhoods, streets, famous people who lived nearby (as "Home of [Name]"), parks, pubs with history.
+Respond with ONLY a valid JSON array, no markdown:
+[{"title":"Exact Place Name","type":"monument"}]
+Valid types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,other
+Only include real places you are certain about.`
     );
-    const arr = JSON.parse(txt.replace(/```json|```/g,'').trim());
-    let cityHint = 'Ireland';
+    // Robust JSON extraction
+    const jsonStr = raw.includes('[') ? raw.slice(raw.indexOf('['), raw.lastIndexOf(']')+1) : raw;
+    const arr = JSON.parse(jsonStr);
+    if (!arr.length) { setStatus('No landmarks found here'); return; }
+
+    // Get city context for geocoding
+    let city='Ireland';
     try {
-      const rev = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
-      cityHint = rev?.address?.city||rev?.address?.town||rev?.address?.county||'Ireland';
+      const rev=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
+      city=rev?.address?.city||rev?.address?.town||rev?.address?.village||rev?.address?.county||'Ireland';
     } catch(e){}
+
+    let added=0;
     for (const p of arr) {
-      const id = p.title.replace(/\W+/g,'_');
+      if (!p.title) continue;
+      const id=p.title.replace(/\W+/g,'_');
       if (markers[id]) continue;
-      const coords = await nominatimGeocode(`${p.title}, ${cityHint}`);
+      const coords=await geocode(`${p.title}, ${city}, Ireland`);
       if (!coords) continue;
-      const emoji = TYPE_ICON[p.type]||'📍';
-      const icon = L.divIcon({ html:`<div class="lm-marker" id="lm-${id}">${emoji}</div>`, iconSize:[28,28], iconAnchor:[14,14], className:'' });
-      const m = L.marker([coords.lat,coords.lng],{icon,ptitle:p.title,ptype:p.type}).addTo(map).bindTooltip(p.title,{direction:'top'});
-      m.on('click', ()=> playLandmarkNow({...p,...coords,id}));
-      markers[id] = m;
+      const emoji=TYPE_ICON[p.type]||'📍';
+      const icon=L.divIcon({html:`<div class="lm-marker" id="lm-${id}">${emoji}</div>`,iconSize:[28,28],iconAnchor:[14,14],className:''});
+      const m=L.marker([coords.lat,coords.lng],{icon,ptitle:p.title,ptype:p.type}).addTo(map).bindTooltip(p.title,{direction:'top'});
+      m.on('click',()=>{ if(!isPlaying) playLandmark({...p,...coords,id}); else prefetchLandmark({...p,...coords,id}); });
+      markers[id]=m;
+      added++;
     }
-    setStatus(Object.keys(markers).length+' landmarks nearby');
-  } catch(e) { setStatus('Error loading landmarks'); }
+    setStatus(`${Object.keys(markers).length} landmarks found`);
+    maybePlay();
+  } catch(e) {
+    setStatus('Error: '+e.message);
+    console.error('fetchLandmarks failed:',e);
+  }
 }
 
-// ── Core engine ───────────────────────────────────────────────
-
-// Find nearest unvisited landmark to current position
+// ── Nearest unvisited ─────────────────────────────────────────
 function nearestUnvisited(exclude=[]) {
   if (!userLatLng) return null;
   let best=null, bestD=Infinity;
   Object.entries(markers).forEach(([id,m])=>{
     if (visited.has(id)||exclude.includes(id)) return;
     const ll=m.getLatLng();
-    const d=distM(userLatLng,{lat:ll.lat,lng:ll.lng});
-    if (d<bestD){bestD=d;best={id,title:m.options.ptitle,type:m.options.ptype,lat:ll.lat,lng:ll.lng,dist:d};}
+    const d=haversine(userLatLng,{lat:ll.lat,lng:ll.lng});
+    if (d<bestD){bestD=d;best={id,title:m.options.ptitle,type:m.options.ptype,lat:ll.lat,lng:ll.lng};}
   });
   return best;
 }
 
-// Called when GPS moves or new landmarks load — kick off nearest if nothing playing
-function maybeAdvance() {
-  if (isPlaying||!userLatLng) return;
-  const nearest = nearestUnvisited();
-  if (!nearest) return;
-  playLandmarkNow(nearest);
+// ── Play engine ───────────────────────────────────────────────
+function maybePlay() {
+  if (isPlaying) return;
+  const nearest=nearestUnvisited();
+  if (nearest) playLandmark(nearest);
 }
 
-// Play a specific landmark immediately, prefetch next in background
-async function playLandmarkNow(p) {
-  if (visited.has(p.id)) return;
-  if (isPlaying) {
-    // queue it as next instead
-    prefetchStory(p);
-    return;
-  }
-  visited.add(p.id);
-  isPlaying = true;
-  markVisited(p.id);
-  setStatus(`Now: ${p.title}`);
-
-  // Show panel with loading state
-  showStoryPanel(p.title, '…');
-
+async function playLandmark(p) {
+  if (visited.has(p.id)||isPlaying) return;
+  visited.add(p.id); isPlaying=true;
+  markDot(p.id,'visited');
+  setStatus('Now: '+p.title);
+  showStory(p.title,'⏳ Loading story…');
   try {
-    const txt = await generateStory(p);
-    currentStory = { ...p, text:txt };
-    showStoryPanel(p.title, txt);
-    speak(txt, onStoryEnd);
-
-    // Immediately start prefetching next nearest in background
-    const next = nearestUnvisited([p.id]);
-    if (next) prefetchStory(next);
-
-  } catch(e) { isPlaying=false; onStoryEnd(); }
+    const txt=await generateStory(p);
+    currentStory={...p,text:txt};
+    showStory(p.title,txt);
+    speak(txt, afterStory);
+    // Prefetch next immediately
+    const next=nearestUnvisited([p.id]);
+    if (next) prefetchLandmark(next);
+  } catch(e) { isPlaying=false; setStatus('Story error — skipping'); setTimeout(maybePlay,2000); }
 }
 
-function onStoryEnd() {
-  isPlaying = false;
-  // If next story is ready, play it
+function afterStory() {
+  isPlaying=false;
   if (nextStory) {
-    const s = nextStory;
-    nextStory = null;
-    prefetchingFor = null;
+    const s=nextStory; nextStory=null; prefetchingId=null;
     hideNextPreview();
-    isPlaying = true;
-    currentStory = s;
-    markVisited(s.id);
-    showStoryPanel(s.title, s.text);
-    speak(s.text, onStoryEnd);
-    setStatus(`Now: ${s.title}`);
-    // Prefetch the one after
-    const after = nearestUnvisited([s.id]);
-    if (after) prefetchStory(after);
+    playLandmark(s);
   } else {
-    // Nothing ready — wait for GPS movement or fetch to complete
-    setStatus(Object.keys(markers).length+' landmarks nearby');
+    setStatus('Looking for next landmark…');
+    setTimeout(maybePlay,1000);
   }
 }
 
-async function prefetchStory(p) {
-  if (prefetchingFor===p.id||visited.has(p.id)) return;
-  prefetchingFor = p.id;
-  showNextPreview(p.title);
+async function prefetchLandmark(p) {
+  if (visited.has(p.id)||prefetchingId===p.id) return;
+  prefetchingId=p.id;
+  showNextPreview(`⏳ Preparing: <b>${p.title}</b>`);
   try {
-    const txt = await generateStory(p);
-    // Only store if still unvisited
+    const txt=await generateStory(p);
     if (!visited.has(p.id)) {
-      nextStory = {...p, text:txt};
-      showNextPreview(p.title, true); // mark as ready
+      nextStory={...p,text:txt};
+      showNextPreview(`✅ Next ready: <b>${p.title}</b> — tap ⏭ to skip`);
     }
-  } catch(e) { prefetchingFor=null; hideNextPreview(); }
+  } catch(e) { prefetchingId=null; hideNextPreview(); }
 }
 
 async function generateStory(p) {
   return await askAI(
-    `You are a captivating GPS audio tour guide. Tell a vivid 3-sentence story about "${p.title}" (type: ${p.type}).
+    `You are a captivating GPS audio tour guide. Write a vivid 3-sentence historical story about "${p.title}" (${p.type}) in Ireland.
 ${p.type==='person'?'Focus on their life, why they lived here, and their legacy.':''}
 ${p.type==='neighbourhood'?'Focus on the history and character of this area.':''}
-${p.type==='street'?'Focus on how this street got its name and its historical significance.':''}
-${p.type==='pub'?'Focus on the history and famous visitors or stories associated with it.':''}
-Start with "As you approach…" or "You're now near…". Max 75 words. Return ONLY the story.`
+${p.type==='street'?'Focus on how this street got its name and historical significance.':''}
+${p.type==='pub'?'Focus on the history and famous visitors.':''}
+Begin with "As you approach…" or "You're now near…". Max 75 words. Return ONLY the story text.`
   );
 }
 
 // ── Skip ──────────────────────────────────────────────────────
 function skipStory() {
   window.speechSynthesis.cancel();
-  isPlaying = false;
-  if (nextStory) {
-    onStoryEnd(); // plays nextStory immediately
-  } else {
-    // Nothing prefetched yet — find nearest and play
-    const nearest = nearestUnvisited();
-    if (nearest) playLandmarkNow(nearest);
-    else hideStoryPanel();
-  }
+  isPlaying=false;
+  if (nextStory) { afterStory(); }
+  else { const n=nearestUnvisited(); if(n) playLandmark(n); else hideStory(); }
 }
 
 // ── Audio ─────────────────────────────────────────────────────
-function speak(txt, onEnd) {
+function speak(txt,onEnd) {
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(txt);
-  u.rate=0.9;
+  const u=new SpeechSynthesisUtterance(txt);
+  u.rate=0.9; u.volume=1;
   const voices=window.speechSynthesis.getVoices();
-  const v=voices.find(v=>v.lang==='en-GB')||voices.find(v=>v.lang.startsWith('en'))||voices[0];
+  const v=voices.find(v=>v.lang==='en-GB'&&v.localService)||voices.find(v=>v.lang.startsWith('en'))||voices[0];
   if(v) u.voice=v;
-  if(onEnd) u.onend=onEnd;
+  u.onend=onEnd; u.onerror=onEnd;
   window.speechSynthesis.speak(u);
 }
-function playStory() {
-  if (currentStory) speak(currentStory.text, onStoryEnd);
-}
+function playStory() { if(currentStory) speak(currentStory.text,afterStory); }
 
-// ── UI helpers ────────────────────────────────────────────────
-function showStoryPanel(name, text) {
-  document.getElementById('story-name').textContent = name;
-  document.getElementById('story-text').textContent = text;
-  document.getElementById('story').style.display = 'block';
-  document.getElementById('notice').style.bottom = '190px';
+// ── UI ────────────────────────────────────────────────────────
+function showStory(name,text) {
+  document.getElementById('story-name').textContent=name;
+  document.getElementById('story-text').textContent=text;
+  document.getElementById('story').style.display='block';
+  document.getElementById('notice').style.bottom='185px';
 }
-function hideStoryPanel() {
-  document.getElementById('story').style.display = 'none';
-  document.getElementById('notice').style.bottom = '16px';
+function hideStory() {
+  document.getElementById('story').style.display='none';
+  document.getElementById('notice').style.bottom='16px';
 }
-function closeStory() {
-  window.speechSynthesis.cancel();
-  isPlaying=false; nextStory=null; prefetchingFor=null;
-  hideStoryPanel(); hideNextPreview();
-}
-function showNextPreview(name, ready=false) {
-  const el = document.getElementById('next-preview');
-  document.getElementById('next-name').textContent = name;
-  el.innerHTML = ready
-    ? `✅ Next ready: <span>${name}</span> — press ⏭ to skip`
-    : `⏳ Preparing next: <span>${name}</span>…`;
-  el.style.display = 'block';
-}
-function hideNextPreview() {
-  document.getElementById('next-preview').style.display='none';
-}
-function markVisited(id) {
-  const el=document.getElementById(`lm-${id}`);
-  if(el){el.classList.add('visited');el.classList.remove('next-up');}
-}
-
-// ── Mode ──────────────────────────────────────────────────────
+function closeStory() { window.speechSynthesis.cancel(); isPlaying=false; nextStory=null; prefetchingId=null; hideStory(); hideNextPreview(); }
+function showNextPreview(html) { const el=document.getElementById('next-preview'); el.innerHTML=html; el.style.display='block'; }
+function hideNextPreview() { document.getElementById('next-preview').style.display='none'; }
+function markDot(id,cls) { const el=document.getElementById('lm-'+id); if(el) el.classList.add(cls); }
+function setStatus(t) { document.getElementById('status').textContent=t; }
 function setMode(m) {
   currentMode=m;
   document.getElementById('btn-explore').classList.toggle('active',m==='explore');
@@ -449,42 +337,35 @@ function setMode(m) {
   document.getElementById('route-panel').classList.toggle('visible',m==='route');
 }
 
-// ── Route planning ────────────────────────────────────────────
+// ── Route ─────────────────────────────────────────────────────
 async function planRoute() {
   const from=document.getElementById('from-inp').value.trim();
   const to=document.getElementById('to-inp').value.trim();
   if(!from||!to) return;
-  const btn=document.getElementById('route-btn');
-  btn.disabled=true; showSpinner('Geocoding locations…');
+  const btn=document.getElementById('route-btn'); btn.disabled=true;
+  setStatus('Planning route…');
   try {
-    const [A,B]=await Promise.all([nominatimGeocode(from),nominatimGeocode(to)]);
-    if(!A||!B){hideSpinner();btn.disabled=false;alert('Could not find one of the locations.');return;}
-    setSpinTxt('Plotting route…');
+    const [A,B]=await Promise.all([geocode(from),geocode(to)]);
+    if(!A||!B){alert('Could not find one of the locations.');btn.disabled=false;return;}
     const osrm=await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`).then(r=>r.json());
     const coords=osrm?.routes?.[0]?.geometry?.coordinates;
-    if(!coords){hideSpinner();btn.disabled=false;alert('No route found.');return;}
+    if(!coords){alert('No route found.');btn.disabled=false;return;}
     if(map.routeLine) map.removeLayer(map.routeLine);
     map.routeLine=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
     map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
-    setSpinTxt('Discovering landmarks…');
-    const samples=samplePoints(coords,10);
-    for(const pt of samples) await fetchLandmarks(pt[1],pt[0]);
-    hideSpinner();btn.disabled=false;setMode('explore');
-    maybeAdvance();
-  } catch(e){hideSpinner();btn.disabled=false;}
+    setStatus('Finding landmarks along route…');
+    const pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);
+    for(const pt of pts) await doFetchLandmarks(pt[1],pt[0]);
+    btn.disabled=false; setMode('explore');
+  } catch(e){btn.disabled=false;setStatus('Route error');}
 }
-function samplePoints(coords,n){const s=Math.floor(coords.length/n);return Array.from({length:n},(_,i)=>coords[Math.min(i*s,coords.length-1)]);}
 
 // ── Utils ─────────────────────────────────────────────────────
-function distM(a,b){
+function haversine(a,b) {
   const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180;
   const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
   return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
-function setStatus(t){document.getElementById('status').textContent=t;}
-function showSpinner(t){document.getElementById('spin-txt').textContent=t;document.getElementById('spinner').style.display='block';}
-function hideSpinner(){document.getElementById('spinner').style.display='none';}
-function setSpinTxt(t){document.getElementById('spin-txt').textContent=t;}
 
 if(window.speechSynthesis.onvoiceschanged!==undefined) window.speechSynthesis.onvoiceschanged=()=>{};
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
