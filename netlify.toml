@@ -2,10 +2,6 @@
   publish = "public"
   functions = "netlify/functions"
 
-[functions]
-  node_bundler = "esbuild"
-  timeout = 30
-
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
