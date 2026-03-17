@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoryRoute</title>
-<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.1.3/dist/maplibre-gl.css" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; }
@@ -13,6 +13,16 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
 #title { font-size:20px; font-weight:800; }
 #title span { color:#f0a500; }
 #status { font-size:11px; background:rgba(0,0,0,0.6); padding:4px 10px; border-radius:12px; color:rgba(255,255,255,0.5); }
+#mode-toggle { position:fixed; top:58px; left:50%; transform:translateX(-50%); z-index:999; display:flex; background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.12); border-radius:20px; overflow:hidden; }
+.mode-btn { padding:7px 18px; font-size:12px; font-weight:700; border:none; background:transparent; color:rgba(255,255,255,0.45); cursor:pointer; transition:all .2s; }
+.mode-btn.active { background:#f0a500; color:#000; }
+#route-panel { position:fixed; top:100px; left:16px; right:16px; z-index:999; background:rgba(13,13,26,0.97); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:14px; display:none; }
+#route-panel.visible { display:block; }
+.r-input { width:100%; padding:10px 13px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:14px; outline:none; margin-bottom:8px; box-sizing:border-box; }
+.r-input::placeholder { color:rgba(255,255,255,0.3); }
+.r-input:focus { border-color:#f0a500; }
+.r-btn { width:100%; padding:11px; background:#f0a500; color:#000; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
+.r-btn:disabled { background:#444; color:#888; cursor:not-allowed; }
 #story { position:fixed; bottom:0; left:0; right:0; padding:16px; background:rgba(10,10,22,0.97); border-top:1px solid rgba(255,255,255,0.1); display:none; z-index:1000; }
 #story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:6px; }
 #story-text { font-size:14px; line-height:1.7; color:rgba(255,255,255,0.9); margin-bottom:12px; }
@@ -23,7 +33,11 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
 #spinner { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,22,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:18px 28px; font-size:12px; color:rgba(255,255,255,0.6); display:none; z-index:2000; text-align:center; }
 .spin { width:28px; height:28px; border:3px solid rgba(240,165,0,0.2); border-top-color:#f0a500; border-radius:50%; animation:sp 1s linear infinite; margin:0 auto 8px; }
 @keyframes sp { to { transform:rotate(360deg); } }
-.maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { display:none; }
+.lm-marker { font-size:22px; cursor:pointer; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8)); transition:transform .2s; }
+.lm-marker:hover { transform:scale(1.2); }
+.lm-marker.visited { opacity:0.35; filter:grayscale(1); }
+.leaflet-tooltip { background:rgba(10,10,22,.95); border:1px solid rgba(240,165,0,.4); color:#fff; font-size:12px; font-weight:600; padding:4px 9px; border-radius:6px; }
+.leaflet-tooltip::before { border-top-color:rgba(240,165,0,.4); }
 </style>
 </head>
 <body>
@@ -32,7 +46,18 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
 
 <div id="header">
   <div id="title">Story<span>Route</span></div>
-  <div id="status">Loading map…</div>
+  <div id="status">Locating you…</div>
+</div>
+
+<div id="mode-toggle">
+  <button class="mode-btn active" id="btn-explore" onclick="setMode('explore')">📍 Explore</button>
+  <button class="mode-btn" id="btn-route" onclick="setMode('route')">🗺️ Route</button>
+</div>
+
+<div id="route-panel">
+  <input class="r-input" id="from-inp" placeholder="📍 From — e.g. Dublin Airport"/>
+  <input class="r-input" id="to-inp"   placeholder="🏁 To — e.g. Trinity College Dublin"/>
+  <button class="r-btn" id="route-btn" onclick="planRoute()">Plan Route & Discover Stories</button>
 </div>
 
 <div id="story">
@@ -44,172 +69,101 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
   </div>
 </div>
 
-<div id="notice">📍 Click a gold dot to hear its story</div>
+<div id="notice">📍 Click a landmark icon to hear its story</div>
 <div id="spinner"><div class="spin"></div><span id="spin-txt">Loading…</span></div>
 
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.1.3/dist/maplibre-gl.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-// ── CONFIG — paste your Maptiler key here ─────────────────────
-const MAPTILER_KEY = 'YOUR_MAPTILER_KEY';
-
-const DUBLIN = { lat: 53.3438, lng: -6.2546 };
+const DUBLIN = [53.3438, -6.2546];
+const TYPE_ICON = { monument:'🏛', church:'⛪', castle:'🏰', street:'🛤', building:'🏢', bridge:'🌉', park:'🌿', museum:'🎭', other:'📍' };
 let map, markers = {}, visited = new Set(), currentStoryText = '', fetched = new Set();
+let currentMode = 'explore';
 
 // ── Map ───────────────────────────────────────────────────────
-map = new maplibregl.Map({
-  container: 'map',
-  style: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPTILER_KEY}`,
-  center: [DUBLIN.lng, DUBLIN.lat],
-  zoom: 15,
-  pitch: 45,
-  bearing: -10,
-  antialias: true
-});
-
-map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'bottom-right');
-
-map.on('load', () => {
-  // ── 3D buildings ──────────────────────────────────────────
-  map.addLayer({
-    id: '3d-buildings',
-    source: 'openmaptiles',
-    'source-layer': 'building',
-    type: 'fill-extrusion',
-    minzoom: 14,
-    paint: {
-      'fill-extrusion-color': [
-        'interpolate', ['linear'], ['zoom'],
-        14, '#1a1f2e',
-        16, '#22283a'
-      ],
-      'fill-extrusion-height': ['coalesce', ['get', 'render_height'], ['get', 'height'], 10],
-      'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], ['get', 'min_height'], 0],
-      'fill-extrusion-opacity': 0.85
-    }
-  });
-
-  setStatus('Locating you…');
-  startGPS();
-  fetchLandmarks(DUBLIN.lat, DUBLIN.lng);
-});
-
-map.on('moveend', () => {
-  const c = map.getCenter();
-  fetchLandmarks(c.lat, c.lng);
-});
+map = L.map('map', { zoomControl:true, attributionControl:false }).setView(DUBLIN, 15);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
+map.on('moveend', () => { const c = map.getCenter(); fetchLandmarks(c.lat, c.lng); });
 
 // ── GPS ───────────────────────────────────────────────────────
-function startGPS() {
-  if (!navigator.geolocation) { setStatus('Demo · Dublin City Centre'); return; }
+if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     p => {
-      map.flyTo({ center: [p.coords.longitude, p.coords.latitude], zoom: 15, pitch: 45 });
-      // user dot
-      const el = document.createElement('div');
-      el.style.cssText = 'width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.7)';
-      new maplibregl.Marker({ element: el }).setLngLat([p.coords.longitude, p.coords.latitude]).addTo(map);
+      const ll = [p.coords.latitude, p.coords.longitude];
+      map.setView(ll, 15);
+      const userIcon = L.divIcon({ html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.7)"></div>', iconSize:[14,14], iconAnchor:[7,7], className:'' });
+      L.marker(ll, { icon:userIcon }).addTo(map);
       setStatus('GPS active');
-      fetchLandmarks(p.coords.latitude, p.coords.longitude);
+      fetchLandmarks(...ll);
     },
-    () => setStatus('Demo · Dublin City Centre'),
-    { enableHighAccuracy: true, timeout: 8000 }
+    () => { setStatus('Demo · Dublin City Centre'); fetchLandmarks(...DUBLIN); },
+    { enableHighAccuracy:true, timeout:8000 }
   );
-}
+} else { setStatus('Demo · Dublin City Centre'); fetchLandmarks(...DUBLIN); }
 
-// ── Groq via Netlify Function ─────────────────────────────────
+// ── AI via Netlify Function ───────────────────────────────────
 async function askAI(prompt) {
   const r = await fetch('/api/claude', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ messages:[{ role:'user', content:prompt }] })
   });
   const d = await r.json();
   return d?.content?.[0]?.text || '';
 }
 
-// ── Landmark type icons ───────────────────────────────────────
-const TYPE_ICON = {
-  monument: '🏛', church: '⛪', castle: '🏰', street: '🛤',
-  building: '🏢', bridge: '🌉', park: '🌿', museum: '🎭', other: '📍'
-};
-
-// ── Geocode a landmark name via Nominatim ─────────────────────
-async function geocode(name, cityHint) {
+// ── Geocode via Nominatim ─────────────────────────────────────
+async function nominatimGeocode(q) {
   try {
-    const q = encodeURIComponent(`${name}, ${cityHint}`);
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
-      headers: { 'Accept-Language': 'en', 'User-Agent': 'StoryRouteApp/1.0' }
-    });
-    const d = await r.json();
-    if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
-  } catch(e) {}
-  return null;
+    const d = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, { headers:{'Accept-Language':'en','User-Agent':'StoryRouteApp/1.0'} }).then(r=>r.json());
+    return d.length ? { lat:+d[0].lat, lng:+d[0].lon } : null;
+  } catch { return null; }
 }
 
-// ── Landmarks ─────────────────────────────────────────────────
+// ── Fetch landmarks ───────────────────────────────────────────
 async function fetchLandmarks(lat, lng) {
   const key = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
   if (fetched.has(key)) return;
   fetched.add(key);
   setStatus('Finding landmarks…');
-
-  // Step 1 — get landmark names + types from AI (no coords)
-  let arr = [];
   try {
     const txt = await askAI(
-      `List up to 8 historically or culturally interesting landmarks within 1km of (${lat.toFixed(4)}, ${lng.toFixed(4)}).
+      `List up to 8 historically interesting landmarks within 1km of (${lat.toFixed(4)}, ${lng.toFixed(4)}).
 Return ONLY a raw JSON array: [{"title":"Exact landmark name","type":"monument"}]
 Types: monument, church, castle, street, building, bridge, park, museum, other
-Use the exact, official name of each place. Only real places you are certain exist.`
+Use the exact official name. Only real places you are certain exist.`
     );
-    arr = JSON.parse(txt.replace(/```json|```/g, '').trim());
-  } catch(e) { setStatus('Error loading landmarks'); return; }
+    const arr = JSON.parse(txt.replace(/```json|```/g,'').trim());
 
-  // Step 2 — geocode each name via Nominatim for accurate coords
-  // Get city name from reverse geocode for better search context
-  let cityHint = 'Dublin, Ireland';
-  try {
-    const rev = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers:{'User-Agent':'StoryRouteApp/1.0'} }).then(r=>r.json());
-    cityHint = rev?.address?.city || rev?.address?.town || rev?.address?.county || 'Dublin, Ireland';
-  } catch(e) {}
+    // Reverse geocode for city context
+    let cityHint = 'Ireland';
+    try {
+      const rev = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
+      cityHint = rev?.address?.city || rev?.address?.town || rev?.address?.county || 'Ireland';
+    } catch(e) {}
 
-  let added = 0;
-  for (const p of arr) {
-    const id = p.title.replace(/\s+/g,'_');
-    if (markers[id]) continue;
-    const coords = await geocode(p.title, cityHint);
-    if (!coords) continue;
-
-    const emoji = TYPE_ICON[p.type] || '📍';
-    const el = document.createElement('div');
-    el.style.cssText = `
-      width:32px; height:32px; display:flex; align-items:center; justify-content:center;
-      font-size:20px; cursor:pointer; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-      animation:pulse 2.5s infinite;
-    `;
-    el.textContent = emoji;
-    el.title = p.title;
-
-    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-      .setLngLat([coords.lng, coords.lat])
-      .setPopup(new maplibregl.Popup({ offset:20, closeButton:false })
-        .setHTML(`<div style="font-size:12px;font-weight:700;color:#f0a500">${emoji} ${p.title}</div>`))
-      .addTo(map);
-
-    el.addEventListener('click', () => triggerStory({ ...p, ...coords, id, el }));
-    markers[id] = marker;
-    added++;
-  }
-
-  setStatus(Object.keys(markers).length + ' landmarks · tap an icon');
+    for (const p of arr) {
+      const id = p.title.replace(/\s+/g,'_');
+      if (markers[id]) continue;
+      const coords = await nominatimGeocode(`${p.title}, ${cityHint}`);
+      if (!coords) continue;
+      const emoji = TYPE_ICON[p.type] || '📍';
+      const icon = L.divIcon({ html:`<div class="lm-marker" id="lm-${id}">${emoji}</div>`, iconSize:[28,28], iconAnchor:[14,14], className:'' });
+      const m = L.marker([coords.lat, coords.lng], { icon })
+        .addTo(map)
+        .bindTooltip(p.title, { direction:'top', permanent:false });
+      m.on('click', () => triggerStory({ ...p, ...coords, id }));
+      markers[id] = m;
+    }
+    setStatus(Object.keys(markers).length + ' landmarks · tap an icon');
+  } catch(e) { setStatus('Error loading landmarks'); }
 }
 
 // ── Story ─────────────────────────────────────────────────────
 async function triggerStory(p) {
   if (visited.has(p.id)) { showStory(p.title, currentStoryText); return; }
   visited.add(p.id);
-  p.el.style.background = 'rgba(240,165,0,0.3)';
-  p.el.style.animation = 'none';
-  map.flyTo({ center: [p.lng, p.lat], zoom: 16, pitch: 55, bearing: Math.random() * 60 - 30, duration: 1200 });
+  const el = document.getElementById(`lm-${p.id}`);
+  if (el) el.classList.add('visited');
+  map.flyTo([p.lat, p.lng], 16, { duration:1 });
   showSpinner(`Uncovering "${p.title}"…`);
   try {
     const txt = await askAI(
@@ -240,14 +194,57 @@ function speak(txt) {
   const u = new SpeechSynthesisUtterance(txt);
   u.rate = 0.9;
   const voices = window.speechSynthesis.getVoices();
-  const v = voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en')) || voices[0];
+  const v = voices.find(v=>v.lang==='en-GB') || voices.find(v=>v.lang.startsWith('en')) || voices[0];
   if (v) u.voice = v;
   window.speechSynthesis.speak(u);
 }
 
+// ── Mode toggle ───────────────────────────────────────────────
+function setMode(m) {
+  currentMode = m;
+  document.getElementById('btn-explore').classList.toggle('active', m==='explore');
+  document.getElementById('btn-route').classList.toggle('active', m==='route');
+  document.getElementById('route-panel').classList.toggle('visible', m==='route');
+}
+
+// ── Route planning ────────────────────────────────────────────
+async function planRoute() {
+  const from = document.getElementById('from-inp').value.trim();
+  const to   = document.getElementById('to-inp').value.trim();
+  if (!from || !to) return;
+  const btn = document.getElementById('route-btn');
+  btn.disabled = true;
+  showSpinner('Geocoding locations…');
+  try {
+    const [A, B] = await Promise.all([nominatimGeocode(from), nominatimGeocode(to)]);
+    if (!A || !B) { hideSpinner(); btn.disabled=false; alert('Could not find one of the locations. Try adding a city name.'); return; }
+    setLoaderText('Plotting route…');
+    const osrm = await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`).then(r=>r.json());
+    const coords = osrm?.routes?.[0]?.geometry?.coordinates;
+    if (!coords) { hideSpinner(); btn.disabled=false; alert('No route found.'); return; }
+    // Draw route
+    if (map.routeLine) map.removeLayer(map.routeLine);
+    map.routeLine = L.polyline(coords.map(c=>[c[1],c[0]]), { color:'#f0a500', weight:5, opacity:0.8 }).addTo(map);
+    map.fitBounds(map.routeLine.getBounds(), { padding:[50,50] });
+    // Fetch landmarks along route
+    setLoaderText('Discovering landmarks…');
+    const samples = samplePoints(coords, 6);
+    for (const pt of samples) await fetchLandmarks(pt[1], pt[0]);
+    hideSpinner(); btn.disabled=false;
+    setMode('explore');
+  } catch(e) { hideSpinner(); btn.disabled=false; }
+}
+
+function samplePoints(coords, n) {
+  const step = Math.floor(coords.length / n);
+  return Array.from({ length:n }, (_,i) => coords[Math.min(i*step, coords.length-1)]);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
 function setStatus(t) { document.getElementById('status').textContent = t; }
-function showSpinner(t) { document.getElementById('spin-txt').textContent = t; document.getElementById('spinner').style.display = 'block'; }
-function hideSpinner() { document.getElementById('spinner').style.display = 'none'; }
+function showSpinner(t) { document.getElementById('spin-txt').textContent=t; document.getElementById('spinner').style.display='block'; }
+function hideSpinner() { document.getElementById('spinner').style.display='none'; }
+function setLoaderText(t) { document.getElementById('spin-txt').textContent=t; }
 
 if (window.speechSynthesis.onvoiceschanged !== undefined) window.speechSynthesis.onvoiceschanged = () => {};
 </script>
