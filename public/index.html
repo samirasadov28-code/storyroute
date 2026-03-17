@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoryRoute</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.1.3/dist/maplibre-gl.css" rel="stylesheet"/>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; }
@@ -17,15 +17,13 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
 #story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:6px; }
 #story-text { font-size:14px; line-height:1.7; color:rgba(255,255,255,0.9); margin-bottom:12px; }
 #story-btns { display:flex; gap:8px; }
-#play-btn { flex:1; padding:10px; background:#f0a500; color:#000; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
-#close-btn { padding:10px 14px; background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:8px; cursor:pointer; }
+#play-btn { flex:1; padding:10px; background:#f0a500; color:#000; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; }
+#close-btn { padding:10px 14px; background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:14px; }
 #notice { position:fixed; bottom:16px; left:16px; right:16px; background:rgba(240,165,0,0.08); border:1px solid rgba(240,165,0,0.25); border-radius:10px; padding:8px 12px; font-size:11px; color:rgba(255,255,255,0.45); text-align:center; z-index:999; transition:bottom .3s; }
 #spinner { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,22,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:18px 28px; font-size:12px; color:rgba(255,255,255,0.6); display:none; z-index:2000; text-align:center; }
 .spin { width:28px; height:28px; border:3px solid rgba(240,165,0,0.2); border-top-color:#f0a500; border-radius:50%; animation:sp 1s linear infinite; margin:0 auto 8px; }
 @keyframes sp { to { transform:rotate(360deg); } }
-.lm-dot { width:16px; height:16px; background:#f0a500; border:3px solid #fff; border-radius:50%; box-shadow:0 0 10px rgba(240,165,0,0.5); }
-.lm-dot.visited { background:rgba(240,165,0,0.3); box-shadow:none; border-color:rgba(255,255,255,0.3); }
-.leaflet-tooltip { background:rgba(10,10,22,.95); border:1px solid rgba(240,165,0,.4); color:#fff; font-size:12px; font-weight:600; padding:4px 9px; border-radius:6px; }
+.maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { display:none; }
 </style>
 </head>
 <body>
@@ -34,7 +32,7 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
 
 <div id="header">
   <div id="title">Story<span>Route</span></div>
-  <div id="status">Locating you…</div>
+  <div id="status">Loading map…</div>
 </div>
 
 <div id="story">
@@ -49,30 +47,80 @@ body { background:#111827; color:#fff; font-family:sans-serif; overflow:hidden; 
 <div id="notice">📍 Click a gold dot to hear its story</div>
 <div id="spinner"><div class="spin"></div><span id="spin-txt">Loading…</span></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.1.3/dist/maplibre-gl.js"></script>
 <script>
-const DUBLIN = [53.3438, -6.2546];
-let map, lmMarkers = {}, visited = new Set(), currentStoryText = '', fetched = new Set();
+// ── CONFIG — paste your Maptiler key here ─────────────────────
+const MAPTILER_KEY = 'nSsWC6K2CjiMIn3mE49N';
 
-// ── Map init ──────────────────────────────────────────────────
-map = L.map('map', { zoomControl:false, attributionControl:false }).setView(DUBLIN, 15);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
-map.on('moveend', () => { const c = map.getCenter(); fetchLandmarks(c.lat, c.lng); });
+const DUBLIN = { lat: 53.3438, lng: -6.2546 };
+let map, markers = {}, visited = new Set(), currentStoryText = '', fetched = new Set();
+
+// ── Map ───────────────────────────────────────────────────────
+map = new maplibregl.Map({
+  container: 'map',
+  style: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPTILER_KEY}`,
+  center: [DUBLIN.lng, DUBLIN.lat],
+  zoom: 15,
+  pitch: 45,
+  bearing: -10,
+  antialias: true
+});
+
+map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'bottom-right');
+
+map.on('load', () => {
+  // ── 3D buildings ──────────────────────────────────────────
+  map.addLayer({
+    id: '3d-buildings',
+    source: 'openmaptiles',
+    'source-layer': 'building',
+    type: 'fill-extrusion',
+    minzoom: 14,
+    paint: {
+      'fill-extrusion-color': [
+        'interpolate', ['linear'], ['zoom'],
+        14, '#1a1f2e',
+        16, '#22283a'
+      ],
+      'fill-extrusion-height': ['coalesce', ['get', 'render_height'], ['get', 'height'], 10],
+      'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], ['get', 'min_height'], 0],
+      'fill-extrusion-opacity': 0.85
+    }
+  });
+
+  setStatus('Locating you…');
+  startGPS();
+  fetchLandmarks(DUBLIN.lat, DUBLIN.lng);
+});
+
+map.on('moveend', () => {
+  const c = map.getCenter();
+  fetchLandmarks(c.lat, c.lng);
+});
 
 // ── GPS ───────────────────────────────────────────────────────
-if (navigator.geolocation) {
+function startGPS() {
+  if (!navigator.geolocation) { setStatus('Demo · Dublin City Centre'); return; }
   navigator.geolocation.getCurrentPosition(
-    p => { map.setView([p.coords.latitude, p.coords.longitude], 15); setStatus('GPS active'); },
-    () => { setStatus('Demo · Dublin City Centre'); },
-    { enableHighAccuracy:true, timeout:8000 }
+    p => {
+      map.flyTo({ center: [p.coords.longitude, p.coords.latitude], zoom: 15, pitch: 45 });
+      // user dot
+      const el = document.createElement('div');
+      el.style.cssText = 'width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.7)';
+      new maplibregl.Marker({ element: el }).setLngLat([p.coords.longitude, p.coords.latitude]).addTo(map);
+      setStatus('GPS active');
+      fetchLandmarks(p.coords.latitude, p.coords.longitude);
+    },
+    () => setStatus('Demo · Dublin City Centre'),
+    { enableHighAccuracy: true, timeout: 8000 }
   );
-} else { setStatus('Demo · Dublin City Centre'); }
+}
 
-// ── Claude via Netlify Function ───────────────────────────────
-async function askClaude(prompt) {
+// ── Groq via Netlify Function ─────────────────────────────────
+async function askAI(prompt) {
   const r = await fetch('/api/claude', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ messages:[{ role:'user', content:prompt }] })
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
   });
   const d = await r.json();
   return d?.content?.[0]?.text || '';
@@ -85,23 +133,36 @@ async function fetchLandmarks(lat, lng) {
   fetched.add(key);
   setStatus('Finding landmarks…');
   try {
-    const txt = await askClaude(
+    const txt = await askAI(
       `List up to 8 historically interesting landmarks within 1km of (${lat.toFixed(4)}, ${lng.toFixed(4)}).
 Return ONLY a raw JSON array: [{"title":"Name","lat":0.0,"lng":0.0,"type":"monument"}]
 Types: monument, church, castle, street, building, bridge, park, museum, other
 Only real, named places you are certain about.`
     );
-    const arr = JSON.parse(txt.replace(/```json|```/g,'').trim());
+    const arr = JSON.parse(txt.replace(/```json|```/g, '').trim());
     arr.forEach(p => {
       const id = p.title + '_' + p.lat.toFixed(3);
-      if (!lmMarkers[id]) {
-        const icon = L.divIcon({ html:'<div class="lm-dot"></div>', iconSize:[16,16], iconAnchor:[8,8], className:'' });
-        const m = L.marker([p.lat, p.lng], { icon }).addTo(map).bindTooltip(p.title, { direction:'top' });
-        m.on('click', () => triggerStory({ ...p, id }));
-        lmMarkers[id] = m;
-      }
+      if (markers[id]) return;
+      // gold pulsing dot
+      const el = document.createElement('div');
+      el.style.cssText = `
+        width:16px; height:16px; background:#f0a500;
+        border:3px solid #fff; border-radius:50%;
+        box-shadow:0 0 0 0 rgba(240,165,0,0.5);
+        animation:pulse 2s infinite; cursor:pointer;
+      `;
+      el.title = p.title;
+      const style = document.createElement('style');
+      style.textContent = `@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(240,165,0,0.5)}70%{box-shadow:0 0 0 10px rgba(240,165,0,0)}100%{box-shadow:0 0 0 0 rgba(240,165,0,0)}}`;
+      document.head.appendChild(style);
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([p.lng, p.lat])
+        .setPopup(new maplibregl.Popup({ offset: 20, closeButton: false, className: 'sr-popup' }).setHTML(`<strong>${p.title}</strong>`))
+        .addTo(map);
+      el.addEventListener('click', () => triggerStory({ ...p, id, el }));
+      markers[id] = marker;
     });
-    setStatus(Object.keys(lmMarkers).length + ' landmarks · tap a dot');
+    setStatus(Object.keys(markers).length + ' landmarks · tap a dot');
   } catch(e) { setStatus('Error loading landmarks'); }
 }
 
@@ -109,11 +170,12 @@ Only real, named places you are certain about.`
 async function triggerStory(p) {
   if (visited.has(p.id)) { showStory(p.title, currentStoryText); return; }
   visited.add(p.id);
-  const el = lmMarkers[p.id]?.getElement()?.querySelector('.lm-dot');
-  if (el) el.classList.add('visited');
+  p.el.style.background = 'rgba(240,165,0,0.3)';
+  p.el.style.animation = 'none';
+  map.flyTo({ center: [p.lng, p.lat], zoom: 16, pitch: 55, bearing: Math.random() * 60 - 30, duration: 1200 });
   showSpinner(`Uncovering "${p.title}"…`);
   try {
-    const txt = await askClaude(
+    const txt = await askAI(
       `You are a captivating GPS audio tour guide. Tell a vivid 3-sentence historical story about "${p.title}" (type: ${p.type}).
 Start with "As you approach…" or "You're now near…". Max 75 words. Return ONLY the story.`
     );
@@ -121,7 +183,7 @@ Start with "As you approach…" or "You're now near…". Max 75 words. Return ON
     hideSpinner();
     showStory(p.title, txt);
     speak(txt);
-  } catch(e) { hideSpinner(); }
+  } catch(e) { hideSpinner(); setStatus('Error generating story'); }
 }
 
 function showStory(name, text) {
@@ -141,17 +203,16 @@ function speak(txt) {
   const u = new SpeechSynthesisUtterance(txt);
   u.rate = 0.9;
   const voices = window.speechSynthesis.getVoices();
-  const v = voices.find(v=>v.lang==='en-GB') || voices.find(v=>v.lang.startsWith('en')) || voices[0];
+  const v = voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en')) || voices[0];
   if (v) u.voice = v;
   window.speechSynthesis.speak(u);
 }
 
 function setStatus(t) { document.getElementById('status').textContent = t; }
-function showSpinner(t) { document.getElementById('spin-txt').textContent=t; document.getElementById('spinner').style.display='block'; }
-function hideSpinner() { document.getElementById('spinner').style.display='none'; }
+function showSpinner(t) { document.getElementById('spin-txt').textContent = t; document.getElementById('spinner').style.display = 'block'; }
+function hideSpinner() { document.getElementById('spinner').style.display = 'none'; }
 
 if (window.speechSynthesis.onvoiceschanged !== undefined) window.speechSynthesis.onvoiceschanged = () => {};
-fetchLandmarks(...DUBLIN);
 </script>
 </body>
 </html>
