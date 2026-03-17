@@ -22,7 +22,7 @@ body { font-family:sans-serif; overflow:hidden; }
 #app-name span { color:#f0a500; }
 #status { font-size:11px; background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08); padding:4px 10px; border-radius:12px; color:#666; max-width:175px; text-align:right; line-height:1.4; }
 
-#mode-toggle { position:fixed; top:62px; left:50%; transform:translateX(-50%); z-index:999; display:flex; background:rgba(255,255,255,0.95); border:1px solid rgba(0,0,0,0.1); border-radius:20px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+#debug { position:fixed; top:62px; left:16px; z-index:1000; background:rgba(0,0,0,0.75); color:#0f0; font-size:10px; padding:6px 10px; border-radius:8px; max-width:220px; line-height:1.6; pointer-events:none; }
 .mode-btn { padding:7px 18px; font-size:12px; font-weight:700; border:none; background:transparent; color:rgba(0,0,0,0.4); cursor:pointer; }
 .mode-btn.active { background:#f0a500; color:#fff; }
 
@@ -57,7 +57,7 @@ body { font-family:sans-serif; overflow:hidden; }
 }
 
 /* Zoom — top right, well away from bottom bar */
-#zoom { position:fixed; top:110px; right:14px; z-index:1000; display:flex; flex-direction:column; gap:6px; }
+#zoom { position:fixed; bottom:90px; left:14px; z-index:1000; display:flex; flex-direction:column; gap:6px; }
 .zbtn { width:40px; height:40px; background:rgba(255,255,255,0.95); border:1px solid rgba(0,0,0,0.15); border-radius:8px; color:#333; font-size:22px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; }
 .zbtn:hover { background:#f0a500; color:#fff; border-color:#f0a500; }
 
@@ -89,6 +89,7 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="status">Starting…</div>
 </div>
 
+<div id="debug">⏳ Waiting…</div>
 <div id="mode-toggle">
   <button class="mode-btn active" id="btn-explore" onclick="setMode('explore')">📍 Explore</button>
   <button class="mode-btn" id="btn-route" onclick="setMode('route')">🗺️ Route</button>
@@ -320,6 +321,7 @@ function nearestUnvisited(exclude=[]) {
 function playNearest() {
   if (!tourActive||isPlaying) return;
   const p=nearestUnvisited();
+  dbg('playNearest()<br>found: '+(p?p.title:'none')+'<br>markers: '+Object.keys(markers).length);
   if (p) playLandmark(p);
   else setStatus('No more landmarks nearby');
 }
@@ -417,9 +419,12 @@ function speak(txt,onEnd) {
   const u=new SpeechSynthesisUtterance(txt);
   u.rate=0.88; u.volume=1;
   const voices=window.speechSynthesis.getVoices();
+  dbg('Speaking…<br>voices: '+voices.length);
   const v=voices.find(v=>v.lang==='en-GB'&&v.localService)||voices.find(v=>v.lang.startsWith('en'))||voices[0];
-  if(v) u.voice=v;
-  u.onend=onEnd; u.onerror=()=>{console.warn('Speech error');onEnd();};
+  if(v) { u.voice=v; dbg('Speaking…<br>voice: '+v.name); }
+  u.onstart=()=>dbg('🔊 Audio playing:<br>'+txt.slice(0,40)+'…');
+  u.onend=()=>{ dbg('✅ Done speaking'); onEnd(); };
+  u.onerror=(e)=>{ dbg('❌ Speech error: '+e.error); onEnd(); };
   window.speechSynthesis.speak(u);
 }
 function replayStory() { if(currentStory&&tourActive) speak(currentStory.text,onStoryEnd); }
@@ -438,7 +443,11 @@ function hideStory() {
 function showNextPreview(html){const el=document.getElementById('next-preview');el.innerHTML=html;el.style.display='block';}
 function hideNextPreview(){document.getElementById('next-preview').style.display='none';}
 function markDot(id,cls){const el=document.getElementById('lm-'+id);if(el)el.classList.add(cls);}
-function setStatus(t){document.getElementById('status').textContent=t;}
+function dbg(t) {
+  console.log(t);
+  document.getElementById('debug').innerHTML = t;
+}
+function setStatus(t) { document.getElementById('status').textContent=t; }
 function setMode(m){
   document.getElementById('btn-explore').classList.toggle('active',m==='explore');
   document.getElementById('btn-route').classList.toggle('active',m==='route');
