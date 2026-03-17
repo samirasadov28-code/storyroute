@@ -5,15 +5,14 @@ export default async (req, context) => {
 
   const body = await req.json();
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01"
+      "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "llama-3.3-70b-versatile",
       max_tokens: 800,
       messages: body.messages
     })
@@ -21,7 +20,10 @@ export default async (req, context) => {
 
   const data = await response.json();
 
-  return new Response(JSON.stringify(data), {
+  // Normalise to same shape the frontend expects
+  const text = data?.choices?.[0]?.message?.content || "";
+
+  return new Response(JSON.stringify({ content: [{ text }] }), {
     status: 200,
     headers: {
       "Content-Type": "application/json",
