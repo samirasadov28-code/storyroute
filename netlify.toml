@@ -4,9 +4,6 @@
 
 [functions]
   node_bundler = "esbuild"
-
-[[functions]]
-  path = "/api/claude"
   timeout = 30
 
 [[redirects]]
