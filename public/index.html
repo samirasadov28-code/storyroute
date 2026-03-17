@@ -253,13 +253,16 @@ function startAt(lat, lng) {
 }
 
 // ── AI helpers ────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 async function callAI(prompt) {
   const r = await fetch('/api/claude', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ messages:[{ role:'user', content:prompt }] })
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
   });
-  if (!r.ok) throw new Error('API error '+r.status);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
   const d = await r.json();
+  if (d.error) throw new Error(d.error);
   const t = d?.content?.[0]?.text || '';
   if (!t) throw new Error('Empty response');
   return t;
