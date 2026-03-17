@@ -433,12 +433,7 @@ async function prefetchStory(p) {
 
 async function getStory(p) {
   return await callAI(
-    `You are a captivating GPS audio tour guide. Write a vivid 3-sentence historical story about "${p.title}" (${p.type}) in Ireland.
-${p.type==='person' ? 'Focus on their life, why they lived here and their legacy.' : ''}
-${p.type==='neighbourhood' ? 'Focus on the history and character of this area.' : ''}
-${p.type==='street' ? 'Focus on how this street got its name and historical significance.' : ''}
-${p.type==='pub' ? 'Focus on the history and famous visitors.' : ''}
-Begin with "As you approach…" or "You're now near…". Max 75 words. Return ONLY the story text.`
+    `GPS audio tour guide. 3 sentences about "${p.title}" in Ireland. Start with "As you approach…" or "You're now near…". Max 60 words. Story only, no title.`
   );
 }
 
