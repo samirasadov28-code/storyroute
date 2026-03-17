@@ -15,11 +15,8 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:sans-serif; overflow:hidden; }
 #map { width:100vw; height:100vh; }
-
-/* Hide ALL Leaflet controls */
 .leaflet-control-container { display:none !important; }
 
-/* Header */
 #header {
   position:fixed; top:0; left:0; right:0; z-index:1000;
   padding:10px 16px;
@@ -31,59 +28,33 @@ body { font-family:sans-serif; overflow:hidden; }
 #logo { height:40px; width:auto; }
 #app-name { font-size:20px; font-weight:800; color:#1a2240; margin-left:10px; }
 #app-name span { color:#f0a500; }
-#status {
-  font-size:11px; background:rgba(0,0,0,0.05);
-  border:1px solid rgba(0,0,0,0.08);
-  padding:4px 10px; border-radius:12px; color:#666;
-}
+#status { font-size:11px; background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08); padding:4px 10px; border-radius:12px; color:#666; }
 
-/* Mode toggle */
 #mode-toggle {
   position:fixed; top:62px; left:50%; transform:translateX(-50%);
   z-index:999; display:flex;
-  background:rgba(255,255,255,0.95);
-  border:1px solid rgba(0,0,0,0.1);
-  border-radius:20px; overflow:hidden;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  background:rgba(255,255,255,0.95); border:1px solid rgba(0,0,0,0.1);
+  border-radius:20px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
 .mode-btn { padding:7px 18px; font-size:12px; font-weight:700; border:none; background:transparent; color:rgba(0,0,0,0.4); cursor:pointer; }
 .mode-btn.active { background:#f0a500; color:#fff; }
 
-/* Route panel */
 #route-panel {
-  position:fixed; top:106px; left:16px; right:16px;
-  z-index:999; background:#fff;
-  border:1px solid rgba(0,0,0,0.1); border-radius:14px;
-  padding:14px; display:none;
-  box-shadow:0 4px 16px rgba(0,0,0,0.1);
+  position:fixed; top:106px; left:16px; right:16px; z-index:999;
+  background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:14px;
+  padding:14px; display:none; box-shadow:0 4px 16px rgba(0,0,0,0.1);
 }
 #route-panel.visible { display:block; }
-.r-input {
-  width:100%; padding:10px 13px;
-  background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.12);
-  border-radius:8px; color:#222; font-size:14px;
-  outline:none; margin-bottom:8px;
-}
+.r-input { width:100%; padding:10px 13px; background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.12); border-radius:8px; color:#222; font-size:14px; outline:none; margin-bottom:8px; }
 .r-input::placeholder { color:rgba(0,0,0,0.3); }
 .r-input:focus { border-color:#f0a500; }
 .r-btn { width:100%; padding:11px; background:#f0a500; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
 .r-btn:disabled { background:#ccc; color:#888; cursor:not-allowed; }
 
-/* Zoom — BOTTOM RIGHT */
-#zoom {
-  position:fixed; bottom:30px; right:14px;
-  z-index:1000; display:flex; flex-direction:column; gap:6px;
-}
-.zbtn {
-  width:40px; height:40px;
-  background:#fff; border:1px solid rgba(0,0,0,0.15);
-  border-radius:8px; color:#333; font-size:22px;
-  cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);
-  display:flex; align-items:center; justify-content:center;
-}
+#zoom { position:fixed; bottom:30px; right:14px; z-index:1000; display:flex; flex-direction:column; gap:6px; }
+.zbtn { width:40px; height:40px; background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:8px; color:#333; font-size:22px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; }
 .zbtn:hover { background:#f0a500; color:#fff; border-color:#f0a500; }
 
-/* Story panel */
 #story {
   position:fixed; bottom:0; left:0; right:0;
   padding:16px; background:#fff;
@@ -91,15 +62,15 @@ body { font-family:sans-serif; overflow:hidden; }
   display:none; z-index:1000;
   box-shadow:0 -4px 20px rgba(0,0,0,0.08);
 }
-#story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:6px; }
+#story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:4px; }
 #story-text { font-size:14px; line-height:1.7; color:#222; margin-bottom:12px; }
-#story-btns { display:flex; gap:8px; }
+#story-btns { display:flex; gap:8px; align-items:center; }
 #play-btn  { flex:1; padding:10px; background:#f0a500; color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; }
-#skip-btn  { padding:10px 14px; background:rgba(0,0,0,0.06); color:#333; border:none; border-radius:8px; cursor:pointer; font-size:14px; }
+#skip-btn  { padding:10px 16px; background:rgba(0,0,0,0.06); color:#333; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
 #close-btn { padding:10px 14px; background:rgba(0,0,0,0.06); color:#333; border:none; border-radius:8px; cursor:pointer; font-size:14px; }
-#queue-badge { margin-top:8px; font-size:11px; color:#999; text-align:center; }
+#next-preview { margin-top:10px; padding:8px 12px; background:rgba(240,165,0,0.06); border:1px solid rgba(240,165,0,0.2); border-radius:8px; font-size:11px; color:#888; display:none; }
+#next-preview span { color:#f0a500; font-weight:700; }
 
-/* Notice */
 #notice {
   position:fixed; bottom:16px; left:16px; right:16px;
   background:rgba(255,255,255,0.95); border:1px solid rgba(240,165,0,0.4);
@@ -108,22 +79,20 @@ body { font-family:sans-serif; overflow:hidden; }
   box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
-/* Spinner */
 #spinner {
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  background:#fff; border:1px solid rgba(0,0,0,0.08);
-  border-radius:12px; padding:20px 30px;
-  font-size:12px; color:#555; display:none;
-  z-index:2000; text-align:center;
-  box-shadow:0 4px 20px rgba(0,0,0,0.12);
+  background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:12px;
+  padding:20px 30px; font-size:12px; color:#555; display:none;
+  z-index:2000; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.12);
 }
 .spin { width:28px; height:28px; border:3px solid rgba(240,165,0,0.2); border-top-color:#f0a500; border-radius:50%; animation:sp 1s linear infinite; margin:0 auto 10px; }
 @keyframes sp { to { transform:rotate(360deg); } }
 
-/* Landmark markers */
 .lm-marker { font-size:22px; cursor:pointer; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); transition:transform .2s; }
 .lm-marker:hover { transform:scale(1.2); }
 .lm-marker.visited { opacity:0.3; filter:grayscale(1); }
+.lm-marker.next-up { animation:bounce 1.2s infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 .leaflet-tooltip { background:#fff; border:1px solid rgba(240,165,0,0.5); color:#222; font-size:12px; font-weight:600; padding:4px 9px; border-radius:6px; }
 </style>
 </head>
@@ -131,29 +100,25 @@ body { font-family:sans-serif; overflow:hidden; }
 
 <div id="map"></div>
 
-<!-- Header: logo + name left, status right -->
 <div id="header">
   <div style="display:flex;align-items:center;">
-    <img id="logo" src="/icon-512.png" alt="StoryRoute"/>
+    <img id="logo" src="/icon-512.png" alt="StoryRoute" style="height:40px;width:auto;"/>
     <span id="app-name">Story<span>Route</span></span>
   </div>
   <div id="status">Locating you…</div>
 </div>
 
-<!-- Mode toggle -->
 <div id="mode-toggle">
   <button class="mode-btn active" id="btn-explore" onclick="setMode('explore')">📍 Explore</button>
   <button class="mode-btn" id="btn-route" onclick="setMode('route')">🗺️ Route</button>
 </div>
 
-<!-- Route panel -->
 <div id="route-panel">
   <input class="r-input" id="from-inp" placeholder="📍 From — e.g. Dublin Airport"/>
   <input class="r-input" id="to-inp"   placeholder="🏁 To — e.g. Trinity College Dublin"/>
   <button class="r-btn" id="route-btn" onclick="planRoute()">Plan Route & Discover Stories</button>
 </div>
 
-<!-- Story panel -->
 <div id="story">
   <div id="story-name"></div>
   <div id="story-text"></div>
@@ -162,16 +127,12 @@ body { font-family:sans-serif; overflow:hidden; }
     <button id="skip-btn"  onclick="skipStory()">⏭ Skip</button>
     <button id="close-btn" onclick="closeStory()">✕</button>
   </div>
-  <div id="queue-badge"></div>
+  <div id="next-preview">⏳ Loading next: <span id="next-name">…</span></div>
 </div>
 
-<!-- Notice -->
-<div id="notice">📍 Click a landmark icon to hear its story</div>
-
-<!-- Spinner -->
+<div id="notice">📍 Tap a landmark or start moving — stories play automatically</div>
 <div id="spinner"><div class="spin"></div><span id="spin-txt">Loading…</span></div>
 
-<!-- Zoom buttons — bottom right -->
 <div id="zoom">
   <button class="zbtn" onclick="map.setZoom(map.getZoom()+1)">+</button>
   <button class="zbtn" onclick="map.setZoom(map.getZoom()-1)">−</button>
@@ -187,11 +148,14 @@ const TYPE_ICON = {
 };
 
 let map, markers = {}, visited = new Set();
-let currentStoryText = '', fetched = new Set();
-let currentMode = 'explore';
+let fetched = new Set(), currentMode = 'explore';
 let userLatLng = null;
-let storyQueue = [], isPlaying = false;
-const AUTO_TRIGGER_M = 300;
+
+// Story engine
+let currentStory   = null;   // playing now
+let nextStory      = null;   // pre-fetched, ready to skip to
+let prefetchingFor = null;   // landmark id being prefetched
+let isPlaying      = false;
 
 // ── Map ───────────────────────────────────────────────────────
 map = L.map('map', { zoomControl:false, attributionControl:false }).setView(DUBLIN, 15);
@@ -202,25 +166,24 @@ map.on('moveend', fetchVisibleArea);
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     p => {
-      const ll = [p.coords.latitude, p.coords.longitude];
       userLatLng = { lat:p.coords.latitude, lng:p.coords.longitude };
-      map.setView(ll, 15);
-      const userIcon = L.divIcon({ html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.6)"></div>', iconSize:[14,14], iconAnchor:[7,7], className:'' });
-      const uMarker = L.marker(ll, { icon:userIcon }).addTo(map);
+      map.setView([userLatLng.lat, userLatLng.lng], 15);
+      const uIcon = L.divIcon({ html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(74,158,255,0.6)"></div>', iconSize:[14,14], iconAnchor:[7,7], className:'' });
+      const uMarker = L.marker([userLatLng.lat, userLatLng.lng], { icon:uIcon }).addTo(map);
       setStatus('GPS active');
       fetchVisibleArea();
       navigator.geolocation.watchPosition(pos => {
         userLatLng = { lat:pos.coords.latitude, lng:pos.coords.longitude };
-        uMarker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
-        checkProximity();
-      }, null, { enableHighAccuracy:true, maximumAge:5000, timeout:15000 });
+        uMarker.setLatLng([userLatLng.lat, userLatLng.lng]);
+        maybeAdvance();
+      }, null, { enableHighAccuracy:true, maximumAge:4000, timeout:15000 });
     },
-    () => { setStatus('Demo · Dublin City Centre'); fetchVisibleArea(); },
+    () => { setStatus('Demo · Dublin'); fetchVisibleArea(); },
     { enableHighAccuracy:true, timeout:8000 }
   );
-} else { setStatus('Demo · Dublin City Centre'); fetchVisibleArea(); }
+} else { setStatus('Demo · Dublin'); fetchVisibleArea(); }
 
-// ── AI via Netlify Function ───────────────────────────────────
+// ── AI ────────────────────────────────────────────────────────
 async function askAI(prompt) {
   const r = await fetch('/api/claude', {
     method:'POST', headers:{'Content-Type':'application/json'},
@@ -230,29 +193,28 @@ async function askAI(prompt) {
   return d?.content?.[0]?.text || '';
 }
 
-// ── Geocode ───────────────────────────────────────────────────
 async function nominatimGeocode(q) {
   try {
-    const d = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, { headers:{'Accept-Language':'en','User-Agent':'StoryRouteApp/1.0'} }).then(r=>r.json());
-    return d.length ? { lat:+d[0].lat, lng:+d[0].lon } : null;
+    const d = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,{headers:{'Accept-Language':'en','User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
+    return d.length ? {lat:+d[0].lat,lng:+d[0].lon} : null;
   } catch { return null; }
 }
 
-// ── Fetch visible area grid ───────────────────────────────────
+// ── Landmark fetching ─────────────────────────────────────────
 function fetchVisibleArea() {
   const b = map.getBounds(), z = map.getZoom();
   const steps = z >= 15 ? 1 : z >= 13 ? 2 : 3;
   const pts = [];
   for (let i=0;i<=steps;i++) for (let j=0;j<=steps;j++) {
     pts.push({
-      lat: b.getSouth() + (b.getNorth()-b.getSouth())*(i/steps),
-      lng: b.getWest()  + (b.getEast() -b.getWest()) *(j/steps)
+      lat: b.getSouth()+(b.getNorth()-b.getSouth())*(i/steps),
+      lng: b.getWest() +(b.getEast() -b.getWest()) *(j/steps)
     });
   }
-  pts.reduce((chain,pt) => chain.then(()=>fetchLandmarks(pt.lat,pt.lng)), Promise.resolve());
+  pts.reduce((ch,pt)=>ch.then(()=>fetchLandmarks(pt.lat,pt.lng)), Promise.resolve())
+     .then(()=>{ if (!isPlaying) maybeAdvance(); });
 }
 
-// ── Fetch landmarks for one point ────────────────────────────
 async function fetchLandmarks(lat, lng) {
   const key = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
   if (fetched.has(key)) return;
@@ -263,152 +225,238 @@ async function fetchLandmarks(lat, lng) {
       `List up to 12 interesting points of interest within 2km of (${lat.toFixed(4)}, ${lng.toFixed(4)}).
 Include a varied mix: historical landmarks, neighbourhoods, named streets, famous people who lived nearby (as "Home of [Name]"), parks, coastal features, pubs with history.
 Return ONLY a raw JSON array: [{"title":"Exact name","type":"monument"}]
-Types: monument, church, castle, street, building, bridge, park, museum, neighbourhood, person, nature, pub, other
+Types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,other
 Use exact official names. Only real places you are certain about.`
     );
     const arr = JSON.parse(txt.replace(/```json|```/g,'').trim());
     let cityHint = 'Ireland';
     try {
       const rev = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
-      cityHint = rev?.address?.city || rev?.address?.town || rev?.address?.county || 'Ireland';
-    } catch(e) {}
+      cityHint = rev?.address?.city||rev?.address?.town||rev?.address?.county||'Ireland';
+    } catch(e){}
     for (const p of arr) {
-      const id = p.title.replace(/\s+/g,'_');
+      const id = p.title.replace(/\W+/g,'_');
       if (markers[id]) continue;
       const coords = await nominatimGeocode(`${p.title}, ${cityHint}`);
       if (!coords) continue;
-      const emoji = TYPE_ICON[p.type] || '📍';
+      const emoji = TYPE_ICON[p.type]||'📍';
       const icon = L.divIcon({ html:`<div class="lm-marker" id="lm-${id}">${emoji}</div>`, iconSize:[28,28], iconAnchor:[14,14], className:'' });
-      const m = L.marker([coords.lat, coords.lng], { icon, ptitle:p.title, ptype:p.type }).addTo(map).bindTooltip(p.title, { direction:'top' });
-      m.on('click', () => triggerStory({ ...p, ...coords, id }));
+      const m = L.marker([coords.lat,coords.lng],{icon,ptitle:p.title,ptype:p.type}).addTo(map).bindTooltip(p.title,{direction:'top'});
+      m.on('click', ()=> playLandmarkNow({...p,...coords,id}));
       markers[id] = m;
     }
-    setStatus(Object.keys(markers).length + ' landmarks · tap an icon');
+    setStatus(Object.keys(markers).length+' landmarks nearby');
   } catch(e) { setStatus('Error loading landmarks'); }
 }
 
-// ── Proximity auto-trigger ────────────────────────────────────
-function distM(a,b) {
-  const R=6371000, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
-  const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
-}
-function checkProximity() {
-  if (!userLatLng) return;
-  Object.entries(markers).forEach(([id,m]) => {
-    if (visited.has(id)) return;
-    const ll = m.getLatLng();
-    if (distM(userLatLng,{lat:ll.lat,lng:ll.lng}) < AUTO_TRIGGER_M) {
-      triggerStory({ title:m.options.ptitle||id.replace(/_/g,' '), type:m.options.ptype||'other', lat:ll.lat, lng:ll.lng, id });
-    }
+// ── Core engine ───────────────────────────────────────────────
+
+// Find nearest unvisited landmark to current position
+function nearestUnvisited(exclude=[]) {
+  if (!userLatLng) return null;
+  let best=null, bestD=Infinity;
+  Object.entries(markers).forEach(([id,m])=>{
+    if (visited.has(id)||exclude.includes(id)) return;
+    const ll=m.getLatLng();
+    const d=distM(userLatLng,{lat:ll.lat,lng:ll.lng});
+    if (d<bestD){bestD=d;best={id,title:m.options.ptitle,type:m.options.ptype,lat:ll.lat,lng:ll.lng,dist:d};}
   });
+  return best;
 }
 
-// ── Story ─────────────────────────────────────────────────────
-async function triggerStory(p) {
+// Called when GPS moves or new landmarks load — kick off nearest if nothing playing
+function maybeAdvance() {
+  if (isPlaying||!userLatLng) return;
+  const nearest = nearestUnvisited();
+  if (!nearest) return;
+  playLandmarkNow(nearest);
+}
+
+// Play a specific landmark immediately, prefetch next in background
+async function playLandmarkNow(p) {
   if (visited.has(p.id)) return;
+  if (isPlaying) {
+    // queue it as next instead
+    prefetchStory(p);
+    return;
+  }
   visited.add(p.id);
-  const el = document.getElementById(`lm-${p.id}`);
-  if (el) el.classList.add('visited');
+  isPlaying = true;
+  markVisited(p.id);
+  setStatus(`Now: ${p.title}`);
+
+  // Show panel with loading state
+  showStoryPanel(p.title, '…');
+
   try {
-    const txt = await askAI(
-      `You are a captivating GPS audio tour guide. Tell a vivid 3-sentence story about "${p.title}" (type: ${p.type}).
+    const txt = await generateStory(p);
+    currentStory = { ...p, text:txt };
+    showStoryPanel(p.title, txt);
+    speak(txt, onStoryEnd);
+
+    // Immediately start prefetching next nearest in background
+    const next = nearestUnvisited([p.id]);
+    if (next) prefetchStory(next);
+
+  } catch(e) { isPlaying=false; onStoryEnd(); }
+}
+
+function onStoryEnd() {
+  isPlaying = false;
+  // If next story is ready, play it
+  if (nextStory) {
+    const s = nextStory;
+    nextStory = null;
+    prefetchingFor = null;
+    hideNextPreview();
+    isPlaying = true;
+    currentStory = s;
+    markVisited(s.id);
+    showStoryPanel(s.title, s.text);
+    speak(s.text, onStoryEnd);
+    setStatus(`Now: ${s.title}`);
+    // Prefetch the one after
+    const after = nearestUnvisited([s.id]);
+    if (after) prefetchStory(after);
+  } else {
+    // Nothing ready — wait for GPS movement or fetch to complete
+    setStatus(Object.keys(markers).length+' landmarks nearby');
+  }
+}
+
+async function prefetchStory(p) {
+  if (prefetchingFor===p.id||visited.has(p.id)) return;
+  prefetchingFor = p.id;
+  showNextPreview(p.title);
+  try {
+    const txt = await generateStory(p);
+    // Only store if still unvisited
+    if (!visited.has(p.id)) {
+      nextStory = {...p, text:txt};
+      showNextPreview(p.title, true); // mark as ready
+    }
+  } catch(e) { prefetchingFor=null; hideNextPreview(); }
+}
+
+async function generateStory(p) {
+  return await askAI(
+    `You are a captivating GPS audio tour guide. Tell a vivid 3-sentence story about "${p.title}" (type: ${p.type}).
 ${p.type==='person'?'Focus on their life, why they lived here, and their legacy.':''}
 ${p.type==='neighbourhood'?'Focus on the history and character of this area.':''}
 ${p.type==='street'?'Focus on how this street got its name and its historical significance.':''}
 ${p.type==='pub'?'Focus on the history and famous visitors or stories associated with it.':''}
 Start with "As you approach…" or "You're now near…". Max 75 words. Return ONLY the story.`
-    );
-    enqueueStory({ title:p.title, text:txt });
-  } catch(e) { console.warn('Story error',e); }
+  );
 }
 
-function enqueueStory(s) {
-  storyQueue.push(s);
-  if (!isPlaying) playNextStory();
+// ── Skip ──────────────────────────────────────────────────────
+function skipStory() {
+  window.speechSynthesis.cancel();
+  isPlaying = false;
+  if (nextStory) {
+    onStoryEnd(); // plays nextStory immediately
+  } else {
+    // Nothing prefetched yet — find nearest and play
+    const nearest = nearestUnvisited();
+    if (nearest) playLandmarkNow(nearest);
+    else hideStoryPanel();
+  }
 }
-function playNextStory() {
-  if (!storyQueue.length) { isPlaying=false; hideStoryPanel(); return; }
-  const s = storyQueue.shift();
-  currentStoryText = s.text;
-  isPlaying = true;
-  showStory(s.title, s.text);
-  speak(s.text, () => { isPlaying=false; setTimeout(playNextStory,1500); });
-  updateQueueBadge();
+
+// ── Audio ─────────────────────────────────────────────────────
+function speak(txt, onEnd) {
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(txt);
+  u.rate=0.9;
+  const voices=window.speechSynthesis.getVoices();
+  const v=voices.find(v=>v.lang==='en-GB')||voices.find(v=>v.lang.startsWith('en'))||voices[0];
+  if(v) u.voice=v;
+  if(onEnd) u.onend=onEnd;
+  window.speechSynthesis.speak(u);
 }
-function showStory(name, text) {
+function playStory() {
+  if (currentStory) speak(currentStory.text, onStoryEnd);
+}
+
+// ── UI helpers ────────────────────────────────────────────────
+function showStoryPanel(name, text) {
   document.getElementById('story-name').textContent = name;
   document.getElementById('story-text').textContent = text;
   document.getElementById('story').style.display = 'block';
-  document.getElementById('notice').style.bottom = '170px';
-  updateQueueBadge();
+  document.getElementById('notice').style.bottom = '190px';
 }
 function hideStoryPanel() {
   document.getElementById('story').style.display = 'none';
   document.getElementById('notice').style.bottom = '16px';
 }
-function updateQueueBadge() {
-  document.getElementById('queue-badge').textContent = storyQueue.length > 0 ? `+${storyQueue.length} more queued` : '';
-}
-function closeStory() { window.speechSynthesis.cancel(); isPlaying=false; storyQueue=[]; hideStoryPanel(); }
-function skipStory()  { window.speechSynthesis.cancel(); isPlaying=false; setTimeout(playNextStory,300); }
-function playStory()  { if (currentStoryText) speak(currentStoryText, ()=>{ isPlaying=false; setTimeout(playNextStory,1500); }); }
-function speak(txt, onEnd) {
+function closeStory() {
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(txt);
-  u.rate = 0.9;
-  const voices = window.speechSynthesis.getVoices();
-  const v = voices.find(v=>v.lang==='en-GB') || voices.find(v=>v.lang.startsWith('en')) || voices[0];
-  if (v) u.voice = v;
-  if (onEnd) u.onend = onEnd;
-  window.speechSynthesis.speak(u);
+  isPlaying=false; nextStory=null; prefetchingFor=null;
+  hideStoryPanel(); hideNextPreview();
+}
+function showNextPreview(name, ready=false) {
+  const el = document.getElementById('next-preview');
+  document.getElementById('next-name').textContent = name;
+  el.innerHTML = ready
+    ? `✅ Next ready: <span>${name}</span> — press ⏭ to skip`
+    : `⏳ Preparing next: <span>${name}</span>…`;
+  el.style.display = 'block';
+}
+function hideNextPreview() {
+  document.getElementById('next-preview').style.display='none';
+}
+function markVisited(id) {
+  const el=document.getElementById(`lm-${id}`);
+  if(el){el.classList.add('visited');el.classList.remove('next-up');}
 }
 
 // ── Mode ──────────────────────────────────────────────────────
 function setMode(m) {
-  currentMode = m;
-  document.getElementById('btn-explore').classList.toggle('active', m==='explore');
-  document.getElementById('btn-route').classList.toggle('active', m==='route');
-  document.getElementById('route-panel').classList.toggle('visible', m==='route');
+  currentMode=m;
+  document.getElementById('btn-explore').classList.toggle('active',m==='explore');
+  document.getElementById('btn-route').classList.toggle('active',m==='route');
+  document.getElementById('route-panel').classList.toggle('visible',m==='route');
 }
 
 // ── Route planning ────────────────────────────────────────────
 async function planRoute() {
-  const from = document.getElementById('from-inp').value.trim();
-  const to   = document.getElementById('to-inp').value.trim();
-  if (!from||!to) return;
-  const btn = document.getElementById('route-btn');
-  btn.disabled = true;
-  showSpinner('Geocoding locations…');
+  const from=document.getElementById('from-inp').value.trim();
+  const to=document.getElementById('to-inp').value.trim();
+  if(!from||!to) return;
+  const btn=document.getElementById('route-btn');
+  btn.disabled=true; showSpinner('Geocoding locations…');
   try {
-    const [A,B] = await Promise.all([nominatimGeocode(from), nominatimGeocode(to)]);
-    if (!A||!B) { hideSpinner(); btn.disabled=false; alert('Could not find one of the locations.'); return; }
+    const [A,B]=await Promise.all([nominatimGeocode(from),nominatimGeocode(to)]);
+    if(!A||!B){hideSpinner();btn.disabled=false;alert('Could not find one of the locations.');return;}
     setSpinTxt('Plotting route…');
-    const osrm = await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`).then(r=>r.json());
-    const coords = osrm?.routes?.[0]?.geometry?.coordinates;
-    if (!coords) { hideSpinner(); btn.disabled=false; alert('No route found.'); return; }
-    if (map.routeLine) map.removeLayer(map.routeLine);
-    map.routeLine = L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
+    const osrm=await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`).then(r=>r.json());
+    const coords=osrm?.routes?.[0]?.geometry?.coordinates;
+    if(!coords){hideSpinner();btn.disabled=false;alert('No route found.');return;}
+    if(map.routeLine) map.removeLayer(map.routeLine);
+    map.routeLine=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
     map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
     setSpinTxt('Discovering landmarks…');
-    const samples = samplePoints(coords,10);
-    for (const pt of samples) await fetchLandmarks(pt[1],pt[0]);
-    hideSpinner(); btn.disabled=false; setMode('explore');
-  } catch(e) { hideSpinner(); btn.disabled=false; }
+    const samples=samplePoints(coords,10);
+    for(const pt of samples) await fetchLandmarks(pt[1],pt[0]);
+    hideSpinner();btn.disabled=false;setMode('explore');
+    maybeAdvance();
+  } catch(e){hideSpinner();btn.disabled=false;}
 }
-function samplePoints(coords,n) {
-  const step=Math.floor(coords.length/n);
-  return Array.from({length:n},(_,i)=>coords[Math.min(i*step,coords.length-1)]);
+function samplePoints(coords,n){const s=Math.floor(coords.length/n);return Array.from({length:n},(_,i)=>coords[Math.min(i*s,coords.length-1)]);}
+
+// ── Utils ─────────────────────────────────────────────────────
+function distM(a,b){
+  const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
+function setStatus(t){document.getElementById('status').textContent=t;}
+function showSpinner(t){document.getElementById('spin-txt').textContent=t;document.getElementById('spinner').style.display='block';}
+function hideSpinner(){document.getElementById('spinner').style.display='none';}
+function setSpinTxt(t){document.getElementById('spin-txt').textContent=t;}
 
-// ── Helpers ───────────────────────────────────────────────────
-function setStatus(t)  { document.getElementById('status').textContent=t; }
-function showSpinner(t){ document.getElementById('spin-txt').textContent=t; document.getElementById('spinner').style.display='block'; }
-function hideSpinner() { document.getElementById('spinner').style.display='none'; }
-function setSpinTxt(t) { document.getElementById('spin-txt').textContent=t; }
-
-if (window.speechSynthesis.onvoiceschanged!==undefined) window.speechSynthesis.onvoiceschanged=()=>{};
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if(window.speechSynthesis.onvoiceschanged!==undefined) window.speechSynthesis.onvoiceschanged=()=>{};
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>
 </body>
 </html>
