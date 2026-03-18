@@ -242,51 +242,26 @@ function startAt(lat, lng) {
     }, null, { enableHighAccuracy:true, maximumAge:5000, timeout:20000 });
   }
   setStatus('Loading landmarks near you…');
-  expandSearch(lat, lng, 0);
-}
 
-// Gradually expanding rings of search points around user
-// Each ring is ~1km further out than the last
-function expandSearch(lat, lng, ring) {
-  const MAX_RINGS = 4; // expands to ~4km radius
-  if (ring > MAX_RINGS) return;
+  // Build a grid of points radiating outward from user's exact GPS position
+  // ~0.009 degrees lat ≈ 1km, ~0.013 degrees lng ≈ 1km at Irish latitudes
+  const offsets = [
+    [0, 0],           // exact user position — always first
+    [0.009, 0],       // 1km north
+    [-0.009, 0],      // 1km south
+    [0, 0.013],       // 1km east
+    [0, -0.013],      // 1km west
+    [0.009, 0.013],   // NE
+    [0.009, -0.013],  // NW
+    [-0.009, 0.013],  // SE
+    [-0.009, -0.013], // SW
+  ];
 
-  let points;
-  if (ring === 0) {
-    // Ring 0 — just the user's exact position
-    points = [[0, 0]];
-  } else {
-    // Each ring adds points evenly spaced around a square at distance ring*1km
-    // ~0.009 lat = 1km, ~0.013 lng = 1km at Irish latitudes
-    const d = ring * 0.009;
-    const dLng = ring * 0.013;
-    points = [];
-    // Top and bottom edges
-    for (let i = -ring; i <= ring; i++) {
-      points.push([ d, i * 0.013]);   // top
-      points.push([-d, i * 0.013]);   // bottom
-    }
-    // Left and right edges (excluding corners already added)
-    for (let i = -ring + 1; i <= ring - 1; i++) {
-      points.push([i * 0.009,  dLng]); // right
-      points.push([i * 0.009, -dLng]); // left
-    }
-  }
-
-  // Fetch all points in this ring sequentially, then move to next ring
-  points.reduce((chain, [dLat, dLng]) =>
+  // Fetch sequentially — user's position first, then outward
+  offsets.reduce((chain, [dLat, dLng]) =>
     chain.then(() => fetchArea(lat + dLat, lng + dLng)),
     Promise.resolve()
-  ).then(() => {
-    const n = Object.keys(markers).length;
-    if (ring < MAX_RINGS) {
-      setStatus(`${n} landmarks found · expanding search…`);
-      // Small pause between rings so UI stays responsive
-      setTimeout(() => expandSearch(lat, lng, ring + 1), 800);
-    } else {
-      setStatus(`${n} landmarks found · press Start`);
-    }
-  });
+  );
 }
 
 // ── AI ────────────────────────────────────────────────────────
@@ -453,16 +428,23 @@ async function playLandmark(p) {
     showStory(p.title,txt);
     const nxt=nearest([p.id]);
     if (nxt) prefetchStory(nxt);
-    tts(txt,()=>{
-      speaking=false;
+    tts(txt, () => {
+      speaking = false;
       if (!tourOn) return;
-      if (nxtStory) {
-        const s=nxtStory; nxtStory=null; prefetchId=null;
-        document.getElementById('next-info').textContent='';
-        document.getElementById('skip-btn').disabled=true;
-        setTimeout(()=>playLandmark(s),1200);
+      // Always re-evaluate nearest at this moment — user may have moved
+      const currentNearest = nearest();
+      if (nxtStory && currentNearest && nxtStory.id === currentNearest.id) {
+        // Prefetched story is still the closest — play it immediately
+        const s = nxtStory; nxtStory = null; prefetchId = null;
+        document.getElementById('next-info').textContent = '';
+        document.getElementById('skip-btn').disabled = true;
+        setTimeout(() => playLandmark(s), 1200);
       } else {
-        setTimeout(playNearest,2000);
+        // Position changed — discard prefetch, play true nearest
+        nxtStory = null; prefetchId = null;
+        document.getElementById('next-info').textContent = '';
+        document.getElementById('skip-btn').disabled = true;
+        setTimeout(playNearest, 1200);
       }
     });
   } catch(e) {
@@ -488,7 +470,12 @@ async function prefetchStory(p) {
 
 async function getStory(p) {
   return await callAI(
-    `GPS audio tour guide. 3 vivid sentences about "${p.title}" (${p.type}) in Ireland. Start with "As you approach…" or "You're now near…". Max 60 words. Story only.`
+    `You are a GPS audio tour guide. Write 3 vivid sentences about "${p.title}" (${p.type}) in Ireland.
+Open with a varied, natural phrase — rotate through options like:
+"The next stop on your journey is…", "Coming up on your right…", "Just ahead of you lies…",
+"You're now passing…", "Keep an eye out for…", "One of the area's hidden gems is…",
+"Nearby you'll find…", "Within your reach is…"
+Be specific and surprising. Max 60 words. Return the story only.`
   );
 }
 
