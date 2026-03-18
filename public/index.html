@@ -17,7 +17,6 @@ body { font-family:sans-serif; overflow:hidden; }
 #map { width:100vw; height:100vh; }
 .leaflet-control-container { display:none !important; }
 
-/* ── Header ── */
 #header {
   position:fixed; top:0; left:0; right:0; z-index:1000;
   padding:10px 16px;
@@ -35,7 +34,6 @@ body { font-family:sans-serif; overflow:hidden; }
   max-width:160px; text-align:right; line-height:1.4;
 }
 
-/* ── Mode toggle ── */
 #mode-toggle {
   position:fixed; top:62px; left:50%; transform:translateX(-50%);
   z-index:999; display:flex;
@@ -45,20 +43,31 @@ body { font-family:sans-serif; overflow:hidden; }
 .mode-btn { padding:7px 18px; font-size:12px; font-weight:700; border:none; background:transparent; color:rgba(0,0,0,0.4); cursor:pointer; }
 .mode-btn.active { background:#f0a500; color:#fff; }
 
-/* ── Route panel ── */
 #route-panel {
   position:fixed; top:106px; left:16px; right:16px; z-index:999;
   background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:14px;
   padding:14px; display:none; box-shadow:0 4px 16px rgba(0,0,0,0.1);
 }
 #route-panel.visible { display:block; }
-.r-input { width:100%; padding:10px 13px; background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.12); border-radius:8px; color:#222; font-size:14px; outline:none; margin-bottom:8px; }
+.r-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+.r-input {
+  flex:1; padding:10px 13px; background:rgba(0,0,0,0.04);
+  border:1px solid rgba(0,0,0,0.12); border-radius:8px;
+  color:#222; font-size:14px; outline:none;
+}
 .r-input::placeholder { color:rgba(0,0,0,0.3); }
 .r-input:focus { border-color:#f0a500; }
+.r-input:disabled { background:rgba(240,165,0,0.08); border-color:rgba(240,165,0,0.4); color:#b36b00; }
+.loc-btn {
+  width:38px; height:38px; flex-shrink:0;
+  background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.12);
+  border-radius:8px; font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.loc-btn.active { background:rgba(240,165,0,0.12); border-color:#f0a500; }
 .r-btn { width:100%; padding:11px; background:#f0a500; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
 .r-btn:disabled { background:#ccc; color:#888; cursor:not-allowed; }
 
-/* ── Zoom — bottom LEFT ── */
 #zoom {
   position:fixed; bottom:90px; left:14px; z-index:1000;
   display:flex; flex-direction:column; gap:6px;
@@ -72,7 +81,6 @@ body { font-family:sans-serif; overflow:hidden; }
 }
 .zbtn:hover { background:#f0a500; color:#fff; border-color:#f0a500; }
 
-/* ── Story panel ── */
 #story {
   position:fixed; bottom:74px; left:0; right:0;
   padding:14px 16px; background:#fff;
@@ -89,7 +97,6 @@ body { font-family:sans-serif; overflow:hidden; }
 #next-info { margin-top:8px; font-size:11px; color:#999; }
 #next-info b { color:#e09400; }
 
-/* ── Bottom bar (Start/Stop) ── */
 #bottom-bar {
   position:fixed; bottom:0; left:0; right:0; z-index:1002;
   background:#fff; border-top:1px solid rgba(0,0,0,0.08);
@@ -105,7 +112,6 @@ body { font-family:sans-serif; overflow:hidden; }
 }
 #tour-btn.stop { background:#ef4444; box-shadow:0 3px 12px rgba(239,68,68,0.3); }
 
-/* ── Launch overlay ── */
 #overlay {
   position:fixed; inset:0; background:#fff; z-index:9999;
   display:flex; flex-direction:column; align-items:center;
@@ -118,7 +124,6 @@ body { font-family:sans-serif; overflow:hidden; }
   box-shadow:0 4px 16px rgba(240,165,0,0.35);
 }
 
-/* ── Landmark markers ── */
 .lm-dot { font-size:22px; cursor:pointer; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25)); transition:transform .15s; }
 .lm-dot:hover { transform:scale(1.2); }
 .lm-dot.visited { opacity:0.3; filter:grayscale(1); }
@@ -129,7 +134,6 @@ body { font-family:sans-serif; overflow:hidden; }
 
 <div id="map"></div>
 
-<!-- Header -->
 <div id="header">
   <div style="display:flex;align-items:center;">
     <img src="/icon-512.png" style="height:40px;width:auto;" onerror="this.style.display='none'">
@@ -138,26 +142,28 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="status">Starting…</div>
 </div>
 
-<!-- Mode toggle -->
 <div id="mode-toggle">
   <button class="mode-btn active" id="btn-explore" onclick="setMode('explore')">📍 Explore</button>
   <button class="mode-btn" id="btn-route" onclick="setMode('route')">🗺️ Route</button>
 </div>
 
-<!-- Route panel -->
 <div id="route-panel">
-  <input class="r-input" id="from-inp" placeholder="📍 From — e.g. Dublin Airport">
-  <input class="r-input" id="to-inp"   placeholder="🏁 To — e.g. Trinity College">
+  <!-- From row with current location toggle -->
+  <div class="r-row">
+    <input class="r-input" id="from-inp" placeholder="📍 From — type or use location"/>
+    <button class="loc-btn" id="from-loc-btn" onclick="toggleFromLocation()" title="Use my location">📍</button>
+  </div>
+  <div class="r-row">
+    <input class="r-input" id="to-inp" placeholder="🏁 To — e.g. Trinity College"/>
+  </div>
   <button class="r-btn" id="route-btn" onclick="planRoute()">Plan Route & Discover Stories</button>
 </div>
 
-<!-- Zoom -->
 <div id="zoom">
   <button class="zbtn" onclick="map.setZoom(map.getZoom()+1)">+</button>
   <button class="zbtn" onclick="map.setZoom(map.getZoom()-1)">−</button>
 </div>
 
-<!-- Story panel -->
 <div id="story">
   <div id="story-name"></div>
   <div id="story-text"></div>
@@ -168,12 +174,10 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="next-info"></div>
 </div>
 
-<!-- Bottom bar -->
 <div id="bottom-bar">
   <button id="tour-btn" onclick="toggleTour()">▶ Start Listening</button>
 </div>
 
-<!-- Launch overlay -->
 <div id="overlay">
   <img src="/icon-512.png" style="width:90px;height:90px;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.1)" onerror="this.style.display='none'">
   <div style="font-size:28px;font-weight:800;color:#1a2240;">Story<span style="color:#f0a500;">Route</span></div>
@@ -184,47 +188,38 @@ body { font-family:sans-serif; overflow:hidden; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-// ── Constants ─────────────────────────────────────────────────
 const DUBLIN = [53.3438, -6.2546];
 const TYPE_ICON = {
   monument:'🏛', church:'⛪', castle:'🏰', street:'🛤',
   building:'🏢', bridge:'🌉', park:'🌿', museum:'🎭',
-  neighbourhood:'🏘', person:'👤', nature:'🌊', pub:'🍺', other:'📍'
+  neighbourhood:'🏘', person:'👤', nature:'🌊', pub:'🍺',
+  beach:'🏖', estate:'🏡', school:'🏫', sport:'🏟', other:'📍'
 };
 
-// ── State ─────────────────────────────────────────────────────
-let markers   = {};          // id → Leaflet marker
-let visited   = new Set();   // ids already told
-let fetched   = new Set();   // area keys already fetched
-let userPos   = null;        // {lat,lng}
-let tourOn    = false;       // tour running?
-let speaking  = false;       // TTS active?
-let curStory  = null;        // {title,text,...}
-let nxtStory  = null;        // pre-fetched next story
-let prefetchId = null;       // id being pre-fetched
+let markers={}, visited=new Set(), fetched=new Set();
+let userPos=null, tourOn=false, speaking=false;
+let curStory=null, nxtStory=null, prefetchId=null;
+let useCurrentLocFrom=false; // route "from" = current location
 
-// ── Map ───────────────────────────────────────────────────────
-const map = L.map('map', { zoomControl:false, attributionControl:false }).setView(DUBLIN, 15);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
+const map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
 map.on('moveend', () => {
-  const c = map.getCenter();
+  const c=map.getCenter();
   fetchArea(c.lat, c.lng);
 });
 
 // ── Boot ──────────────────────────────────────────────────────
 function initApp() {
-  // Unlock iOS audio via user gesture
-  const u = new SpeechSynthesisUtterance(' ');
-  u.volume = 0;
+  const u=new SpeechSynthesisUtterance(' '); u.volume=0;
   window.speechSynthesis.speak(u);
-  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('overlay').style.display='none';
   getGPS();
 }
 
 // ── GPS ───────────────────────────────────────────────────────
 function getGPS() {
   setStatus('Getting location…');
-  if (!navigator.geolocation) { startAt(DUBLIN[0], DUBLIN[1]); return; }
+  if (!navigator.geolocation) { startAt(DUBLIN[0],DUBLIN[1]); return; }
   navigator.geolocation.getCurrentPosition(
     p  => startAt(p.coords.latitude, p.coords.longitude),
     () => startAt(DUBLIN[0], DUBLIN[1]),
@@ -235,294 +230,352 @@ function getGPS() {
 function startAt(lat, lng) {
   userPos = { lat, lng };
   map.setView([lat, lng], 15);
-  // Blue user dot
   const dotIcon = L.divIcon({
     html: '<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',
     iconSize:[14,14], iconAnchor:[7,7], className:''
   });
-  const um = L.marker([lat,lng], { icon:dotIcon }).addTo(map);
-  // Watch position
+  const um = L.marker([lat, lng], { icon:dotIcon }).addTo(map);
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(p => {
       userPos = { lat:p.coords.latitude, lng:p.coords.longitude };
       um.setLatLng([userPos.lat, userPos.lng]);
     }, null, { enableHighAccuracy:true, maximumAge:5000, timeout:20000 });
   }
-  setStatus('Finding landmarks…');
-  fetchArea(lat, lng);
+  setStatus('Loading landmarks near you…');
+  expandSearch(lat, lng, 0);
 }
 
-// ── AI helpers ────────────────────────────────────────────────
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+// Gradually expanding rings of search points around user
+// Each ring is ~1km further out than the last
+function expandSearch(lat, lng, ring) {
+  const MAX_RINGS = 4; // expands to ~4km radius
+  if (ring > MAX_RINGS) return;
+
+  let points;
+  if (ring === 0) {
+    // Ring 0 — just the user's exact position
+    points = [[0, 0]];
+  } else {
+    // Each ring adds points evenly spaced around a square at distance ring*1km
+    // ~0.009 lat = 1km, ~0.013 lng = 1km at Irish latitudes
+    const d = ring * 0.009;
+    const dLng = ring * 0.013;
+    points = [];
+    // Top and bottom edges
+    for (let i = -ring; i <= ring; i++) {
+      points.push([ d, i * 0.013]);   // top
+      points.push([-d, i * 0.013]);   // bottom
+    }
+    // Left and right edges (excluding corners already added)
+    for (let i = -ring + 1; i <= ring - 1; i++) {
+      points.push([i * 0.009,  dLng]); // right
+      points.push([i * 0.009, -dLng]); // left
+    }
+  }
+
+  // Fetch all points in this ring sequentially, then move to next ring
+  points.reduce((chain, [dLat, dLng]) =>
+    chain.then(() => fetchArea(lat + dLat, lng + dLng)),
+    Promise.resolve()
+  ).then(() => {
+    const n = Object.keys(markers).length;
+    if (ring < MAX_RINGS) {
+      setStatus(`${n} landmarks found · expanding search…`);
+      // Small pause between rings so UI stays responsive
+      setTimeout(() => expandSearch(lat, lng, ring + 1), 800);
+    } else {
+      setStatus(`${n} landmarks found · press Start`);
+    }
+  });
+}
+
+// ── AI ────────────────────────────────────────────────────────
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 async function callAI(prompt) {
-  const r = await fetch('/api/claude', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+  const r=await fetch('/api/claude',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({messages:[{role:'user',content:prompt}]})
   });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  const d = await r.json();
+  if (!r.ok) throw new Error('HTTP '+r.status);
+  const d=await r.json();
   if (d.error) throw new Error(d.error);
-  const t = d?.content?.[0]?.text || '';
+  const t=d?.content?.[0]?.text||'';
   if (!t) throw new Error('Empty response');
   return t;
 }
 
 async function geocode(q) {
   try {
-    const d = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
-      { headers:{ 'User-Agent':'StoryRouteApp/1.0' } }
-    ).then(r => r.json());
-    return d.length ? { lat:+d[0].lat, lng:+d[0].lon } : null;
-  } catch { return null; }
+    const d=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
+      {headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
+    return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null;
+  } catch {return null;}
 }
 
-// ── Fetch landmarks for an area ───────────────────────────────
-async function fetchArea(lat, lng) {
-  const key = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
+// ── Fetch landmarks ───────────────────────────────────────────
+async function fetchArea(lat,lng) {
+  const key=`${lat.toFixed(2)}_${lng.toFixed(2)}`;
   if (fetched.has(key)) return;
   fetched.add(key);
   try {
-    const raw = await callAI(
-      `List up to 10 historically or culturally interesting places within 2km of lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}.
-Include varied types: landmarks, neighbourhoods, streets with history, famous people nearby (as "Home of [Name]"), parks, pubs with history.
-Return ONLY a raw JSON array, no markdown:
-[{"title":"Exact Name","type":"monument"}]
-Types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,other
-Only real places you are certain about.`
-    );
-    const s = raw.indexOf('['), e = raw.lastIndexOf(']');
-    if (s === -1 || e === -1) return;
-    const arr = JSON.parse(raw.slice(s, e+1));
+    const raw=await callAI(
+      `You are a local historian. List 6 interesting places within 2km of lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)} in Ireland.
 
-    // City hint for geocoding
-    let city = 'Ireland';
+Be SPECIFIC to this exact area — do not give generic Dublin landmarks unless they are genuinely within 2km.
+Include a wide variety:
+- Historic buildings, ruins, castles, churches
+- Named residential estates or neighbourhoods with origin stories
+- Streets named after historical figures or events
+- Famous or notable people born/lived nearby (format: "Birthplace of [Name]" or "Home of [Name]")
+- Parks, beaches, coastal features, rivers
+- Historic pubs, schools, GAA clubs with long history
+- Industrial or maritime history (ports, mills, railways)
+
+Return ONLY a JSON array, no markdown:
+[{"title":"Exact local name","type":"monument"}]
+Types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,beach,estate,school,sport,other
+Only include real places you are certain exist in this specific area.`
+    );
+    const s=raw.indexOf('['),e=raw.lastIndexOf(']');
+    if (s===-1||e===-1) return;
+    const arr=JSON.parse(raw.slice(s,e+1));
+
+    let city='Ireland';
     try {
-      const rev = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-        { headers:{'User-Agent':'StoryRouteApp/1.0'} }).then(r=>r.json());
-      city = rev?.address?.city || rev?.address?.town || rev?.address?.village || rev?.address?.county || 'Ireland';
-    } catch(e) {}
+      const rev=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+        {headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
+      city=rev?.address?.city||rev?.address?.town||rev?.address?.village||rev?.address?.county||'Ireland';
+    } catch(e){}
 
     for (const p of arr) {
       if (!p.title) continue;
-      const id = p.title.replace(/\W+/g,'_');
+      const id=p.title.replace(/\W+/g,'_');
       if (markers[id]) continue;
-      const coords = await geocode(`${p.title}, ${city}, Ireland`);
+      await sleep(300);
+      const coords=await geocode(`${p.title}, ${city}, Ireland`);
       if (!coords) continue;
-      const emoji = TYPE_ICON[p.type] || '📍';
-      const icon = L.divIcon({
-        html: `<div class="lm-dot" id="lm-${id}">${emoji}</div>`,
-        iconSize:[28,28], iconAnchor:[14,14], className:''
+      const emoji=TYPE_ICON[p.type]||'📍';
+      const icon=L.divIcon({
+        html:`<div class="lm-dot" id="lm-${id}">${emoji}</div>`,
+        iconSize:[28,28],iconAnchor:[14,14],className:''
       });
-      const m = L.marker([coords.lat, coords.lng], { icon, _title:p.title, _type:p.type })
-        .addTo(map)
-        .bindTooltip(p.title, { direction:'top' });
-      const landmark = { id, title:p.title, type:p.type, lat:coords.lat, lng:coords.lng };
-      m.on('click', () => onTapMarker(landmark));
-      markers[id] = m;
+      const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:p.type})
+        .addTo(map).bindTooltip(p.title,{direction:'top'});
+      const lm={id,title:p.title,type:p.type,lat:coords.lat,lng:coords.lng};
+      m.on('click',()=>onTapMarker(lm));
+      markers[id]=m;
     }
-
-    const n = Object.keys(markers).length;
-    setStatus(n + ' landmark' + (n!==1?'s':'') + ' · press Start');
-
+    const n=Object.keys(markers).length;
+    setStatus(n+' landmark'+(n!==1?'s':'')+' · press Start');
+    if (tourOn&&!speaking) playNearest();
   } catch(e) {
-    fetched.delete(key); // allow retry
-    console.error('fetchArea failed:', e.message);
+    fetched.delete(key);
+    setStatus('Error: '+e.message);
+    console.error('fetchArea:',e.message);
   }
 }
 
-// ── Tour controls ─────────────────────────────────────────────
-function toggleTour() {
-  if (!tourOn) startTour(); else stopTour();
+// ── Route panel — current location toggle ─────────────────────
+function toggleFromLocation() {
+  useCurrentLocFrom = !useCurrentLocFrom;
+  const inp=document.getElementById('from-inp');
+  const btn=document.getElementById('from-loc-btn');
+  if (useCurrentLocFrom) {
+    inp.value='📍 My current location';
+    inp.disabled=true;
+    btn.classList.add('active');
+  } else {
+    inp.value='';
+    inp.disabled=false;
+    inp.placeholder='📍 From — type or use location';
+    btn.classList.remove('active');
+  }
 }
 
+// ── Tour ──────────────────────────────────────────────────────
+function toggleTour() { if (!tourOn) startTour(); else stopTour(); }
+
 function startTour() {
-  tourOn = true;
-  const btn = document.getElementById('tour-btn');
-  btn.textContent = '⏹ Stop Listening';
+  tourOn=true;
+  const btn=document.getElementById('tour-btn');
+  btn.textContent='⏹ Stop Listening';
   btn.classList.add('stop');
-  setStatus('Tour started');
+  setStatus('Tour active');
   playNearest();
 }
 
 function stopTour() {
-  tourOn = false; speaking = false;
-  nxtStory = null; prefetchId = null; curStory = null;
+  tourOn=false; speaking=false;
+  nxtStory=null; prefetchId=null; curStory=null;
   window.speechSynthesis.cancel();
-  const btn = document.getElementById('tour-btn');
-  btn.textContent = '▶ Start Listening';
+  const btn=document.getElementById('tour-btn');
+  btn.textContent='▶ Start Listening';
   btn.classList.remove('stop');
-  document.getElementById('story').style.display = 'none';
-  document.getElementById('skip-btn').disabled = true;
-  document.getElementById('next-info').textContent = '';
-  setStatus(Object.keys(markers).length + ' landmarks on map');
+  document.getElementById('story').style.display='none';
+  document.getElementById('skip-btn').disabled=true;
+  document.getElementById('next-info').textContent='';
+  setStatus(Object.keys(markers).length+' landmarks on map');
 }
 
-// ── Nearest unvisited ─────────────────────────────────────────
+// ── Nearest ───────────────────────────────────────────────────
 function nearest(exclude=[]) {
   if (!userPos) return null;
-  let best = null, bestD = Infinity;
-  for (const [id, m] of Object.entries(markers)) {
-    if (visited.has(id) || exclude.includes(id)) continue;
-    const ll = m.getLatLng();
-    const d = haversine(userPos, { lat:ll.lat, lng:ll.lng });
-    if (d < bestD) { bestD=d; best={ id, title:m.options._title, type:m.options._type, lat:ll.lat, lng:ll.lng }; }
+  let best=null,bestD=Infinity;
+  for (const [id,m] of Object.entries(markers)) {
+    if (visited.has(id)||exclude.includes(id)) continue;
+    const ll=m.getLatLng();
+    const d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
+    if (d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng};}
   }
   return best;
 }
 
-// ── Playback ──────────────────────────────────────────────────
+// ── Play ──────────────────────────────────────────────────────
 function playNearest() {
-  if (!tourOn || speaking) return;
-  const p = nearest();
+  if (!tourOn||speaking) return;
+  const p=nearest();
   if (p) playLandmark(p);
   else setStatus('No more unvisited landmarks nearby');
 }
 
 async function playLandmark(p) {
-  if (!tourOn || speaking || visited.has(p.id)) return;
-  visited.add(p.id);
-  speaking = true;
+  if (!tourOn||speaking||visited.has(p.id)) return;
+  visited.add(p.id); speaking=true;
   dotVisited(p.id);
-  setStatus('📖 ' + p.title);
-  showStory(p.title, '⏳ Loading story…');
-  document.getElementById('skip-btn').disabled = true;
-
+  setStatus('📖 '+p.title);
+  showStory(p.title,'⏳ Loading story…');
+  document.getElementById('skip-btn').disabled=true;
   try {
-    const txt = await getStory(p);
-    if (!tourOn) { speaking = false; return; }
-    curStory = { ...p, text:txt };
-    showStory(p.title, txt);
-    // Pre-fetch next story silently
-    const nxt = nearest([p.id]);
+    const txt=await getStory(p);
+    if (!tourOn){speaking=false;return;}
+    curStory={...p,text:txt};
+    showStory(p.title,txt);
+    const nxt=nearest([p.id]);
     if (nxt) prefetchStory(nxt);
-    // Speak — advance when done
-    tts(txt, () => {
-      speaking = false;
+    tts(txt,()=>{
+      speaking=false;
       if (!tourOn) return;
       if (nxtStory) {
-        const s = nxtStory; nxtStory = null; prefetchId = null;
-        document.getElementById('next-info').textContent = '';
-        document.getElementById('skip-btn').disabled = true;
-        setTimeout(() => playLandmark(s), 1200);
+        const s=nxtStory; nxtStory=null; prefetchId=null;
+        document.getElementById('next-info').textContent='';
+        document.getElementById('skip-btn').disabled=true;
+        setTimeout(()=>playLandmark(s),1200);
       } else {
-        setTimeout(playNearest, 2000);
+        setTimeout(playNearest,2000);
       }
     });
   } catch(e) {
-    speaking = false;
-    console.error('playLandmark error:', e.message);
-    if (tourOn) setTimeout(playNearest, 4000);
+    speaking=false;
+    setStatus('Story error — retrying in 4s');
+    if (tourOn) setTimeout(playNearest,4000);
   }
 }
 
 async function prefetchStory(p) {
-  if (visited.has(p.id) || prefetchId === p.id || nxtStory) return;
-  prefetchId = p.id;
-  document.getElementById('next-info').innerHTML = `⏳ Loading next: <b>${p.title}</b>`;
+  if (visited.has(p.id)||prefetchId===p.id||nxtStory) return;
+  prefetchId=p.id;
+  document.getElementById('next-info').innerHTML=`⏳ Loading next: <b>${p.title}</b>`;
   try {
-    const txt = await getStory(p);
-    if (!visited.has(p.id) && tourOn) {
-      nxtStory = { ...p, text:txt };
-      document.getElementById('next-info').innerHTML = `✅ Next ready: <b>${p.title}</b>`;
-      document.getElementById('skip-btn').disabled = false;
+    const txt=await getStory(p);
+    if (!visited.has(p.id)&&tourOn) {
+      nxtStory={...p,text:txt};
+      document.getElementById('next-info').innerHTML=`✅ Next ready: <b>${p.title}</b>`;
+      document.getElementById('skip-btn').disabled=false;
     }
-  } catch(e) {
-    prefetchId = null;
-    document.getElementById('next-info').textContent = '';
-  }
+  } catch(e){prefetchId=null;document.getElementById('next-info').textContent='';}
 }
 
 async function getStory(p) {
   return await callAI(
-    `GPS audio tour guide. 3 sentences about "${p.title}" in Ireland. Start with "As you approach…" or "You're now near…". Max 60 words. Story only, no title.`
+    `GPS audio tour guide. 3 vivid sentences about "${p.title}" (${p.type}) in Ireland. Start with "As you approach…" or "You're now near…". Max 60 words. Story only.`
   );
 }
 
-// ── Skip — only when next is pre-fetched ─────────────────────
 function skipStory() {
   if (!nxtStory) return;
   window.speechSynthesis.cancel();
-  speaking = false;
-  const s = nxtStory; nxtStory = null; prefetchId = null;
-  document.getElementById('next-info').textContent = '';
-  document.getElementById('skip-btn').disabled = true;
-  setTimeout(() => playLandmark(s), 300);
+  speaking=false;
+  const s=nxtStory; nxtStory=null; prefetchId=null;
+  document.getElementById('next-info').textContent='';
+  document.getElementById('skip-btn').disabled=true;
+  setTimeout(()=>playLandmark(s),300);
 }
 
-// ── Tap a marker ──────────────────────────────────────────────
 function onTapMarker(p) {
-  if (!tourOn) { setStatus('Press ▶ Start Listening first'); return; }
+  if (!tourOn){setStatus('Press ▶ Start Listening first');return;}
   if (speaking) return;
   playLandmark(p);
 }
 
 // ── TTS ───────────────────────────────────────────────────────
-function tts(text, onDone) {
+function tts(text,onDone) {
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.88; u.volume = 1;
-  const voices = window.speechSynthesis.getVoices();
-  const v = voices.find(v => v.lang === 'en-GB' && v.localService)
-    || voices.find(v => v.lang.startsWith('en'))
-    || voices[0];
-  if (v) u.voice = v;
-  u.onend   = onDone;
-  u.onerror = () => { console.warn('TTS error'); onDone(); };
+  const u=new SpeechSynthesisUtterance(text);
+  u.rate=0.88; u.volume=1;
+  const voices=window.speechSynthesis.getVoices();
+  const v=voices.find(v=>v.lang==='en-GB'&&v.localService)
+    ||voices.find(v=>v.lang.startsWith('en'))||voices[0];
+  if(v) u.voice=v;
+  u.onend=onDone;
+  u.onerror=()=>{console.warn('TTS error');onDone();};
   window.speechSynthesis.speak(u);
 }
-function replayStory() { if (curStory && tourOn) tts(curStory.text, () => { speaking=false; if(tourOn) setTimeout(playNearest,1500); }); }
+function replayStory(){if(curStory&&tourOn)tts(curStory.text,()=>{speaking=false;if(tourOn)setTimeout(playNearest,1500);});}
 
-// ── UI helpers ────────────────────────────────────────────────
-function showStory(name, text) {
-  document.getElementById('story-name').textContent = name;
-  document.getElementById('story-text').textContent = text;
-  document.getElementById('story').style.display = 'block';
+// ── UI ────────────────────────────────────────────────────────
+function showStory(name,text){
+  document.getElementById('story-name').textContent=name;
+  document.getElementById('story-text').textContent=text;
+  document.getElementById('story').style.display='block';
 }
-function dotVisited(id) {
-  const el = document.getElementById('lm-' + id);
-  if (el) el.classList.add('visited');
-}
-function setStatus(t) { document.getElementById('status').textContent = t; }
-function setMode(m) {
-  document.getElementById('btn-explore').classList.toggle('active', m==='explore');
-  document.getElementById('btn-route').classList.toggle('active', m==='route');
-  document.getElementById('route-panel').classList.toggle('visible', m==='route');
+function dotVisited(id){const el=document.getElementById('lm-'+id);if(el)el.classList.add('visited');}
+function setStatus(t){document.getElementById('status').textContent=t;}
+function setMode(m){
+  document.getElementById('btn-explore').classList.toggle('active',m==='explore');
+  document.getElementById('btn-route').classList.toggle('active',m==='route');
+  document.getElementById('route-panel').classList.toggle('visible',m==='route');
 }
 
-// ── Route mode ────────────────────────────────────────────────
+// ── Route ─────────────────────────────────────────────────────
 async function planRoute() {
-  const from = document.getElementById('from-inp').value.trim();
-  const to   = document.getElementById('to-inp').value.trim();
-  if (!from || !to) return;
-  const btn = document.getElementById('route-btn');
-  btn.disabled = true; setStatus('Planning route…');
+  const toVal=document.getElementById('to-inp').value.trim();
+  if (!toVal) return;
+  const btn=document.getElementById('route-btn');
+  btn.disabled=true; setStatus('Planning route…');
   try {
-    const [A, B] = await Promise.all([geocode(from), geocode(to)]);
-    if (!A || !B) { alert('Could not find one of the locations.'); btn.disabled=false; return; }
-    const rd = await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`).then(r=>r.json());
-    const coords = rd?.routes?.[0]?.geometry?.coordinates;
-    if (!coords) { alert('No route found.'); btn.disabled=false; return; }
+    let A;
+    if (useCurrentLocFrom && userPos) {
+      A={lat:userPos.lat,lng:userPos.lng};
+    } else {
+      const fromVal=document.getElementById('from-inp').value.trim();
+      if (!fromVal){btn.disabled=false;alert('Please enter a starting location.');return;}
+      A=await geocode(fromVal);
+    }
+    const B=await geocode(toVal);
+    if (!A||!B){btn.disabled=false;alert('Could not find one of the locations.');return;}
+    const rd=await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`).then(r=>r.json());
+    const coords=rd?.routes?.[0]?.geometry?.coordinates;
+    if (!coords){btn.disabled=false;alert('No route found.');return;}
     if (map.routeLine) map.removeLayer(map.routeLine);
-    map.routeLine = L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
-    map.fitBounds(map.routeLine.getBounds(), {padding:[60,60]});
+    map.routeLine=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
+    map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
     setStatus('Finding landmarks along route…');
-    const pts = Array.from({length:8}, (_,i) => coords[Math.floor(i*(coords.length-1)/7)]);
-    for (const pt of pts) await fetchArea(pt[1], pt[0]);
-    btn.disabled = false; setMode('explore');
-  } catch(e) { btn.disabled=false; setStatus('Route error: '+e.message); }
+    const pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);
+    for (const pt of pts) await fetchArea(pt[1],pt[0]);
+    btn.disabled=false; setMode('explore');
+  } catch(e){btn.disabled=false;setStatus('Route error: '+e.message);}
 }
 
-// ── Haversine ─────────────────────────────────────────────────
-function haversine(a, b) {
-  const R=6371000, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
+// ── Utils ─────────────────────────────────────────────────────
+function haversine(a,b){
+  const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180;
   const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
   return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
-if (window.speechSynthesis.onvoiceschanged !== undefined) window.speechSynthesis.onvoiceschanged = () => {};
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if(window.speechSynthesis.onvoiceschanged!==undefined) window.speechSynthesis.onvoiceschanged=()=>{};
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>
 </body>
 </html>
