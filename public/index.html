@@ -139,11 +139,11 @@ body { font-family:sans-serif; overflow:hidden; }
     <img src="/icon-512.png" style="height:40px;width:auto;" onerror="this.style.display='none'">
     <span id="app-name">Story<span>Route</span></span>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <button onclick="refreshLandmarks()" title="Refresh landmarks" style="width:34px;height:34px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;">🔄</button>
-    <div id="status">Starting…</div>
-  </div>
+  <div id="status">Starting…</div>
 </div>
+
+<!-- Refresh button — bottom right above zoom -->
+<button onclick="refreshLandmarks()" title="Refresh landmarks" style="position:fixed;bottom:160px;right:14px;z-index:1000;width:42px;height:42px;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.15);border-radius:8px;font-size:18px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;">🔄</button>
 
 <div id="mode-toggle">
   <button class="mode-btn active" id="btn-explore" onclick="setMode('explore')">📍 Explore</button>
@@ -188,9 +188,10 @@ body { font-family:sans-serif; overflow:hidden; }
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:12px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.72</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.73</span>
   </div>
-  <div style="font-size:10px;color:#ddd;margin-top:4px;letter-spacing:.5px;">v1.0.72</div>
+  <button onclick="forceUpdate()" style="margin-top:8px;padding:8px 20px;background:transparent;border:1px solid rgba(0,0,0,0.12);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
+  <div style="font-size:10px;color:#ddd;margin-top:4px;letter-spacing:.5px;">v1.0.73</div>
 </div>
 
 <!-- Silent audio loop — keeps iOS audio session alive when screen locks -->
@@ -368,39 +369,29 @@ Only include real places you are certain exist in this specific area.`
   }
 }
 
-// ── Refresh — clear cache, re-fetch entire visible area ───────
+// ── Force update ──────────────────────────────────────────────
+function forceUpdate() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.unregister());
+    });
+  }
+  caches.keys().then(keys => {
+    keys.forEach(k => caches.delete(k));
+  }).finally(() => window.location.reload(true));
+}
+
+
 function refreshLandmarks() {
-  // Clear all fetched area keys so they can be re-fetched
   fetched.clear();
-  // Remove all existing markers from map
   Object.values(markers).forEach(m => map.removeLayer(m));
   markers = {};
   visited.clear();
   nxtStory = null; prefetchId = null;
   document.getElementById('next-info').textContent = '';
   document.getElementById('skip-btn').disabled = true;
-  setStatus('Refreshing landmarks…');
-
-  // Re-fetch from current GPS position outward
-  if (userPos) {
-    const offsets = [
-      [0, 0],
-      [0.009, 0], [-0.009, 0],
-      [0, 0.013], [0, -0.013],
-      [0.009, 0.013], [0.009, -0.013],
-      [-0.009, 0.013], [-0.009, -0.013],
-      [0.018, 0], [-0.018, 0],
-      [0, 0.026], [0, -0.026],
-    ];
-    offsets.reduce((chain, [dLat, dLng]) =>
-      chain.then(() => fetchArea(userPos.lat + dLat, userPos.lng + dLng)),
-      Promise.resolve()
-    );
-  } else {
-    // Fall back to map centre
-    const c = map.getCenter();
-    fetchArea(c.lat, c.lng);
-  }
+  setStatus('Refreshing…');
+  fetchVisibleBounds();
 }
 
 
