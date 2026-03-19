@@ -184,7 +184,13 @@ body { font-family:sans-serif; overflow:hidden; }
   <div style="font-size:14px;color:#999;text-align:center;max-width:260px;line-height:1.6;">Historical stories about places around you, as you explore.</div>
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;">Allow location access when prompted</div>
-  <div style="font-size:10px;color:#ddd;margin-top:4px;letter-spacing:.5px;">v1.0.69</div>
+  <div style="font-size:10px;color:#ddd;margin-top:4px;letter-spacing:.5px;">v1.0.70</div>
+</div>
+
+<!-- Update banner — shown when new SW is waiting -->
+<div id="update-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#1a2240;color:#fff;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -2px 12px rgba(0,0,0,0.2);">
+  <span style="font-size:13px;">🆕 New version available</span>
+  <button onclick="applyUpdate()" style="padding:8px 16px;background:#f0a500;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Update now</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -562,8 +568,32 @@ function haversine(a,b){
   return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
-if(window.speechSynthesis.onvoiceschanged!==undefined) window.speechSynthesis.onvoiceschanged=()=>{};
-if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if (window.speechSynthesis.onvoiceschanged !== undefined) window.speechSynthesis.onvoiceschanged = () => {};
+
+// ── Service worker + auto-update ──────────────────────────────
+let newWorker = null;
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    // Check for updates every time the page loads
+    reg.update();
+    reg.addEventListener('updatefound', () => {
+      newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          // New version ready — show update banner
+          document.getElementById('update-bar').style.display = 'flex';
+        }
+      });
+    });
+  });
+  // When SW activates, reload so user gets fresh app
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
+function applyUpdate() {
+  if (newWorker) newWorker.postMessage('SKIP_WAITING');
+}
 </script>
 </body>
 </html>
