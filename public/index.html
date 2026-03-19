@@ -139,7 +139,10 @@ body { font-family:sans-serif; overflow:hidden; }
     <img src="/icon-512.png" style="height:40px;width:auto;" onerror="this.style.display='none'">
     <span id="app-name">Story<span>Route</span></span>
   </div>
-  <div id="status">Starting…</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button onclick="refreshLandmarks()" title="Refresh landmarks" style="width:34px;height:34px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;">🔄</button>
+    <div id="status">Starting…</div>
+  </div>
 </div>
 
 <div id="mode-toggle">
@@ -183,8 +186,11 @@ body { font-family:sans-serif; overflow:hidden; }
   <div style="font-size:28px;font-weight:800;color:#1a2240;">Story<span style="color:#f0a500;">Route</span></div>
   <div style="font-size:14px;color:#999;text-align:center;max-width:260px;line-height:1.6;">Historical stories about places around you, as you explore.</div>
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
-  <div style="font-size:11px;color:#ccc;">Allow location access when prompted</div>
-  <div style="font-size:10px;color:#ddd;margin-top:4px;letter-spacing:.5px;">v1.0.71</div>
+  <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
+  <div style="margin-top:12px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
+    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.72</span>
+  </div>
+  <div style="font-size:10px;color:#ddd;margin-top:4px;letter-spacing:.5px;">v1.0.72</div>
 </div>
 
 <!-- Silent audio loop — keeps iOS audio session alive when screen locks -->
@@ -255,18 +261,17 @@ function startAt(lat, lng) {
   }
   setStatus('Loading landmarks near you…');
 
-  // Build a grid of points radiating outward from user's exact GPS position
+  // Build a denser grid radiating from user's exact GPS position
   // ~0.009 degrees lat ≈ 1km, ~0.013 degrees lng ≈ 1km at Irish latitudes
   const offsets = [
-    [0, 0],           // exact user position — always first
-    [0.009, 0],       // 1km north
-    [-0.009, 0],      // 1km south
-    [0, 0.013],       // 1km east
-    [0, -0.013],      // 1km west
-    [0.009, 0.013],   // NE
-    [0.009, -0.013],  // NW
-    [-0.009, 0.013],  // SE
-    [-0.009, -0.013], // SW
+    [0, 0],                          // exact position — always first
+    [0.009, 0],   [-0.009, 0],       // 1km N/S
+    [0, 0.013],   [0, -0.013],       // 1km E/W
+    [0.009, 0.013], [0.009, -0.013], // NE/NW
+    [-0.009, 0.013],[-0.009,-0.013], // SE/SW
+    [0.018, 0],   [-0.018, 0],       // 2km N/S
+    [0, 0.026],   [0, -0.026],       // 2km E/W
+    [0.018, 0.026],[-0.018,-0.026],  // far corners
   ];
 
   // Fetch sequentially — user's position first, then outward
@@ -363,7 +368,42 @@ Only include real places you are certain exist in this specific area.`
   }
 }
 
-// ── Route panel — current location toggle ─────────────────────
+// ── Refresh — clear cache, re-fetch entire visible area ───────
+function refreshLandmarks() {
+  // Clear all fetched area keys so they can be re-fetched
+  fetched.clear();
+  // Remove all existing markers from map
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  markers = {};
+  visited.clear();
+  nxtStory = null; prefetchId = null;
+  document.getElementById('next-info').textContent = '';
+  document.getElementById('skip-btn').disabled = true;
+  setStatus('Refreshing landmarks…');
+
+  // Re-fetch from current GPS position outward
+  if (userPos) {
+    const offsets = [
+      [0, 0],
+      [0.009, 0], [-0.009, 0],
+      [0, 0.013], [0, -0.013],
+      [0.009, 0.013], [0.009, -0.013],
+      [-0.009, 0.013], [-0.009, -0.013],
+      [0.018, 0], [-0.018, 0],
+      [0, 0.026], [0, -0.026],
+    ];
+    offsets.reduce((chain, [dLat, dLng]) =>
+      chain.then(() => fetchArea(userPos.lat + dLat, userPos.lng + dLng)),
+      Promise.resolve()
+    );
+  } else {
+    // Fall back to map centre
+    const c = map.getCenter();
+    fetchArea(c.lat, c.lng);
+  }
+}
+
+
 function toggleFromLocation() {
   useCurrentLocFrom = !useCurrentLocFrom;
   const inp=document.getElementById('from-inp');
