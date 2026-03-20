@@ -227,7 +227,9 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="story-text"></div>
   <div id="story-btns">
     <button id="replay-btn" onclick="replayStory()">▶ Replay</button>
+    <button id="stop-story-btn" onclick="stopCurrentStory()">⏹ Stop</button>
     <button id="skip-btn" onclick="skipStory()" disabled>⏭ Skip</button>
+    <button id="hide-story-btn" onclick="hideStoryPanel()">Hide ↓</button>
   </div>
   <div id="next-info"></div>
 </div>
@@ -236,9 +238,9 @@ body { font-family:sans-serif; overflow:hidden; }
 <div id="bottom-bar">
   <button id="tour-btn" onclick="toggleTour()">▶ Start Listening</button>
   <div id="travel-mode">
-    <button class="tm-btn" id="tm-walking" onclick="setTravelMode('walking')">🚶 Walking<span>200m radius</span></button>
-    <button class="tm-btn active" id="tm-driving" onclick="setTravelMode('driving')">🚗 Driving<span>10km radius</span></button>
-    <button class="tm-btn" id="tm-long" onclick="setTravelMode('long')">🛣️ Long Drive<span>25km radius</span></button>
+    <button class="tm-btn active" id="tm-walking" onclick="setTravelMode('walking')">🚶 Walking</button>
+    <button class="tm-btn" id="tm-driving" onclick="setTravelMode('driving')">🚗 Short Drive</button>
+    <button class="tm-btn" id="tm-long" onclick="setTravelMode('long')">🛣️ Long Drive</button>
   </div>
 </div>
 
@@ -259,7 +261,7 @@ body { font-family:sans-serif; overflow:hidden; }
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.80</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.81</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
@@ -283,8 +285,8 @@ const TRAVEL_MODES = {
   driving: { radius: 10000, label: 'driving',    fetch: 5000  },
   long:    { radius: 25000, label: 'long drive', fetch: 15000 }
 };
-let travelMode = 'driving'; // default
-let PROXIMITY_RADIUS = TRAVEL_MODES.driving.radius;
+let travelMode = 'walking';
+let PROXIMITY_RADIUS = TRAVEL_MODES.walking.radius;
 const TYPE_ICON = {
   monument:'🏛', church:'⛪', castle:'🏰', street:'🛤',
   building:'🏢', bridge:'🌉', park:'🌿', museum:'🎭',
@@ -305,7 +307,14 @@ let proxAlertTimer=null;
 // ── Map ───────────────────────────────────────────────────────
 const map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-map.on('moveend', fetchVisibleBounds);
+// Tap map to hide story panel
+map.on('click', () => {
+  if (document.getElementById('story').style.display !== 'none') {
+    hideStoryPanel();
+  }
+});
+
+
 
 // ── Voice rotation ────────────────────────────────────────────
 let voicePool = [];   // all good English voices found on device
@@ -771,7 +780,22 @@ Be specific and surprising. Max 65 words. Return ONLY the story.`
   );
 }
 
-function skipStory(){
+function stopCurrentStory() {
+  cancelAudio();
+  speaking = false;
+  nxtStory = null; prefetchId = null;
+  document.getElementById('skip-btn').disabled = true;
+  document.getElementById('next-info').textContent = '';
+  // If tour is on, it will pick next landmark automatically
+  if (tourOn) setTimeout(playNearest, 1500);
+  else setStatus(Object.keys(markers).length + ' landmarks · tap to listen');
+}
+
+function hideStoryPanel() {
+  document.getElementById('story').style.display = 'none';
+}
+
+
   if(!nxtStory) return;
   cancelAudio(); speaking=false;
   const s=nxtStory; nxtStory=null; prefetchId=null;
