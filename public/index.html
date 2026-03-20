@@ -86,8 +86,7 @@ body { font-family:sans-serif; overflow:hidden; }
   border-top:1px solid rgba(0,0,0,0.08);
   display:none; z-index:1001;
   box-shadow:0 -4px 20px rgba(0,0,0,0.08);
-}
-#story-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+}#story-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
 #story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; }
 #fav-btn { background:none; border:none; font-size:20px; cursor:pointer; padding:0 2px; line-height:1; }
 #story-text { font-size:14px; line-height:1.7; color:#222; margin-bottom:10px; }
@@ -233,6 +232,19 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="next-info"></div>
 </div>
 
+<!-- Travel mode selector -->
+<div id="travel-mode">
+  <button class="tm-btn" id="tm-walking" onclick="setTravelMode('walking')">
+    🚶 Walking<span>≤ 200m</span>
+  </button>
+  <button class="tm-btn active" id="tm-driving" onclick="setTravelMode('driving')">
+    🚗 Driving<span>≤ 10km</span>
+  </button>
+  <button class="tm-btn" id="tm-long" onclick="setTravelMode('long')">
+    🛣️ Long Drive<span>≤ 25km</span>
+  </button>
+</div>
+
 <!-- Bottom bar -->
 <div id="bottom-bar">
   <button id="tour-btn" onclick="toggleTour()">▶ Start Listening</button>
@@ -255,7 +267,7 @@ body { font-family:sans-serif; overflow:hidden; }
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.77</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.78</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
@@ -274,7 +286,13 @@ body { font-family:sans-serif; overflow:hidden; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const DUBLIN = [53.3438, -6.2546];
-const PROXIMITY_RADIUS = 300; // metres — trigger story within this distance
+const TRAVEL_MODES = {
+  walking: { radius: 200,   label: 'walking',    fetch: 1500  },
+  driving: { radius: 10000, label: 'driving',    fetch: 5000  },
+  long:    { radius: 25000, label: 'long drive', fetch: 15000 }
+};
+let travelMode = 'driving'; // default
+let PROXIMITY_RADIUS = TRAVEL_MODES.driving.radius;
 const TYPE_ICON = {
   monument:'🏛', church:'⛪', castle:'🏰', street:'🛤',
   building:'🏢', bridge:'🌉', park:'🌿', museum:'🎭',
@@ -419,7 +437,18 @@ function deleteFav(i) {
 }
 loadFavourites();
 
-// ── Boot ──────────────────────────────────────────────────────
+function setTravelMode(mode) {
+  travelMode = mode;
+  PROXIMITY_RADIUS = TRAVEL_MODES[mode].radius;
+  document.querySelectorAll('.tm-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tm-'+mode).classList.add('active');
+  setStatus('Mode: '+TRAVEL_MODES[mode].label+' · '+
+    (PROXIMITY_RADIUS >= 1000 ? (PROXIMITY_RADIUS/1000)+'km' : PROXIMITY_RADIUS+'m')+' radius');
+  // Refresh fetch area size based on new mode
+  if (travelMode !== 'walking') fetchVisibleBounds();
+}
+
+
 function initApp() {
   const u=new SpeechSynthesisUtterance(' '); u.volume=0; window.speechSynthesis.speak(u);
   document.getElementById('overlay').style.display='none';
@@ -621,7 +650,10 @@ function startTour(){
   const btn=document.getElementById('tour-btn');
   btn.textContent='⏹ Stop Listening'; btn.classList.add('stop');
   document.getElementById('proximity-alert').classList.remove('visible');
-  setStatus('Tour active');
+  document.getElementById('travel-mode').classList.add('visible');
+  // Shift story panel up to make room for travel mode bar
+  document.getElementById('story').style.bottom='118px';
+  setStatus('Mode: '+TRAVEL_MODES[travelMode].label);
   playNearest();
 }
 
@@ -634,6 +666,8 @@ function stopTour(){
   const btn=document.getElementById('tour-btn');
   btn.textContent='▶ Start Listening'; btn.classList.remove('stop');
   document.getElementById('story').style.display='none';
+  document.getElementById('story').style.bottom='74px';
+  document.getElementById('travel-mode').classList.remove('visible');
   document.getElementById('skip-btn').disabled=true;
   document.getElementById('next-info').textContent='';
   setStatus(Object.keys(markers).length+' landmarks on map');
@@ -642,12 +676,13 @@ function stopTour(){
 // ── Nearest unvisited ─────────────────────────────────────────
 function nearest(exclude=[]) {
   if(!userPos) return null;
-  let best=null,bestD=Infinity;
+  let best=null, bestD=Infinity;
   for(const [id,m] of Object.entries(markers)){
     if(visited.has(id)||exclude.includes(id)) continue;
     const ll=m.getLatLng();
     const d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
-    if(d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng};}
+    // Only consider landmarks within the current travel mode radius
+    if(d<=PROXIMITY_RADIUS && d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng};}
   }
   return best;
 }
