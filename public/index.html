@@ -232,22 +232,14 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="next-info"></div>
 </div>
 
-<!-- Travel mode selector -->
-<div id="travel-mode">
-  <button class="tm-btn" id="tm-walking" onclick="setTravelMode('walking')">
-    🚶 Walking<span>≤ 200m</span>
-  </button>
-  <button class="tm-btn active" id="tm-driving" onclick="setTravelMode('driving')">
-    🚗 Driving<span>≤ 10km</span>
-  </button>
-  <button class="tm-btn" id="tm-long" onclick="setTravelMode('long')">
-    🛣️ Long Drive<span>≤ 25km</span>
-  </button>
-</div>
-
 <!-- Bottom bar -->
 <div id="bottom-bar">
   <button id="tour-btn" onclick="toggleTour()">▶ Start Listening</button>
+  <div id="travel-mode">
+    <button class="tm-btn" id="tm-walking" onclick="setTravelMode('walking')">🚶 Walking<span>200m radius</span></button>
+    <button class="tm-btn active" id="tm-driving" onclick="setTravelMode('driving')">🚗 Driving<span>10km radius</span></button>
+    <button class="tm-btn" id="tm-long" onclick="setTravelMode('long')">🛣️ Long Drive<span>25km radius</span></button>
+  </div>
 </div>
 
 <!-- Favourites panel -->
@@ -267,7 +259,7 @@ body { font-family:sans-serif; overflow:hidden; }
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.79</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.80</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
@@ -651,8 +643,6 @@ function startTour(){
   btn.textContent='⏹ Stop Listening'; btn.classList.add('stop');
   document.getElementById('proximity-alert').classList.remove('visible');
   document.getElementById('travel-mode').classList.add('visible');
-  // Shift story panel up to make room for travel mode bar
-  document.getElementById('story').style.bottom='118px';
   setStatus('Mode: '+TRAVEL_MODES[travelMode].label);
   playNearest();
 }
@@ -666,7 +656,6 @@ function stopTour(){
   const btn=document.getElementById('tour-btn');
   btn.textContent='▶ Start Listening'; btn.classList.remove('stop');
   document.getElementById('story').style.display='none';
-  document.getElementById('story').style.bottom='74px';
   document.getElementById('travel-mode').classList.remove('visible');
   document.getElementById('skip-btn').disabled=true;
   document.getElementById('next-info').textContent='';
