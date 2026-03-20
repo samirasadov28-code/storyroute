@@ -188,10 +188,10 @@ body { font-family:sans-serif; overflow:hidden; }
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:12px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.74</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;letter-spacing:.5px;">v1.0.75</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:8px;padding:8px 20px;background:transparent;border:1px solid rgba(0,0,0,0.12);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
-  <div style="font-size:10px;color:#ddd;margin-top:4px;letter-spacing:.5px;">v1.0.74</div>
+  <div style="font-size:10px;color:#ddd;margin-top:4px;letter-spacing:.5px;">v1.0.75</div>
 </div>
 
 <!-- Silent audio loop — keeps iOS audio session alive when screen locks -->
@@ -206,7 +206,6 @@ body { font-family:sans-serif; overflow:hidden; }
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://js.puter.com/v2/"></script>
 <script>
 const DUBLIN = [53.3438, -6.2546];
 const TYPE_ICON = {
@@ -544,38 +543,61 @@ function onTapMarker(p) {
   playLandmark(p);
 }
 
-// ── TTS — Puter/Polly (free neural voice) with browser fallback
-let puterReady = false;
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof puter !== 'undefined') puterReady = true;
-});
+// ── TTS — best available browser voice ───────────────────────
+let bestVoice = null;
 
-function tts(text, onDone) {
-  window.speechSynthesis.cancel();
-  if (puterReady && typeof puter !== 'undefined') {
-    // Use Amazon Polly neural voice via Puter (free, no key needed)
-    puter.ai.txt2speech(text, { voice:'Joanna', engine:'neural', language:'en-US' })
-      .then(audio => {
-        audio.onended = onDone;
-        audio.onerror = () => { console.warn('Polly error, falling back'); browserTTS(text, onDone); };
-        audio.play().catch(() => browserTTS(text, onDone));
-      })
-      .catch(() => browserTTS(text, onDone));
-  } else {
-    browserTTS(text, onDone);
+function loadVoices() {
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return;
+  // Priority order — best natural voices first
+  const preferred = [
+    'Karen',        // iOS en-AU — very natural
+    'Daniel',       // iOS en-GB — clear British
+    'Moira',        // iOS en-IE — Irish accent
+    'Samantha',     // iOS en-US — default Apple
+    'Google UK English Female',
+    'Google UK English Male',
+    'Google US English',
+  ];
+  for (const name of preferred) {
+    const v = voices.find(v => v.name === name);
+    if (v) { bestVoice = v; break; }
+  }
+  // Fallback — any local English voice
+  if (!bestVoice) {
+    bestVoice = voices.find(v => v.lang === 'en-IE' && v.localService)
+      || voices.find(v => v.lang === 'en-GB' && v.localService)
+      || voices.find(v => v.lang.startsWith('en') && v.localService)
+      || voices.find(v => v.lang.startsWith('en'))
+      || voices[0];
   }
 }
 
-function browserTTS(text, onDone) {
+// Load voices immediately and also on the voiceschanged event
+loadVoices();
+if (window.speechSynthesis.onvoiceschanged !== undefined) {
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function tts(text, onDone) {
+  window.speechSynthesis.cancel();
+  if (!bestVoice) loadVoices();
   const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.88; u.volume = 1;
-  const voices = window.speechSynthesis.getVoices();
-  const v = voices.find(v => v.lang === 'en-GB' && v.localService)
-    || voices.find(v => v.lang.startsWith('en')) || voices[0];
-  if (v) u.voice = v;
-  u.onend = onDone;
+  u.rate = 0.88;
+  u.volume = 1;
+  u.pitch = 1;
+  if (bestVoice) u.voice = bestVoice;
+  u.onend   = onDone;
   u.onerror = () => { console.warn('TTS error'); onDone(); };
   window.speechSynthesis.speak(u);
+}
+
+function replayStory() {
+  if (curStory && tourOn) tts(curStory.text, () => { speaking=false; if(tourOn) setTimeout(playNearest,1500); });
+}
+
+function cancelAudio() {
+  window.speechSynthesis.cancel();
 }
 
 // ── UI ────────────────────────────────────────────────────────
