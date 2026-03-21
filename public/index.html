@@ -122,6 +122,34 @@ touch-action:manipulation;
 #next-info{margin-top:8px;font-size:11px;color:#999;}
 #next-info b{color:#e09400;}
 
+/* ── STORY PHOTO ── */
+#story-photo-wrap{display:none;margin-bottom:10px;border-radius:10px;overflow:hidden;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+#story-photo-wrap.loaded{display:block;background:none;animation:none;}
+#story-photo{width:100%;max-height:160px;object-fit:cover;display:block;opacity:0;transition:opacity .3s;}
+#story-photo-wrap.loaded #story-photo{opacity:1;}
+#story-photo-credit{font-size:9px;color:#bbb;text-align:right;padding:2px 4px 0;}
+
+/* ── VOICE SETTINGS PANEL ── */
+#voice-panel{position:fixed;top:0;right:0;bottom:0;width:min(300px,90vw);background:#fff;z-index:3000;transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);}
+#voice-panel.open{transform:translateX(0);}
+#voice-panel-header{padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;}
+#voice-panel-header h2{font-size:17px;font-weight:800;color:#1a2240;}
+#voice-close{background:none;border:none;font-size:22px;cursor:pointer;color:#999;touch-action:manipulation;}
+#voice-panel-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;}
+.voice-option{border:2px solid rgba(0,0,0,0.1);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;touch-action:manipulation;transition:border-color .15s,background .15s;}
+.voice-option.selected{border-color:#f0a500;background:rgba(240,165,0,0.05);}
+.voice-option-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.voice-option-name{font-size:14px;font-weight:700;color:#1a2240;}
+.voice-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;}
+.badge-free{background:rgba(34,197,94,0.12);color:#15803d;}
+.badge-pro{background:rgba(240,165,0,0.12);color:#b36b00;}
+.badge-best{background:rgba(139,92,246,0.12);color:#7c3aed;}
+.voice-option-desc{font-size:12px;color:#666;line-height:1.5;}
+.voice-option-cost{font-size:11px;color:#bbb;margin-top:4px;}
+#voice-test-btn{width:100%;padding:12px;background:#1a2240;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;margin-top:4px;}
+#voice-save-note{font-size:11px;color:#999;text-align:center;margin-top:10px;line-height:1.5;}
+
 /* ── BOTTOM BAR ── */
 #bottom-bar{position:fixed;bottom:0;left:0;right:0;z-index:1002;background:#fff;border-top:1px solid rgba(0,0,0,0.08);padding:10px 16px 14px;box-shadow:0 -2px 12px rgba(0,0,0,0.08);}
 #tour-btn{width:100%;padding:14px;border:none;border-radius:12px;font-weight:800;font-size:17px;cursor:pointer;background:#22c55e;color:#fff;box-shadow:0 3px 12px rgba(34,197,94,0.3);touch-action:manipulation;}
@@ -247,7 +275,7 @@ touch-action:manipulation;
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.3.2</div>
+  <div id="splash-version">v1.4.0</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
@@ -272,8 +300,33 @@ touch-action:manipulation;
   <div id="menu-body">
     <button class="mi" id="refresh-mi"><span class="mi-icon">🔄</span>Refresh landmarks</button>
     <button class="mi" id="favs-mi"><span class="mi-icon">❤️</span>Favourites</button>
+    <button class="mi" id="voice-mi"><span class="mi-icon">🎙️</span>Voice settings</button>
     <div class="mi-divider"></div>
     <button class="mi" id="upgrade-mi"><span class="mi-icon">⭐</span>Upgrade to Pro — €3.99/mo</button>
+  </div>
+</div>
+
+<!-- ── VOICE PANEL ── -->
+
+<div id="voice-panel">
+  <div id="voice-panel-header"><h2>🎙️ Voice</h2><button id="voice-close">✕</button></div>
+  <div id="voice-panel-body">
+    <div class="voice-option" id="vo-browser" onclick="selectVoice('browser')">
+      <div class="voice-option-top"><span class="voice-option-name">Device voice</span><span class="voice-badge badge-free">Fallback</span></div>
+      <div class="voice-option-desc">Your device's built-in text-to-speech. Works offline. Sounds robotic on Android, passable on iOS.</div>
+      <div class="voice-option-cost">Free · no setup</div>
+    </div>
+    <div class="voice-option selected" id="vo-google" onclick="selectVoice('google')">
+      <div class="voice-option-top"><span class="voice-option-name">Google Cloud TTS</span><span class="voice-badge badge-pro">Active</span></div>
+      <div class="voice-option-desc">Natural neural voice — en-IE-Standard-A (Irish English female). Major step up in quality. Requires <code>GOOGLE_TTS_KEY</code> on your backend.</div>
+      <div class="voice-option-cost">Free 1M chars/mo · then $4/1M</div>
+    </div>
+    <div style="background:rgba(0,0,0,0.03);border-radius:10px;padding:12px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:#1a2240;margin-bottom:6px;">Backend endpoint needed</div>
+      <div style="font-size:11px;color:#666;line-height:1.6;">Your <code>/api/tts</code> should accept <code>POST {text, voice}</code> and return an MP3 stream. Use Google's <code>texttospeech.googleapis.com/v1/text:synthesize</code> with voice <code>en-IE-Standard-A</code> and <code>MP3</code> encoding.</div>
+    </div>
+    <button id="voice-test-btn" onclick="testCurrentVoice()">▶ Test voice</button>
+    <div id="voice-save-note">Falls back to device voice automatically if the API is unreachable.</div>
   </div>
 </div>
 
@@ -347,6 +400,7 @@ touch-action:manipulation;
     </div>
   </div>
   <div id="story-body">
+    <div id="story-photo-wrap"><img id="story-photo" alt=""><div id="story-photo-credit"></div></div>
     <div id="story-text"></div>
     <div id="story-btns">
       <button id="replay-btn" onclick="replayStory()">▶ Replay</button>
@@ -449,6 +503,8 @@ let travelMode='walking',PROXIMITY_RADIUS=200;
 let voicePool=[],newWorker=null;
 let longStories=[],currentLongStoryIdx=-1,longSpeaking=false;
 let currentAreaName='this area',currentCityName='Ireland';
+let voiceProvider=localStorage.getItem('sr_voice')||'google'; // 'browser'|'google'
+let currentAudio=null; // for HTML5 audio from API TTS
 
 // ── Analytics ─────────────────────────────────────────────────
 function track(n,p={}){try{gtag('event',n,p);}catch(e){}}
@@ -479,6 +535,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('menu-overlay').addEventListener('click',closeMenu);
   document.getElementById('refresh-mi').addEventListener('click',()=>{refreshLandmarks();closeMenu();});
   document.getElementById('favs-mi').addEventListener('click',()=>{openFavPanel();closeMenu();});
+  document.getElementById('voice-mi').addEventListener('click',()=>{openVoicePanel();closeMenu();});
   document.getElementById('upgrade-mi').addEventListener('click',()=>{startCheckout();closeMenu();});
 
   // Cookie
@@ -490,6 +547,7 @@ document.addEventListener('DOMContentLoaded',function(){
   if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('✅ Pro unlocked!'),800);}
   if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('🎉 Welcome to Pro!'),800);}
 
+  document.getElementById('voice-close').addEventListener('click',closeVoicePanel);
   loadFavs();
   loadVoices();
 });
@@ -547,8 +605,38 @@ function loadVoices(){
 if(typeof speechSynthesis!=='undefined'&&speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=loadVoices;
 function currentVoice(){return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null;}
 
-// ── TTS ───────────────────────────────────────────────────────
-function tts(text,onDone,rate=0.88){
+// ── TTS — multi-provider ──────────────────────────────────────
+function cancelAudio(){
+  try{speechSynthesis.cancel();}catch(e){}
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+}
+
+async function tts(text,onDone,rate=0.88){
+  cancelAudio();
+  if(voiceProvider==='google'){
+    try{
+      const r=await fetch('/api/tts',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({text,voice:'en-IE-Standard-A'})
+      });
+      if(!r.ok)throw new Error('TTS '+r.status);
+      const blob=await r.blob();
+      const url=URL.createObjectURL(blob);
+      currentAudio=new Audio(url);
+      currentAudio.playbackRate=rate;
+      currentAudio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;onDone();};
+      currentAudio.onerror=()=>{URL.revokeObjectURL(url);currentAudio=null;browserTTS(text,onDone,rate);};
+      await currentAudio.play();
+      return;
+    }catch(e){
+      console.warn('Google TTS failed, falling back to browser:',e);
+    }
+  }
+  browserTTS(text,onDone,rate);
+}
+
+function browserTTS(text,onDone,rate=0.88){
   try{
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
@@ -558,13 +646,83 @@ function tts(text,onDone,rate=0.88){
     speechSynthesis.speak(u);
   }catch(e){onDone();}
 }
-function cancelAudio(){try{speechSynthesis.cancel();}catch(e){}}
+
 function replayStory(){if(curStory)tts(curStory.text,()=>{speaking=false;if(tourOn)setTimeout(playNearest,1500);});}
 function shareStory(){
   if(!curStory)return;
   if(navigator.share){navigator.share({title:curStory.title,text:curStory.text,url:location.href}).catch(()=>{});}
   else{navigator.clipboard&&navigator.clipboard.writeText(curStory.title+'\n\n'+curStory.text+'\n\nStoryRoute: '+location.href).then(()=>showToast('Copied!'));}
   track('story_share',{title:curStory.title});
+}
+
+// ── Voice panel ───────────────────────────────────────────────
+function openVoicePanel(){
+  document.querySelectorAll('.voice-option').forEach(el=>el.classList.remove('selected'));
+  const sel=document.getElementById('vo-'+voiceProvider);
+  if(sel)sel.classList.add('selected');
+  document.getElementById('voice-panel').classList.add('open');
+  document.getElementById('menu-overlay').classList.add('open');
+}
+function closeVoicePanel(){
+  document.getElementById('voice-panel').classList.remove('open');
+  document.getElementById('menu-overlay').classList.remove('open');
+}
+function selectVoice(provider){
+  voiceProvider=provider;
+  localStorage.setItem('sr_voice',provider);
+  document.querySelectorAll('.voice-option').forEach(el=>el.classList.remove('selected'));
+  const sel=document.getElementById('vo-'+provider);
+  if(sel)sel.classList.add('selected');
+}
+function testCurrentVoice(){
+  tts('Welcome to StoryRoute. Steeped in centuries of history, Ireland has a story waiting around every corner.',()=>{});
+}
+
+// ── Photos — Wikipedia API ────────────────────────────────────
+const photoCache={};
+
+async function fetchPhoto(title){
+  if(photoCache[title]!==undefined) return photoCache[title];
+  const attempts=[
+    title,
+    title+', Dublin',
+    title+', Ireland',
+    title.replace(/^(The|St\.?|Saint)\s/i,'')
+  ];
+  for(const q of attempts){
+    try{
+      const slug=q.trim().replace(/ /g,'_');
+      const r=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(slug),{headers:{'User-Agent':'StoryRouteApp/1.0'}});
+      if(!r.ok) continue;
+      const d=await r.json();
+      if(d.thumbnail&&d.thumbnail.source){
+        // Request a larger version — replace any px size with 600px
+        const url=d.thumbnail.source.replace(/\/\d+px-/,'/600px-');
+        const result={url,credit:'Wikipedia'};
+        photoCache[title]=result;
+        return result;
+      }
+    }catch(e){continue;}
+  }
+  photoCache[title]=null;
+  return null;
+}
+
+async function loadStoryPhoto(title){
+  const wrap=document.getElementById('story-photo-wrap');
+  const img=document.getElementById('story-photo');
+  const credit=document.getElementById('story-photo-credit');
+  // Reset state
+  wrap.classList.remove('loaded');
+  img.src='';
+  credit.textContent='';
+  const photo=await fetchPhoto(title);
+  if(photo){
+    img.onload=()=>wrap.classList.add('loaded');
+    img.onerror=()=>wrap.classList.remove('loaded');
+    img.src=photo.url;
+    credit.textContent='📷 Wikipedia';
+  }
 }
 
 // ── Cache ─────────────────────────────────────────────────────
@@ -873,6 +1031,8 @@ function showStory(name,text,type){
   document.getElementById('story-body').style.display='block';
   document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
+  // Load photo async — won't block story display
+  if(text!=='⏳ Loading story…') loadStoryPhoto(name);
 }
 function setPulse(id){document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));const el=document.getElementById('lm-'+id);if(el)el.classList.add('playing');}
 function dotVisited(id){const el=document.getElementById('lm-'+id);if(el)el.classList.add('visited');}
