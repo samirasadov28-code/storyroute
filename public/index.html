@@ -11,11 +11,22 @@
 <meta name="apple-mobile-web-app-title" content="StoryRoute">
 <meta name="theme-color" content="#f0a500">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-R6WMQEWZMV"></script>
+<!-- Consent default MUST be set before GA loads -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
+  // Deny all by default — updated after user accepts
+  gtag('consent', 'default', {
+    analytics_storage:    'denied',
+    ad_storage:           'denied',
+    ad_user_data:         'denied',
+    ad_personalization:   'denied',
+    wait_for_update:      500
+  });
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-R6WMQEWZMV"></script>
+<script>
   gtag('js', new Date());
   gtag('config', 'G-R6WMQEWZMV');
 </script>
@@ -324,7 +335,7 @@ body{font-family:sans-serif;overflow:hidden;}
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.0.95</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.0.96</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
