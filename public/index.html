@@ -14,147 +14,220 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:sans-serif; overflow:hidden; }
-#map { width:100vw; height:100vh; }
-.leaflet-control-container { display:none !important; }
-#header { position:fixed; top:0; left:0; right:0; z-index:1000; padding:10px 16px; background:rgba(255,255,255,0.97); border-bottom:1px solid rgba(0,0,0,0.08); display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-#app-name { font-size:20px; font-weight:800; color:#1a2240; margin-left:10px; }
-#app-name span { color:#f0a500; }
-#status { font-size:11px; background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08); padding:4px 10px; border-radius:12px; color:#666; max-width:160px; text-align:right; line-height:1.4; }
-.hdr-btn { width:34px; height:34px; background:transparent; border:1px solid rgba(0,0,0,0.1); border-radius:8px; font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-.hdr-btn:hover { background:rgba(240,165,0,0.1); border-color:#f0a500; }
-#auth-btn { padding:6px 12px; background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.12); border-radius:8px; font-size:12px; font-weight:700; color:#444; cursor:pointer; white-space:nowrap; }
-#stories-left { font-size:10px; color:#f0a500; font-weight:700; display:none; }
-#progress-wrap { position:fixed; top:62px; left:0; right:0; z-index:998; background:rgba(255,255,255,0.95); border-bottom:1px solid rgba(0,0,0,0.06); padding:6px 16px; display:none; align-items:center; gap:10px; }
-#progress-wrap.visible { display:flex; }
-#progress-track { flex:1; height:6px; background:rgba(0,0,0,0.08); border-radius:3px; overflow:hidden; }
-#progress-fill { height:100%; background:#f0a500; border-radius:3px; width:0%; transition:width .5s; }
-#progress-label { font-size:11px; color:#888; flex-shrink:0; }
-#mode-toggle { position:fixed; top:62px; left:50%; transform:translateX(-50%); z-index:999; display:flex; background:rgba(255,255,255,0.97); border:1px solid rgba(0,0,0,0.1); border-radius:20px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-.mode-btn { padding:7px 18px; font-size:12px; font-weight:700; border:none; background:transparent; color:rgba(0,0,0,0.4); cursor:pointer; }
-.mode-btn.active { background:#f0a500; color:#fff; }
-#route-panel { position:fixed; top:106px; left:16px; right:16px; z-index:999; background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:14px; padding:14px; display:none; box-shadow:0 4px 16px rgba(0,0,0,0.1); }
-#route-panel.visible { display:block; }
-.r-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-.r-input { flex:1; padding:10px 13px; background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.12); border-radius:8px; color:#222; font-size:14px; outline:none; }
-.r-input::placeholder { color:rgba(0,0,0,0.3); }
-.r-input:focus { border-color:#f0a500; }
-.r-input:disabled { background:rgba(240,165,0,0.08); border-color:rgba(240,165,0,0.4); color:#b36b00; }
-.loc-btn { width:38px; height:38px; flex-shrink:0; background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.12); border-radius:8px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-.loc-btn.active { background:rgba(240,165,0,0.12); border-color:#f0a500; }
-.r-btn { width:100%; padding:11px; background:#f0a500; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
-.r-btn:disabled { background:#ccc; color:#888; cursor:not-allowed; }
-#zoom { position:fixed; bottom:90px; left:14px; z-index:1000; display:flex; flex-direction:column; gap:6px; }
-.zbtn { width:42px; height:42px; background:rgba(255,255,255,0.97); border:1px solid rgba(0,0,0,0.15); border-radius:8px; color:#333; font-size:22px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; }
-.zbtn:hover { background:#f0a500; color:#fff; border-color:#f0a500; }
-#story { position:fixed; bottom:74px; left:0; right:0; padding:14px 16px; background:#fff; border-top:1px solid rgba(0,0,0,0.08); display:none; z-index:1001; box-shadow:0 -4px 20px rgba(0,0,0,0.08); }
-#story-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-#story-name { font-size:10px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1.2px; }
-#fav-btn { background:none; border:none; font-size:20px; cursor:pointer; padding:0 2px; }
-#story-text { font-size:14px; line-height:1.7; color:#222; margin-bottom:10px; }
-#story-btns { display:flex; gap:8px; }
-#replay-btn { flex:1; padding:10px; background:rgba(0,0,0,0.05); color:#333; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; }
-#stop-story-btn { padding:10px 16px; background:#ef4444; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:700; }
-#skip-btn { padding:10px 22px; background:#f0a500; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:700; }
-#skip-btn:disabled { background:#ddd; color:#aaa; cursor:not-allowed; }
-#hide-story-btn { padding:10px 14px; background:rgba(0,0,0,0.05); color:#888; border:none; border-radius:8px; cursor:pointer; font-size:13px; }
-#next-info { margin-top:8px; font-size:11px; color:#999; }
-#next-info b { color:#e09400; }
-#bottom-bar { position:fixed; bottom:0; left:0; right:0; z-index:1002; background:#fff; border-top:1px solid rgba(0,0,0,0.08); padding:10px 16px 14px; box-shadow:0 -2px 12px rgba(0,0,0,0.08); }
-#tour-btn { width:100%; padding:14px; border:none; border-radius:12px; font-weight:800; font-size:17px; cursor:pointer; background:#22c55e; color:#fff; box-shadow:0 3px 12px rgba(34,197,94,0.3); }
-#tour-btn.stop { background:#ef4444; box-shadow:0 3px 12px rgba(239,68,68,0.3); }
-#travel-mode { display:none; justify-content:center; gap:8px; margin-top:10px; }
-#travel-mode.visible { display:flex; }
-.tm-btn { flex:1; padding:8px 6px; background:#fff; border:2px solid rgba(0,0,0,0.1); border-radius:10px; font-size:12px; font-weight:700; color:#666; cursor:pointer; text-align:center; }
-.tm-btn.active { border:2px solid #1a2240; color:#1a2240; }
-#fav-panel { position:fixed; top:0; right:0; bottom:0; width:min(320px,90vw); background:#fff; z-index:2000; transform:translateX(100%); transition:transform .3s; display:flex; flex-direction:column; box-shadow:-4px 0 20px rgba(0,0,0,0.12); }
-#fav-panel.open { transform:translateX(0); }
-#fav-panel-header { padding:16px; border-bottom:1px solid rgba(0,0,0,0.08); display:flex; justify-content:space-between; align-items:center; }
-#fav-panel-header h2 { font-size:17px; font-weight:800; color:#1a2240; }
-#fav-close { background:none; border:none; font-size:22px; cursor:pointer; color:#999; }
-#fav-list { flex:1; overflow-y:auto; padding:12px; }
-.fav-item { padding:12px; border:1px solid rgba(0,0,0,0.08); border-radius:10px; margin-bottom:10px; }
-.fav-title { font-size:11px; font-weight:700; color:#f0a500; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
-.fav-text { font-size:13px; color:#444; line-height:1.5; margin-bottom:8px; }
-.fav-actions { display:flex; gap:6px; }
-.fav-play { flex:1; padding:7px; background:#f0a500; color:#fff; border:none; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; }
-.fav-del { padding:7px 10px; background:rgba(0,0,0,0.05); color:#999; border:none; border-radius:7px; font-size:12px; cursor:pointer; }
-#prox-alert { position:fixed; top:110px; left:16px; right:16px; z-index:998; background:#1a2240; color:#fff; border-radius:12px; padding:10px 14px; font-size:13px; font-weight:600; display:none; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(0,0,0,0.2); }
-#prox-alert.visible { display:flex; }
-#paywall { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9990; display:none; align-items:center; justify-content:center; padding:24px; }
-#paywall.visible { display:flex; }
-.pw-box { background:#fff; border-radius:20px; padding:28px 24px; max-width:340px; width:100%; text-align:center; }
-.pw-box h2 { font-size:20px; font-weight:800; color:#1a2240; margin-bottom:8px; }
-.pw-box p { font-size:14px; color:#888; line-height:1.6; margin-bottom:16px; }
-.pw-perks { text-align:left; margin-bottom:18px; }
-.pw-perks li { font-size:13px; color:#555; margin-bottom:6px; list-style:none; }
-.pw-perks li::before { content:"✓ "; color:#22c55e; font-weight:700; }
-.pw-pro { display:block; width:100%; padding:14px; background:#f0a500; color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:800; cursor:pointer; margin-bottom:10px; }
-.pw-login { display:block; width:100%; padding:12px; background:rgba(0,0,0,0.05); color:#444; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:10px; }
-.pw-close { font-size:12px; color:#ccc; background:none; border:none; cursor:pointer; }
-.lm-dot { font-size:22px; cursor:pointer; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25)); transition:transform .15s; }
-.lm-dot:hover { transform:scale(1.2); }
-.lm-dot.visited { opacity:0.3; filter:grayscale(1); }
-.lm-dot.faved { filter:drop-shadow(0 0 4px rgba(240,165,0,0.8)); }
-.leaflet-tooltip { background:#fff; border:1px solid rgba(240,165,0,0.5); color:#222; font-size:12px; font-weight:600; padding:4px 9px; border-radius:6px; }
-#overlay { position:fixed; inset:0; background:#fff; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:30px; }
-#overlay-btn { padding:16px 48px; background:#f0a500; color:#fff; border:none; border-radius:14px; font-size:18px; font-weight:700; cursor:pointer; box-shadow:0 4px 16px rgba(240,165,0,0.35); }
-#update-bar { position:fixed; bottom:0; left:0; right:0; z-index:9998; background:#1a2240; color:#fff; padding:12px 16px; display:none; align-items:center; justify-content:space-between; gap:12px; }
-#update-bar.visible { display:flex; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:sans-serif;overflow:hidden;}
+#map{width:100vw;height:100vh;}
+.leaflet-control-container{display:none!important;}
+
+/* Header */
+#header{position:fixed;top:0;left:0;right:0;z-index:1000;padding:10px 16px;background:rgba(255,255,255,0.97);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+#app-name{font-size:20px;font-weight:800;color:#1a2240;margin-left:10px;}
+#app-name span{color:#f0a500;}
+#status{font-size:11px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.08);padding:4px 10px;border-radius:12px;color:#666;max-width:160px;text-align:right;line-height:1.4;}
+
+/* Hamburger button */
+#menu-btn{
+  width:52px;height:52px;
+  background:#f0a500;color:#fff;
+  border:none;border-radius:12px;
+  font-size:26px;font-weight:700;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 10px rgba(240,165,0,0.4);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+/* Side menu panel */
+#menu-panel{
+  position:fixed;top:0;right:0;bottom:0;
+  width:min(280px,85vw);
+  background:#fff;z-index:3000;
+  transform:translateX(100%);
+  transition:transform .25s ease;
+  box-shadow:-4px 0 20px rgba(0,0,0,0.15);
+  display:flex;flex-direction:column;
+}
+#menu-panel.open{transform:translateX(0);}
+#menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:2999;display:none;}
+#menu-overlay.open{display:block;}
+#menu-top{padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;}
+#menu-top h2{font-size:18px;font-weight:800;color:#1a2240;}
+#menu-close-btn{width:36px;height:36px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;font-size:20px;cursor:pointer;}
+#menu-body{flex:1;overflow-y:auto;padding:8px 0;}
+.mi{display:flex;align-items:center;gap:14px;padding:15px 20px;font-size:15px;font-weight:600;color:#333;cursor:pointer;border:none;background:none;width:100%;text-align:left;-webkit-tap-highlight-color:transparent;}
+.mi:hover,.mi:active{background:rgba(240,165,0,0.08);color:#f0a500;}
+.mi-icon{font-size:20px;width:28px;text-align:center;}
+.mi-divider{height:1px;background:rgba(0,0,0,0.07);margin:6px 16px;}
+#auth-label{flex:1;}
+#stories-left{font-size:10px;font-weight:700;color:#f0a500;background:rgba(240,165,0,0.1);padding:2px 8px;border-radius:10px;display:none;}
+
+/* Mode toggle */
+#mode-toggle{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:999;display:flex;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.1);border-radius:20px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.mode-btn{padding:7px 18px;font-size:12px;font-weight:700;border:none;background:transparent;color:rgba(0,0,0,0.4);cursor:pointer;}
+.mode-btn.active{background:#f0a500;color:#fff;}
+
+/* Route panel */
+#route-panel{position:fixed;top:106px;left:16px;right:16px;z-index:999;background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:14px;padding:14px;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.1);}
+#route-panel.visible{display:block;}
+.r-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+.r-input{flex:1;padding:10px 13px;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#222;font-size:14px;outline:none;}
+.r-input::placeholder{color:rgba(0,0,0,0.3);}
+.r-input:focus{border-color:#f0a500;}
+.r-input:disabled{background:rgba(240,165,0,0.08);border-color:rgba(240,165,0,0.4);color:#b36b00;}
+.loc-btn{width:38px;height:38px;flex-shrink:0;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.12);border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.loc-btn.active{background:rgba(240,165,0,0.12);border-color:#f0a500;}
+.r-btn{width:100%;padding:11px;background:#f0a500;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;}
+.r-btn:disabled{background:#ccc;color:#888;cursor:not-allowed;}
+
+/* Route progress */
+#progress-wrap{position:fixed;top:62px;left:0;right:0;z-index:998;background:rgba(255,255,255,0.95);border-bottom:1px solid rgba(0,0,0,0.06);padding:6px 16px;display:none;align-items:center;gap:10px;}
+#progress-wrap.visible{display:flex;}
+#progress-track{flex:1;height:6px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden;}
+#progress-fill{height:100%;background:#f0a500;border-radius:3px;width:0%;transition:width .5s;}
+#progress-label{font-size:11px;color:#888;flex-shrink:0;}
+
+/* Zoom */
+#zoom{position:fixed;bottom:90px;left:14px;z-index:1000;display:flex;flex-direction:column;gap:6px;}
+.zbtn{width:42px;height:42px;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.15);border-radius:8px;color:#333;font-size:22px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;}
+.zbtn:hover{background:#f0a500;color:#fff;border-color:#f0a500;}
+
+/* Story panel */
+#story{position:fixed;bottom:74px;left:0;right:0;padding:14px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.08);display:none;z-index:1001;box-shadow:0 -4px 20px rgba(0,0,0,0.08);}
+#story-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+#story-name{font-size:10px;font-weight:700;color:#f0a500;text-transform:uppercase;letter-spacing:1.2px;}
+#fav-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:0 2px;}
+#story-text{font-size:14px;line-height:1.7;color:#222;margin-bottom:10px;}
+#story-btns{display:flex;gap:8px;}
+#replay-btn{flex:1;padding:10px;background:rgba(0,0,0,0.05);color:#333;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;}
+#stop-story-btn{padding:10px 14px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;}
+#skip-btn{padding:10px 18px;background:#f0a500;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;}
+#skip-btn:disabled{background:#ddd;color:#aaa;cursor:not-allowed;}
+#hide-story-btn{padding:10px 12px;background:rgba(0,0,0,0.05);color:#888;border:none;border-radius:8px;cursor:pointer;font-size:13px;}
+#next-info{margin-top:8px;font-size:11px;color:#999;}
+#next-info b{color:#e09400;}
+
+/* Bottom bar */
+#bottom-bar{position:fixed;bottom:0;left:0;right:0;z-index:1002;background:#fff;border-top:1px solid rgba(0,0,0,0.08);padding:10px 16px 14px;box-shadow:0 -2px 12px rgba(0,0,0,0.08);}
+#tour-btn{width:100%;padding:14px;border:none;border-radius:12px;font-weight:800;font-size:17px;cursor:pointer;background:#22c55e;color:#fff;box-shadow:0 3px 12px rgba(34,197,94,0.3);}
+#tour-btn.stop{background:#ef4444;box-shadow:0 3px 12px rgba(239,68,68,0.3);}
+#travel-mode{display:none;justify-content:center;gap:8px;margin-top:10px;}
+#travel-mode.visible{display:flex;}
+.tm-btn{flex:1;padding:10px 4px;background:#fff;border:2px solid rgba(0,0,0,0.1);border-radius:10px;font-size:12px;font-weight:700;color:#666;cursor:pointer;text-align:center;}
+.tm-btn.active{border-color:#1a2240;color:#1a2240;}
+
+/* Favourites panel */
+#fav-panel{position:fixed;top:0;left:0;bottom:0;width:min(320px,90vw);background:#fff;z-index:3000;transform:translateX(-100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,0.12);}
+#fav-panel.open{transform:translateX(0);}
+#fav-panel-header{padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;}
+#fav-panel-header h2{font-size:17px;font-weight:800;color:#1a2240;}
+#fav-close{background:none;border:none;font-size:22px;cursor:pointer;color:#999;}
+#fav-list{flex:1;overflow-y:auto;padding:12px;}
+.fav-item{padding:12px;border:1px solid rgba(0,0,0,0.08);border-radius:10px;margin-bottom:10px;}
+.fav-title{font-size:11px;font-weight:700;color:#f0a500;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.fav-text{font-size:13px;color:#444;line-height:1.5;margin-bottom:8px;}
+.fav-actions{display:flex;gap:6px;}
+.fav-play{flex:1;padding:7px;background:#f0a500;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;}
+.fav-del{padding:7px 10px;background:rgba(0,0,0,0.05);color:#999;border:none;border-radius:7px;font-size:12px;cursor:pointer;}
+
+/* Proximity alert */
+#prox-alert{position:fixed;top:110px;left:16px;right:16px;z-index:998;background:#1a2240;color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,0.2);}
+#prox-alert.visible{display:flex;}
+
+/* Paywall */
+#paywall{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9990;display:none;align-items:center;justify-content:center;padding:24px;}
+#paywall.visible{display:flex;}
+.pw-box{background:#fff;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;}
+.pw-box h2{font-size:20px;font-weight:800;color:#1a2240;margin-bottom:8px;}
+.pw-box p{font-size:14px;color:#888;line-height:1.6;margin-bottom:16px;}
+.pw-perks{text-align:left;margin-bottom:18px;}
+.pw-perks li{font-size:13px;color:#555;margin-bottom:6px;list-style:none;}
+.pw-perks li::before{content:"✓ ";color:#22c55e;font-weight:700;}
+.pw-pro{display:block;width:100%;padding:14px;background:#f0a500;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;}
+.pw-login{display:block;width:100%;padding:12px;background:rgba(0,0,0,0.05);color:#444;border:1px solid rgba(0,0,0,0.1);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px;}
+.pw-close{font-size:12px;color:#ccc;background:none;border:none;cursor:pointer;}
+
+/* Markers */
+.lm-dot{font-size:22px;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));transition:transform .15s;}
+.lm-dot:hover{transform:scale(1.2);}
+.lm-dot.visited{opacity:0.3;filter:grayscale(1);}
+.lm-dot.faved{filter:drop-shadow(0 0 4px rgba(240,165,0,0.8));}
+.leaflet-tooltip{background:#fff;border:1px solid rgba(240,165,0,0.5);color:#222;font-size:12px;font-weight:600;padding:4px 9px;border-radius:6px;}
+
+/* Launch overlay */
+#overlay{position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;}
+#overlay-btn{padding:16px 48px;background:#f0a500;color:#fff;border:none;border-radius:14px;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(240,165,0,0.35);}
+
+/* Update banner */
+#update-bar{position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#1a2240;color:#fff;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;}
+#update-bar.visible{display:flex;}
 </style>
 </head>
 <body>
 <div id="map"></div>
 
+<!-- Header -->
 <div id="header">
   <div style="display:flex;align-items:center;">
     <img src="/icon-512.png" style="height:40px;width:auto;" onerror="this.style.display='none'">
     <span id="app-name">Story<span>Route</span></span>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;">
+  <div style="display:flex;align-items:center;gap:10px;">
     <div id="status">Starting…</div>
-    <button id="menu-btn" onclick="toggleMenu(event)">☰</button>
+    <button id="menu-btn" type="button">☰</button>
   </div>
 </div>
 
-<!-- Dropdown menu -->
-<div id="dropdown">
-  <button class="dd-item" onclick="handleAuthClick();closeMenu()">
-    <span class="dd-icon">👤</span>
-    <span id="auth-label">Log in</span>
-    <span id="stories-left" class="dd-badge" style="display:none;"></span>
-  </button>
-  <div class="dd-divider"></div>
-  <button class="dd-item" onclick="refreshLandmarks();closeMenu()">
-    <span class="dd-icon">🔄</span> Refresh landmarks
-  </button>
-  <button class="dd-item" onclick="openFavPanel();closeMenu()">
-    <span class="dd-icon">❤️</span> Favourites
-  </button>
-  <div class="dd-divider"></div>
-  <button class="dd-item" onclick="startCheckout();closeMenu()">
-    <span class="dd-icon">⭐</span> Upgrade to Pro — €3.99/mo
-  </button>
-  <button class="dd-item" onclick="forceUpdate()">
-    <span class="dd-icon">⬆️</span> Force update
-  </button>
+<!-- Menu overlay (behind panel) -->
+<div id="menu-overlay"></div>
+
+<!-- Side menu panel (slides in from right) -->
+<div id="menu-panel">
+  <div id="menu-top">
+    <h2>Menu</h2>
+    <button id="menu-close-btn" type="button">✕</button>
+  </div>
+  <div id="menu-body">
+    <button class="mi" id="auth-mi" type="button">
+      <span class="mi-icon">👤</span>
+      <span id="auth-label">Log in / Sign up</span>
+      <span id="stories-left"></span>
+    </button>
+    <div class="mi-divider"></div>
+    <button class="mi" type="button" id="refresh-mi">
+      <span class="mi-icon">🔄</span> Refresh landmarks
+    </button>
+    <button class="mi" type="button" id="favs-mi">
+      <span class="mi-icon">❤️</span> Favourites
+    </button>
+    <div class="mi-divider"></div>
+    <button class="mi" type="button" id="upgrade-mi">
+      <span class="mi-icon">⭐</span> Upgrade to Pro — €3.99/mo
+    </button>
+    <div class="mi-divider"></div>
+    <button class="mi" type="button" id="force-mi">
+      <span class="mi-icon">⬆️</span> Force update
+    </button>
+  </div>
 </div>
 
+<!-- Progress bar -->
 <div id="progress-wrap">
   <div id="progress-track"><div id="progress-fill"></div></div>
   <div id="progress-label">0%</div>
 </div>
 
+<!-- Mode toggle -->
 <div id="mode-toggle">
   <button class="mode-btn active" id="btn-explore" onclick="setMode('explore')">📍 Explore</button>
   <button class="mode-btn" id="btn-route" onclick="setMode('route')">🗺️ Route</button>
 </div>
 
+<!-- Route panel -->
 <div id="route-panel">
   <div class="r-row">
     <input class="r-input" id="from-inp" placeholder="📍 From — type or use location"/>
-    <button class="loc-btn" id="from-loc-btn" onclick="toggleFromLoc()" title="Use my location">📍</button>
+    <button class="loc-btn" id="from-loc-btn" onclick="toggleFromLoc()">📍</button>
   </div>
   <div class="r-row">
     <input class="r-input" id="to-inp" placeholder="🏁 To — e.g. Trinity College"/>
@@ -162,13 +235,16 @@ body { font-family:sans-serif; overflow:hidden; }
   <button class="r-btn" id="route-btn" onclick="planRoute()">Plan Route & Discover Stories</button>
 </div>
 
+<!-- Proximity alert -->
 <div id="prox-alert">📍 <span id="prox-text"></span></div>
 
+<!-- Zoom -->
 <div id="zoom">
   <button class="zbtn" onclick="map.setZoom(map.getZoom()+1)">+</button>
   <button class="zbtn" onclick="map.setZoom(map.getZoom()-1)">−</button>
 </div>
 
+<!-- Story panel -->
 <div id="story">
   <div id="story-header">
     <div id="story-name"></div>
@@ -184,6 +260,7 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="next-info"></div>
 </div>
 
+<!-- Bottom bar -->
 <div id="bottom-bar">
   <button id="tour-btn" onclick="toggleTour()">▶ Start Listening</button>
   <div id="travel-mode">
@@ -193,6 +270,7 @@ body { font-family:sans-serif; overflow:hidden; }
   </div>
 </div>
 
+<!-- Favourites panel -->
 <div id="fav-panel">
   <div id="fav-panel-header">
     <h2>❤️ Favourites</h2>
@@ -201,6 +279,7 @@ body { font-family:sans-serif; overflow:hidden; }
   <div id="fav-list"></div>
 </div>
 
+<!-- Paywall -->
 <div id="paywall">
   <div class="pw-box">
     <div style="font-size:40px;margin-bottom:12px;">🗺️</div>
@@ -218,6 +297,7 @@ body { font-family:sans-serif; overflow:hidden; }
   </div>
 </div>
 
+<!-- Launch overlay -->
 <div id="overlay">
   <img src="/icon-512.png" style="width:90px;height:90px;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.1)" onerror="this.style.display='none'">
   <div style="font-size:28px;font-weight:800;color:#1a2240;">Story<span style="color:#f0a500;">Route</span></div>
@@ -225,11 +305,12 @@ body { font-family:sans-serif; overflow:hidden; }
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.0.86</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.0.87</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
 
+<!-- Update banner -->
 <div id="update-bar">
   <span style="font-size:13px;">🆕 New version available</span>
   <button onclick="applyUpdate()" style="padding:8px 16px;background:#f0a500;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Update now</button>
@@ -240,404 +321,195 @@ body { font-family:sans-serif; overflow:hidden; }
 </audio>
 
 <script>
-// ── Constants ─────────────────────────────────────────────────
-const DUBLIN = [53.3438, -6.2546];
-const FREE_LIMIT = 5;
-const TRAVEL_MODES = {
-  walking: { radius:200   },
-  driving: { radius:10000 },
-  long:    { radius:25000 }
-};
-const TYPE_ICON = {
-  monument:'🏛',church:'⛪',castle:'🏰',street:'🛤',building:'🏢',
-  bridge:'🌉',park:'🌿',museum:'🎭',neighbourhood:'🏘',person:'👤',
-  nature:'🌊',pub:'🍺',beach:'🏖',estate:'🏡',school:'🏫',sport:'🏟',other:'📍'
-};
+const DUBLIN=[53.3438,-6.2546];
+const FREE_LIMIT=5;
+const TRAVEL_MODES={walking:{radius:200},driving:{radius:10000},long:{radius:25000}};
+const TYPE_ICON={monument:'🏛',church:'⛪',castle:'🏰',street:'🛤',building:'🏢',bridge:'🌉',park:'🌿',museum:'🎭',neighbourhood:'🏘',person:'👤',nature:'🌊',pub:'🍺',beach:'🏖',estate:'🏡',school:'🏫',sport:'🏟',other:'📍'};
 
-// ── State ─────────────────────────────────────────────────────
-let markers={}, visited=new Set(), fetched=new Set();
-let userPos=null, tourOn=false, speaking=false;
-let curStory=null, nxtStory=null, prefetchId=null;
-let useCurrentLocFrom=false, routeCoords=[];
-let landmarkCount=0, favourites=[], proxTimer=null;
-let travelMode='walking', PROXIMITY_RADIUS=200;
-let voicePool=[], newWorker=null;
+let markers={},visited=new Set(),fetched=new Set();
+let userPos=null,tourOn=false,speaking=false;
+let curStory=null,nxtStory=null,prefetchId=null;
+let useCurrentLocFrom=false,routeCoords=[];
+let landmarkCount=0,favourites=[],proxTimer=null;
+let travelMode='walking',PROXIMITY_RADIUS=200;
+let voicePool=[],newWorker=null;
 
 // ── Map ───────────────────────────────────────────────────────
-const map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
+const map=L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-map.on('moveend', fetchVisibleBounds);
-map.on('click', ()=>{ document.getElementById('story').style.display='none'; });
+map.on('moveend',fetchVisibleBounds);
+map.on('click',()=>{
+  document.getElementById('story').style.display='none';
+});
+
+// ── Menu — wired up after DOM ready ──────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('menu-btn').addEventListener('click',openMenu);
+  document.getElementById('menu-close-btn').addEventListener('click',closeMenu);
+  document.getElementById('menu-overlay').addEventListener('click',closeMenu);
+  document.getElementById('auth-mi').addEventListener('click',()=>{handleAuthClick();closeMenu();});
+  document.getElementById('refresh-mi').addEventListener('click',()=>{refreshLandmarks();closeMenu();});
+  document.getElementById('favs-mi').addEventListener('click',()=>{openFavPanel();closeMenu();});
+  document.getElementById('upgrade-mi').addEventListener('click',()=>{startCheckout();closeMenu();});
+  document.getElementById('force-mi').addEventListener('click',()=>{forceUpdate();});
+});
+function openMenu(){
+  document.getElementById('menu-panel').classList.add('open');
+  document.getElementById('menu-overlay').classList.add('open');
+}
+function closeMenu(){
+  document.getElementById('menu-panel').classList.remove('open');
+  document.getElementById('menu-overlay').classList.remove('open');
+}
 
 // ── Monetisation ──────────────────────────────────────────────
-function isPro(){
-  const u=window.netlifyIdentity?.currentUser();
-  return u?.app_metadata?.plan==='pro';
-}
-function isLoggedIn(){ return !!window.netlifyIdentity?.currentUser(); }
-function todayKey(){ return new Date().toDateString(); }
-function getCount(){
-  if(localStorage.getItem('sr_day')!==todayKey()){ localStorage.setItem('sr_day',todayKey()); localStorage.setItem('sr_n','0'); }
-  return parseInt(localStorage.getItem('sr_n')||'0');
-}
-function bumpCount(){ const n=getCount()+1; localStorage.setItem('sr_n',String(n)); updateBadge(); return n; }
-function canPlay(){ return isPro()||getCount()<FREE_LIMIT; }
-function updateBadge(){
-  const el=document.getElementById('stories-left');
-  if(isPro()||!isLoggedIn()){ el.style.display='none'; return; }
-  const left=Math.max(0,FREE_LIMIT-getCount());
-  el.style.display='inline'; el.textContent=left+' free left';
-}
-function showPaywall(){ document.getElementById('paywall').classList.add('visible'); }
-function closePaywall(){ document.getElementById('paywall').classList.remove('visible'); }
-async function startCheckout(){
-  const u=window.netlifyIdentity?.currentUser();
-  const r=await fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:u?.id,userEmail:u?.email})});
-  const d=await r.json();
-  if(d.url) window.location.href=d.url;
-  else showToast('Checkout error — please try again');
-}
-function showToast(msg){
-  const t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a2240;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:9999;white-space:nowrap;';
-  t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3500);
-}
+function isPro(){const u=window.netlifyIdentity?.currentUser();return u?.app_metadata?.plan==='pro';}
+function isLoggedIn(){return!!window.netlifyIdentity?.currentUser();}
+function todayKey(){return new Date().toDateString();}
+function getCount(){if(localStorage.getItem('sr_day')!==todayKey()){localStorage.setItem('sr_day',todayKey());localStorage.setItem('sr_n','0');}return parseInt(localStorage.getItem('sr_n')||'0');}
+function bumpCount(){const n=getCount()+1;localStorage.setItem('sr_n',String(n));updateBadge();return n;}
+function canPlay(){return isPro()||getCount()<FREE_LIMIT;}
+function updateBadge(){const el=document.getElementById('stories-left');if(isPro()||!isLoggedIn()){el.style.display='none';return;}const left=Math.max(0,FREE_LIMIT-getCount());el.style.display='inline';el.style.cssText='font-size:10px;font-weight:700;color:#f0a500;background:rgba(240,165,0,0.1);padding:2px 8px;border-radius:10px;margin-left:auto;';el.textContent=left+' free left';}
+function showPaywall(){document.getElementById('paywall').classList.add('visible');}
+function closePaywall(){document.getElementById('paywall').classList.remove('visible');}
+async function startCheckout(){const u=window.netlifyIdentity?.currentUser();const r=await fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:u?.id,userEmail:u?.email})});const d=await r.json();if(d.url)window.location.href=d.url;else showToast('Checkout error — please try again');}
+function showToast(msg){const t=document.createElement('div');t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a2240;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:9999;white-space:nowrap;';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);}
 
 // ── Netlify Identity ──────────────────────────────────────────
 function initIdentity(){
-  if(!window.netlifyIdentity) return;
-  netlifyIdentity.on('init', u=>{ updateAuthUI(u); updateBadge(); });
-  netlifyIdentity.on('login', u=>{ updateAuthUI(u); netlifyIdentity.close(); updateBadge(); });
-  netlifyIdentity.on('logout', ()=>updateAuthUI(null));
-  netlifyIdentity.init();
-  if(location.search.includes('upgraded=true')){
-    netlifyIdentity.refresh().then(()=>{ updateBadge(); history.replaceState({},'','/'); if(isPro()) showToast('🎉 Welcome to Pro! Unlimited stories unlocked.'); });
-  }
+  if(!window.netlifyIdentity){console.warn('Identity widget not loaded');return;}
+  netlifyIdentity.on('init',u=>{updateAuthUI(u);updateBadge();});
+  netlifyIdentity.on('login',u=>{updateAuthUI(u);netlifyIdentity.close();updateBadge();closeMenu();});
+  netlifyIdentity.on('logout',()=>{updateAuthUI(null);updateBadge();});
+  netlifyIdentity.init({APIUrl:window.location.origin+'/.netlify/identity'});
+  if(location.search.includes('upgraded=true')){netlifyIdentity.refresh().then(()=>{updateBadge();history.replaceState({},'','/');if(isPro())showToast('🎉 Welcome to Pro!');});}
 }
-function updateAuthUI(u){
-  const btn=document.getElementById('auth-btn');
-  btn.textContent=u?(u.email.split('@')[0]+(isPro()?' ⭐':'')):'Log in';
-}
-function handleAuthClick(){
-  if(isLoggedIn()) netlifyIdentity.open('settings');
-  else netlifyIdentity.open('login');
-}
-window.addEventListener('load', initIdentity);
+function updateAuthUI(u){const label=document.getElementById('auth-label');label.textContent=u?(u.email.split('@')[0]+(isPro()?' ⭐':'')):'Log in / Sign up';}
+function handleAuthClick(){if(isLoggedIn())netlifyIdentity.open('settings');else netlifyIdentity.open('login');}
+window.addEventListener('load',()=>setTimeout(initIdentity,500));
 
 // ── Boot ──────────────────────────────────────────────────────
 function initApp(){
-  const u=new SpeechSynthesisUtterance(' '); u.volume=0; window.speechSynthesis.speak(u);
+  const u=new SpeechSynthesisUtterance(' ');u.volume=0;window.speechSynthesis.speak(u);
   document.getElementById('overlay').style.display='none';
   getGPS();
 }
 
 // ── GPS ───────────────────────────────────────────────────────
-function getGPS(){
-  setStatus('Getting location…');
-  if(!navigator.geolocation){ startAt(DUBLIN[0],DUBLIN[1]); return; }
-  navigator.geolocation.getCurrentPosition(
-    p=>startAt(p.coords.latitude,p.coords.longitude),
-    ()=>startAt(DUBLIN[0],DUBLIN[1]),
-    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
-  );
-}
+function getGPS(){setStatus('Getting location…');if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1]);return;}navigator.geolocation.getCurrentPosition(p=>startAt(p.coords.latitude,p.coords.longitude),()=>startAt(DUBLIN[0],DUBLIN[1]),{enableHighAccuracy:true,timeout:15000,maximumAge:0});}
 function startAt(lat,lng){
-  userPos={lat,lng};
-  map.setView([lat,lng],15);
+  userPos={lat,lng};map.setView([lat,lng],15);
   const icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
   const um=L.marker([lat,lng],{icon}).addTo(map);
-  if(navigator.geolocation){
-    navigator.geolocation.watchPosition(p=>{
-      userPos={lat:p.coords.latitude,lng:p.coords.longitude};
-      um.setLatLng([userPos.lat,userPos.lng]);
-      updateProgress(); checkProxAlert();
-    },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-  }
-  setStatus('Loading landmarks…');
-  setTimeout(fetchVisibleBounds,600);
+  if(navigator.geolocation)navigator.geolocation.watchPosition(p=>{userPos={lat:p.coords.latitude,lng:p.coords.longitude};um.setLatLng([userPos.lat,userPos.lng]);updateProgress();checkProxAlert();},null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+  setStatus('Loading landmarks…');setTimeout(fetchVisibleBounds,600);
 }
 
 // ── Voices ────────────────────────────────────────────────────
-function loadVoices(){
-  const all=window.speechSynthesis.getVoices(); if(!all.length) return;
-  const pref=['Moira','Daniel','Karen','Fiona','Samantha','Google UK English Female','Google UK English Male','Google US English'];
-  voicePool=[];
-  pref.forEach(n=>{ const v=all.find(v=>v.name===n); if(v) voicePool.push(v); });
-  if(!voicePool.length) voicePool=all.filter(v=>v.lang.startsWith('en')&&v.localService);
-  if(!voicePool.length) voicePool=all.filter(v=>v.lang.startsWith('en'));
-  if(!voicePool.length&&all.length) voicePool=[all[0]];
-}
+function loadVoices(){const all=window.speechSynthesis.getVoices();if(!all.length)return;const pref=['Moira','Daniel','Karen','Fiona','Samantha','Google UK English Female','Google UK English Male','Google US English'];voicePool=[];pref.forEach(n=>{const v=all.find(v=>v.name===n);if(v)voicePool.push(v);});if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en')&&v.localService);if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en'));if(!voicePool.length&&all.length)voicePool=[all[0]];}
 loadVoices();
-if(window.speechSynthesis.onvoiceschanged!==undefined) window.speechSynthesis.onvoiceschanged=loadVoices;
-function currentVoice(){ return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null; }
+if(window.speechSynthesis.onvoiceschanged!==undefined)window.speechSynthesis.onvoiceschanged=loadVoices;
+function currentVoice(){return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null;}
 
 // ── TTS ───────────────────────────────────────────────────────
-function tts(text,onDone){
-  window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  u.rate=0.88; u.volume=1; u.pitch=1;
-  const v=currentVoice(); if(v) u.voice=v;
-  u.onend=onDone; u.onerror=()=>{ console.warn('TTS err'); onDone(); };
-  window.speechSynthesis.speak(u);
-}
-function cancelAudio(){ window.speechSynthesis.cancel(); }
-function replayStory(){ if(curStory&&tourOn) tts(curStory.text,()=>{ speaking=false; if(tourOn) setTimeout(playNearest,1500); }); }
+function tts(text,onDone){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=0.88;u.volume=1;u.pitch=1;const v=currentVoice();if(v)u.voice=v;u.onend=onDone;u.onerror=()=>{console.warn('TTS err');onDone();};window.speechSynthesis.speak(u);}
+function cancelAudio(){window.speechSynthesis.cancel();}
+function replayStory(){if(curStory&&tourOn)tts(curStory.text,()=>{speaking=false;if(tourOn)setTimeout(playNearest,1500);});}
 
 // ── Offline cache ─────────────────────────────────────────────
-function lmKey(la,ln){ return `sr_lm_${la.toFixed(2)}_${ln.toFixed(2)}`; }
-function saveLM(la,ln,a){ try{localStorage.setItem(lmKey(la,ln),JSON.stringify(a));}catch(e){} }
-function loadLM(la,ln){ try{const d=localStorage.getItem(lmKey(la,ln));return d?JSON.parse(d):null;}catch(e){return null;} }
-function saveStory(id,t){ try{localStorage.setItem('sr_s_'+id,t);}catch(e){} }
-function loadStory(id){ try{return localStorage.getItem('sr_s_'+id)||null;}catch(e){return null;} }
+function lmKey(la,ln){return`sr_lm_${la.toFixed(2)}_${ln.toFixed(2)}`;}
+function saveLM(la,ln,a){try{localStorage.setItem(lmKey(la,ln),JSON.stringify(a));}catch(e){}}
+function loadLM(la,ln){try{const d=localStorage.getItem(lmKey(la,ln));return d?JSON.parse(d):null;}catch(e){return null;}}
+function saveStory(id,t){try{localStorage.setItem('sr_s_'+id,t);}catch(e){}}
+function loadStory(id){try{return localStorage.getItem('sr_s_'+id)||null;}catch(e){return null;}}
 
 // ── Favourites ────────────────────────────────────────────────
-function loadFavs(){ try{favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');}catch(e){favourites=[];} }
-function saveFavs(){ try{localStorage.setItem('sr_favs',JSON.stringify(favourites));}catch(e){} }
-function isFaved(id){ return favourites.some(f=>f.id===id); }
-function toggleFavourite(){
-  if(!curStory) return;
-  const btn=document.getElementById('fav-btn');
-  if(isFaved(curStory.id)){ favourites=favourites.filter(f=>f.id!==curStory.id); btn.textContent='🤍'; }
-  else{ favourites.push({id:curStory.id,title:curStory.title,text:curStory.text}); btn.textContent='❤️'; }
-  saveFavs();
-}
-function openFavPanel(){ renderFavs(); document.getElementById('fav-panel').classList.add('open'); }
-function closeFavPanel(){ document.getElementById('fav-panel').classList.remove('open'); }
-function renderFavs(){
-  const el=document.getElementById('fav-list');
-  if(!favourites.length){ el.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:40px 20px;">No favourites yet.<br>Tap ❤️ on a story to save it.</div>'; return; }
-  el.innerHTML=favourites.map((f,i)=>`<div class="fav-item"><div class="fav-title">${f.title}</div><div class="fav-text">${f.text}</div><div class="fav-actions"><button class="fav-play" onclick="playFav(${i})">▶ Play</button><button class="fav-del" onclick="delFav(${i})">🗑</button></div></div>`).join('');
-}
-function playFav(i){ tts(favourites[i].text,()=>{}); closeFavPanel(); }
-function delFav(i){ favourites.splice(i,1); saveFavs(); renderFavs(); }
+function loadFavs(){try{favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');}catch(e){favourites=[];}}
+function saveFavs(){try{localStorage.setItem('sr_favs',JSON.stringify(favourites));}catch(e){}}
+function isFaved(id){return favourites.some(f=>f.id===id);}
+function toggleFavourite(){if(!curStory)return;const btn=document.getElementById('fav-btn');if(isFaved(curStory.id)){favourites=favourites.filter(f=>f.id!==curStory.id);btn.textContent='🤍';}else{favourites.push({id:curStory.id,title:curStory.title,text:curStory.text});btn.textContent='❤️';}saveFavs();}
+function openFavPanel(){renderFavs();document.getElementById('fav-panel').classList.add('open');}
+function closeFavPanel(){document.getElementById('fav-panel').classList.remove('open');}
+function renderFavs(){const el=document.getElementById('fav-list');if(!favourites.length){el.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:40px 20px;">No favourites yet.<br>Tap ❤️ on a story to save it.</div>';return;}el.innerHTML=favourites.map((f,i)=>`<div class="fav-item"><div class="fav-title">${f.title}</div><div class="fav-text">${f.text}</div><div class="fav-actions"><button class="fav-play" onclick="playFav(${i})">▶ Play</button><button class="fav-del" onclick="delFav(${i})">🗑</button></div></div>`).join('');}
+function playFav(i){tts(favourites[i].text,()=>{});closeFavPanel();}
+function delFav(i){favourites.splice(i,1);saveFavs();renderFavs();}
 loadFavs();
 
 // ── AI ────────────────────────────────────────────────────────
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-async function callAI(prompt){
-  const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const d=await r.json(); if(d.error) throw new Error(d.error);
-  const t=d?.content?.[0]?.text||''; if(!t) throw new Error('Empty'); return t;
-}
-async function geocode(q){
-  try{ const d=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json()); return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null; }catch{return null;}
-}
+async function callAI(prompt){const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();if(d.error)throw new Error(d.error);const t=d?.content?.[0]?.text||'';if(!t)throw new Error('Empty');return t;}
+async function geocode(q){try{const d=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null;}catch{return null;}}
 
 // ── Fetch ─────────────────────────────────────────────────────
-function fetchVisibleBounds(){
-  const b=map.getBounds(),z=map.getZoom();
-  const s=z>=15?1:z>=13?2:3,pts=[];
-  for(let i=0;i<=s;i++) for(let j=0;j<=s;j++) pts.push({lat:b.getSouth()+(b.getNorth()-b.getSouth())*(i/s),lng:b.getWest()+(b.getEast()-b.getWest())*(j/s)});
-  pts.reduce((ch,pt)=>ch.then(()=>fetchArea(pt.lat,pt.lng)),Promise.resolve());
-}
+function fetchVisibleBounds(){const b=map.getBounds(),z=map.getZoom(),s=z>=15?1:z>=13?2:3,pts=[];for(let i=0;i<=s;i++)for(let j=0;j<=s;j++)pts.push({lat:b.getSouth()+(b.getNorth()-b.getSouth())*(i/s),lng:b.getWest()+(b.getEast()-b.getWest())*(j/s)});pts.reduce((ch,pt)=>ch.then(()=>fetchArea(pt.lat,pt.lng)),Promise.resolve());}
 async function fetchArea(lat,lng){
-  const key=`${lat.toFixed(2)}_${lng.toFixed(2)}`;
-  if(fetched.has(key)) return; fetched.add(key);
-  const cached=loadLM(lat,lng);
-  if(cached&&cached.length){ await addLMs(cached,lat,lng); afterFetch(); return; }
+  const key=`${lat.toFixed(2)}_${lng.toFixed(2)}`;if(fetched.has(key))return;fetched.add(key);
+  const cached=loadLM(lat,lng);if(cached&&cached.length){await addLMs(cached,lat,lng);afterFetch();return;}
   setStatus('Searching landmarks…');
-  try{
-    const raw=await callAI(`You are a local Irish historian. List 12 genuinely interesting places within 1.5km of lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}. IMPORTANT: Be hyper-local. Include: churches, graveyards, ruins, castles, Martello towers, housing estates/townlands, streets named after historical figures, famous people born/lived here (as "Birthplace of X"), parks, beaches, rivers, pubs, GAA clubs, railway stations, mills, docks. Return ONLY a JSON array: [{"title":"Name","type":"monument"}] Types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,beach,estate,school,sport,other`);
-    const s=raw.indexOf('['),e=raw.lastIndexOf(']'); if(s===-1||e===-1) return;
-    const arr=JSON.parse(raw.slice(s,e+1)); saveLM(lat,lng,arr);
-    await addLMs(arr,lat,lng); afterFetch();
-  }catch(err){ fetched.delete(key); setStatus('Error: '+err.message); }
+  try{const raw=await callAI(`You are a local Irish historian. List 12 genuinely interesting places within 1.5km of lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}. IMPORTANT: Be hyper-local. Include: churches, graveyards, ruins, castles, Martello towers, housing estates/townlands, streets named after historical figures, famous people born/lived here (as "Birthplace of X"), parks, beaches, rivers, pubs, GAA clubs, railway stations, mills, docks. Return ONLY a JSON array: [{"title":"Name","type":"monument"}] Types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,beach,estate,school,sport,other`);
+  const s=raw.indexOf('['),e=raw.lastIndexOf(']');if(s===-1||e===-1)return;
+  const arr=JSON.parse(raw.slice(s,e+1));saveLM(lat,lng,arr);await addLMs(arr,lat,lng);afterFetch();}
+  catch(err){fetched.delete(key);setStatus('Error: '+err.message);}
 }
-function afterFetch(){ const n=Object.keys(markers).length; setStatus(n+' landmark'+(n!==1?'s':'')+' · tap to listen'); if(tourOn&&!speaking) playNearest(); }
+function afterFetch(){const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':'')+' · tap to listen');if(tourOn&&!speaking)playNearest();}
 async function addLMs(arr,lat,lng){
-  let city='Ireland';
-  try{ const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json()); city=r?.address?.city||r?.address?.town||r?.address?.village||r?.address?.county||'Ireland'; }catch(e){}
-  for(const p of arr){
-    if(!p.title) continue; const id=p.title.replace(/\W+/g,'_'); if(markers[id]) continue;
-    await sleep(300); const coords=await geocode(`${p.title}, ${city}, Ireland`); if(!coords) continue;
-    const icon=L.divIcon({html:`<div class="lm-dot${isFaved(id)?' faved':''}" id="lm-${id}">${TYPE_ICON[p.type]||'📍'}</div>`,iconSize:[28,28],iconAnchor:[14,14],className:''});
-    const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:p.type}).addTo(map).bindTooltip(p.title,{direction:'top'});
-    const lm={id,title:p.title,type:p.type,lat:coords.lat,lng:coords.lng};
-    m.on('click',()=>onTapMarker(lm)); markers[id]=m;
-  }
+  let city='Ireland';try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());city=r?.address?.city||r?.address?.town||r?.address?.village||r?.address?.county||'Ireland';}catch(e){}
+  for(const p of arr){if(!p.title)continue;const id=p.title.replace(/\W+/g,'_');if(markers[id])continue;await sleep(300);const coords=await geocode(`${p.title}, ${city}, Ireland`);if(!coords)continue;const icon=L.divIcon({html:`<div class="lm-dot${isFaved(id)?' faved':''}" id="lm-${id}">${TYPE_ICON[p.type]||'📍'}</div>`,iconSize:[28,28],iconAnchor:[14,14],className:''});const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:p.type}).addTo(map).bindTooltip(p.title,{direction:'top'});const lm={id,title:p.title,type:p.type,lat:coords.lat,lng:coords.lng};m.on('click',()=>onTapMarker(lm));markers[id]=m;}
 }
 
-// ── Menu ──────────────────────────────────────────────────────
-function toggleMenu(e) {
-  if (e) { e.stopPropagation(); e.preventDefault(); }
-  document.getElementById('dropdown').classList.toggle('open');
-}
-function closeMenu() {
-  document.getElementById('dropdown').classList.remove('open');
-}
-// Prevent dropdown clicks from closing the menu via map click
-document.getElementById('dropdown').addEventListener('click', e => e.stopPropagation());
-// Close menu when tapping map
-map.on('click', () => {
-  closeMenu();
-  document.getElementById('story').style.display='none';
-});
-function refreshLandmarks(){
-  fetched.clear(); Object.values(markers).forEach(m=>map.removeLayer(m));
-  markers={}; visited.clear(); nxtStory=null; prefetchId=null;
-  document.getElementById('next-info').textContent='';
-  document.getElementById('skip-btn').disabled=true;
-  setStatus('Refreshing…'); fetchVisibleBounds();
-}
+// ── Refresh ───────────────────────────────────────────────────
+function refreshLandmarks(){fetched.clear();Object.values(markers).forEach(m=>map.removeLayer(m));markers={};visited.clear();nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setStatus('Refreshing…');fetchVisibleBounds();}
 
 // ── Travel mode ───────────────────────────────────────────────
-function setTravelMode(m){
-  travelMode=m; PROXIMITY_RADIUS=TRAVEL_MODES[m].radius;
-  document.querySelectorAll('.tm-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tm-'+m).classList.add('active');
-}
+function setTravelMode(m){travelMode=m;PROXIMITY_RADIUS=TRAVEL_MODES[m].radius;document.querySelectorAll('.tm-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tm-'+m).classList.add('active');}
 
 // ── Proximity alert ───────────────────────────────────────────
-function checkProxAlert(){
-  if(!userPos||tourOn) return;
-  let best=null,bestD=Infinity;
-  Object.entries(markers).forEach(([id,m])=>{ if(visited.has(id)) return; const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng}); if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:m.options._title,dist:Math.round(d)};} });
-  const el=document.getElementById('prox-alert');
-  if(best){ document.getElementById('prox-text').textContent=`${best.name} is ${best.dist}m away`; el.classList.add('visible'); clearTimeout(proxTimer); proxTimer=setTimeout(()=>el.classList.remove('visible'),5000); }
-  else el.classList.remove('visible');
-}
+function checkProxAlert(){if(!userPos||tourOn)return;let best=null,bestD=Infinity;Object.entries(markers).forEach(([id,m])=>{if(visited.has(id))return;const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:m.options._title,dist:Math.round(d)};}});const el=document.getElementById('prox-alert');if(best){document.getElementById('prox-text').textContent=`${best.name} is ${best.dist}m away`;el.classList.add('visible');clearTimeout(proxTimer);proxTimer=setTimeout(()=>el.classList.remove('visible'),5000);}else el.classList.remove('visible');}
 
-// ── Progress bar ──────────────────────────────────────────────
-function updateProgress(){
-  if(!routeCoords.length||!userPos) return;
-  let minD=Infinity,minI=0;
-  routeCoords.forEach(([la,ln],i)=>{ const d=haversine(userPos,{lat:la,lng:ln}); if(d<minD){minD=d;minI=i;} });
-  const pct=Math.round((minI/(routeCoords.length-1))*100);
-  document.getElementById('progress-fill').style.width=pct+'%';
-  document.getElementById('progress-label').textContent=pct+'%';
-}
+// ── Progress ──────────────────────────────────────────────────
+function updateProgress(){if(!routeCoords.length||!userPos)return;let minD=Infinity,minI=0;routeCoords.forEach(([la,ln],i)=>{const d=haversine(userPos,{lat:la,lng:ln});if(d<minD){minD=d;minI=i;}});const pct=Math.round((minI/(routeCoords.length-1))*100);document.getElementById('progress-fill').style.width=pct+'%';document.getElementById('progress-label').textContent=pct+'%';}
 
 // ── Tour ──────────────────────────────────────────────────────
-function toggleTour(){ if(!tourOn) startTour(); else stopTour(); }
-function startTour(){
-  tourOn=true; document.getElementById('silent-audio').play().catch(()=>{});
-  const btn=document.getElementById('tour-btn'); btn.textContent='⏹ Stop Listening'; btn.classList.add('stop');
-  document.getElementById('prox-alert').classList.remove('visible');
-  document.getElementById('travel-mode').classList.add('visible');
-  setStatus('Tour active'); playNearest();
-}
-function stopTour(){
-  tourOn=false; speaking=false; nxtStory=null; prefetchId=null; curStory=null;
-  cancelAudio(); const sa=document.getElementById('silent-audio'); sa.pause(); sa.currentTime=0;
-  const btn=document.getElementById('tour-btn'); btn.textContent='▶ Start Listening'; btn.classList.remove('stop');
-  document.getElementById('story').style.display='none';
-  document.getElementById('travel-mode').classList.remove('visible');
-  document.getElementById('skip-btn').disabled=true;
-  document.getElementById('next-info').textContent='';
-  setStatus(Object.keys(markers).length+' landmarks · tap to listen');
-}
+function toggleTour(){if(!tourOn)startTour();else stopTour();}
+function startTour(){tourOn=true;document.getElementById('silent-audio').play().catch(()=>{});const btn=document.getElementById('tour-btn');btn.textContent='⏹ Stop Listening';btn.classList.add('stop');document.getElementById('prox-alert').classList.remove('visible');document.getElementById('travel-mode').classList.add('visible');setStatus('Tour active');playNearest();}
+function stopTour(){tourOn=false;speaking=false;nxtStory=null;prefetchId=null;curStory=null;cancelAudio();const sa=document.getElementById('silent-audio');sa.pause();sa.currentTime=0;const btn=document.getElementById('tour-btn');btn.textContent='▶ Start Listening';btn.classList.remove('stop');document.getElementById('story').style.display='none';document.getElementById('travel-mode').classList.remove('visible');document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';setStatus(Object.keys(markers).length+' landmarks · tap to listen');}
 
 // ── Nearest ───────────────────────────────────────────────────
-function nearest(excl=[]){
-  if(!userPos) return null; let best=null,bestD=Infinity;
-  for(const [id,m] of Object.entries(markers)){
-    if(visited.has(id)||excl.includes(id)) continue;
-    const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
-    if(d<=PROXIMITY_RADIUS&&d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng};}
-  }
-  return best;
-}
+function nearest(excl=[]){if(!userPos)return null;let best=null,bestD=Infinity;for(const [id,m] of Object.entries(markers)){if(visited.has(id)||excl.includes(id))continue;const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<=PROXIMITY_RADIUS&&d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng};}}return best;}
 
 // ── Play engine ───────────────────────────────────────────────
-function playNearest(){ if(!tourOn||speaking) return; const p=nearest(); if(p) playLandmark(p); else setStatus('No unvisited landmarks within range'); }
-
-async function playLandmark(p){
-  if(speaking||visited.has(p.id)) return;
-  if(!canPlay()){ speaking=false; showPaywall(); return; }
-  bumpCount(); visited.add(p.id); speaking=true; landmarkCount++;
-  dotVisited(p.id); setStatus('📖 '+p.title);
-  showStory(p.title,'⏳ Loading story…');
-  document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';
-  document.getElementById('skip-btn').disabled=true;
-  const cached=loadStory(p.id);
-  if(cached){ finishPlay(p,cached); return; }
-  try{ const txt=await getStory(p); saveStory(p.id,txt); finishPlay(p,txt); }
-  catch(e){ speaking=false; setStatus('Story error — retrying in 4s'); if(tourOn) setTimeout(playNearest,4000); }
-}
-function finishPlay(p,txt){
-  if(!speaking) return;
-  curStory={...p,text:txt}; showStory(p.title,txt);
-  if(tourOn){ const nxt=nearest([p.id]); if(nxt) prefetchStory(nxt); }
-  tts(txt,()=>{ speaking=false; if(!tourOn) return; if(nxtStory){ const s=nxtStory; nxtStory=null; prefetchId=null; document.getElementById('next-info').textContent=''; document.getElementById('skip-btn').disabled=true; setTimeout(()=>playLandmark(s),1200); } else { const cn=nearest(); if(cn) setTimeout(()=>playLandmark(cn),1500); else setTimeout(playNearest,2000); } });
-}
-async function prefetchStory(p){
-  if(visited.has(p.id)||prefetchId===p.id||nxtStory) return;
-  prefetchId=p.id; document.getElementById('next-info').innerHTML=`⏳ Preparing: <b>${p.title}</b>`;
-  const cached=loadStory(p.id);
-  if(cached&&!visited.has(p.id)){ nxtStory={...p,text:cached}; document.getElementById('next-info').innerHTML=`✅ Next: <b>${p.title}</b>`; document.getElementById('skip-btn').disabled=false; return; }
-  try{ const txt=await getStory(p); if(!visited.has(p.id)&&tourOn){ saveStory(p.id,txt); nxtStory={...p,text:txt}; document.getElementById('next-info').innerHTML=`✅ Next: <b>${p.title}</b>`; document.getElementById('skip-btn').disabled=false; } }
-  catch(e){ prefetchId=null; document.getElementById('next-info').textContent=''; }
-}
-async function getStory(p){
-  return await callAI(`GPS audio tour guide. 3 vivid sentences about "${p.title}" (${p.type}) in Ireland. Open with a varied phrase (NOT directional — no left/right/ahead/behind). Use openers like "Steeped in history…", "Few locals know that…", "Legend has it that…", "Dating back centuries…", "One of the area's hidden gems is…". Max 65 words. Story only.`);
-}
+function playNearest(){if(!tourOn||speaking)return;const p=nearest();if(p)playLandmark(p);else setStatus('No unvisited landmarks within range');}
+async function playLandmark(p){if(speaking||visited.has(p.id))return;if(!canPlay()){speaking=false;showPaywall();return;}bumpCount();visited.add(p.id);speaking=true;landmarkCount++;dotVisited(p.id);setStatus('📖 '+p.title);showStory(p.title,'⏳ Loading story…');document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';document.getElementById('skip-btn').disabled=true;const cached=loadStory(p.id);if(cached){finishPlay(p,cached);return;}try{const txt=await getStory(p);saveStory(p.id,txt);finishPlay(p,txt);}catch(e){speaking=false;setStatus('Story error — retrying in 4s');if(tourOn)setTimeout(playNearest,4000);}}
+function finishPlay(p,txt){if(!speaking)return;curStory={...p,text:txt};showStory(p.title,txt);if(tourOn){const nxt=nearest([p.id]);if(nxt)prefetchStory(nxt);}tts(txt,()=>{speaking=false;if(!tourOn)return;if(nxtStory){const s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(()=>playLandmark(s),1200);}else{const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1500);else setTimeout(playNearest,2000);}});}
+async function prefetchStory(p){if(visited.has(p.id)||prefetchId===p.id||nxtStory)return;prefetchId=p.id;document.getElementById('next-info').innerHTML=`⏳ Preparing: <b>${p.title}</b>`;const cached=loadStory(p.id);if(cached&&!visited.has(p.id)){nxtStory={...p,text:cached};document.getElementById('next-info').innerHTML=`✅ Next: <b>${p.title}</b>`;document.getElementById('skip-btn').disabled=false;return;}try{const txt=await getStory(p);if(!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory={...p,text:txt};document.getElementById('next-info').innerHTML=`✅ Next: <b>${p.title}</b>`;document.getElementById('skip-btn').disabled=false;}}catch(e){prefetchId=null;document.getElementById('next-info').textContent='';}}
+async function getStory(p){return await callAI(`GPS audio tour guide. 3 vivid sentences about "${p.title}" (${p.type}) in Ireland. Open with a varied phrase NOT mentioning direction. Use openers like "Steeped in history…", "Few locals know that…", "Legend has it that…", "Dating back centuries…". Max 65 words. Story only.`);}
 
 // ── Stop / skip / hide ────────────────────────────────────────
-function stopCurrentStory(){ cancelAudio(); speaking=false; nxtStory=null; prefetchId=null; document.getElementById('skip-btn').disabled=true; document.getElementById('next-info').textContent=''; if(tourOn) setTimeout(playNearest,1500); else setStatus(Object.keys(markers).length+' landmarks · tap to listen'); }
-function hideStoryPanel(){ document.getElementById('story').style.display='none'; }
-function skipStory(){ if(!nxtStory) return; cancelAudio(); speaking=false; const s=nxtStory; nxtStory=null; prefetchId=null; document.getElementById('next-info').textContent=''; document.getElementById('skip-btn').disabled=true; setTimeout(()=>playLandmark(s),300); }
+function stopCurrentStory(){cancelAudio();speaking=false;nxtStory=null;prefetchId=null;document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';if(tourOn)setTimeout(playNearest,1500);else setStatus(Object.keys(markers).length+' landmarks · tap to listen');}
+function hideStoryPanel(){document.getElementById('story').style.display='none';}
+function skipStory(){if(!nxtStory)return;cancelAudio();speaking=false;const s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(()=>playLandmark(s),300);}
 
 // ── Tap marker ────────────────────────────────────────────────
-function onTapMarker(p){
-  if(!speaking&&!tourOn){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; window.speechSynthesis.speak(u); }
-  if(speaking){ setStatus('Will play "'+p.title+'" next'); nxtStory=null; prefetchId=null; prefetchStory(p); return; }
-  playLandmarkOnDemand(p);
-}
-async function playLandmarkOnDemand(p){
-  if(speaking) return;
-  if(!canPlay()){ showPaywall(); return; }
-  const wasVis=visited.has(p.id);
-  if(!wasVis){ visited.add(p.id); landmarkCount++; bumpCount(); dotVisited(p.id); }
-  speaking=true; setStatus('📖 '+p.title);
-  showStory(p.title,'⏳ Loading story…');
-  document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';
-  document.getElementById('skip-btn').disabled=true;
-  const cached=loadStory(p.id);
-  if(cached){ curStory={...p,text:cached}; showStory(p.title,cached); tts(cached,()=>{ speaking=false; if(tourOn) { const cn=nearest(); if(cn) setTimeout(()=>playLandmark(cn),1200); } else setStatus(Object.keys(markers).length+' landmarks · tap to listen'); }); return; }
-  try{ const txt=await getStory(p); saveStory(p.id,txt); curStory={...p,text:txt}; showStory(p.title,txt); tts(txt,()=>{ speaking=false; if(tourOn){ const cn=nearest(); if(cn) setTimeout(()=>playLandmark(cn),1200); } else setStatus(Object.keys(markers).length+' landmarks · tap to listen'); }); }
-  catch(e){ speaking=false; setStatus('Story error — tap to retry'); }
-}
+function onTapMarker(p){if(!speaking&&!tourOn){const u=new SpeechSynthesisUtterance(' ');u.volume=0;window.speechSynthesis.speak(u);}if(speaking){setStatus('Will play "'+p.title+'" next');nxtStory=null;prefetchId=null;prefetchStory(p);return;}playLandmarkOnDemand(p);}
+async function playLandmarkOnDemand(p){if(speaking)return;if(!canPlay()){showPaywall();return;}const wasVis=visited.has(p.id);if(!wasVis){visited.add(p.id);landmarkCount++;bumpCount();dotVisited(p.id);}speaking=true;setStatus('📖 '+p.title);showStory(p.title,'⏳ Loading story…');document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';document.getElementById('skip-btn').disabled=true;const cached=loadStory(p.id);if(cached){curStory={...p,text:cached};showStory(p.title,cached);tts(cached,()=>{speaking=false;if(tourOn){const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}else setStatus(Object.keys(markers).length+' landmarks · tap to listen');});return;}try{const txt=await getStory(p);saveStory(p.id,txt);curStory={...p,text:txt};showStory(p.title,txt);tts(txt,()=>{speaking=false;if(tourOn){const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}else setStatus(Object.keys(markers).length+' landmarks · tap to listen');});}catch(e){speaking=false;setStatus('Story error — tap to retry');}}
 
 // ── UI ────────────────────────────────────────────────────────
-function showStory(name,text){ document.getElementById('story-name').textContent=name; document.getElementById('story-text').textContent=text; document.getElementById('story').style.display='block'; }
-function dotVisited(id){ const el=document.getElementById('lm-'+id); if(el) el.classList.add('visited'); }
-function setStatus(t){ document.getElementById('status').textContent=t; }
-function setMode(m){ document.getElementById('btn-explore').classList.toggle('active',m==='explore'); document.getElementById('btn-route').classList.toggle('active',m==='route'); document.getElementById('route-panel').classList.toggle('visible',m==='route'); }
-function toggleFromLoc(){ useCurrentLocFrom=!useCurrentLocFrom; const i=document.getElementById('from-inp'),b=document.getElementById('from-loc-btn'); if(useCurrentLocFrom){i.value='📍 My current location';i.disabled=true;b.classList.add('active');}else{i.value='';i.disabled=false;i.placeholder='📍 From — type or use location';b.classList.remove('active');} }
+function showStory(name,text){document.getElementById('story-name').textContent=name;document.getElementById('story-text').textContent=text;document.getElementById('story').style.display='block';}
+function dotVisited(id){const el=document.getElementById('lm-'+id);if(el)el.classList.add('visited');}
+function setStatus(t){document.getElementById('status').textContent=t;}
+function setMode(m){document.getElementById('btn-explore').classList.toggle('active',m==='explore');document.getElementById('btn-route').classList.toggle('active',m==='route');document.getElementById('route-panel').classList.toggle('visible',m==='route');}
+function toggleFromLoc(){useCurrentLocFrom=!useCurrentLocFrom;const i=document.getElementById('from-inp'),b=document.getElementById('from-loc-btn');if(useCurrentLocFrom){i.value='📍 My current location';i.disabled=true;b.classList.add('active');}else{i.value='';i.disabled=false;i.placeholder='📍 From — type or use location';b.classList.remove('active');}}
 
 // ── Route ─────────────────────────────────────────────────────
-async function planRoute(){
-  const to=document.getElementById('to-inp').value.trim(); if(!to) return;
-  const btn=document.getElementById('route-btn'); btn.disabled=true; setStatus('Planning route…');
-  try{
-    let A; if(useCurrentLocFrom&&userPos){A={lat:userPos.lat,lng:userPos.lng};}else{ const fv=document.getElementById('from-inp').value.trim(); if(!fv){btn.disabled=false;alert('Enter a starting location.');return;} A=await geocode(fv); }
-    const B=await geocode(to); if(!A||!B){btn.disabled=false;alert('Could not find one of the locations.');return;}
-    const rd=await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`).then(r=>r.json());
-    const coords=rd?.routes?.[0]?.geometry?.coordinates; if(!coords){btn.disabled=false;alert('No route found.');return;}
-    if(map.routeLine) map.removeLayer(map.routeLine);
-    routeCoords=coords.map(c=>[c[1],c[0]]);
-    map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
-    map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
-    document.getElementById('progress-wrap').classList.add('visible');
-    document.getElementById('mode-toggle').style.display='none';
-    updateProgress(); setStatus('Finding landmarks…');
-    const pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);
-    for(const pt of pts) await fetchArea(pt[1],pt[0]);
-    btn.disabled=false; setMode('explore');
-  }catch(e){btn.disabled=false;setStatus('Route error: '+e.message);}
-}
+async function planRoute(){const to=document.getElementById('to-inp').value.trim();if(!to)return;const btn=document.getElementById('route-btn');btn.disabled=true;setStatus('Planning route…');try{let A;if(useCurrentLocFrom&&userPos){A={lat:userPos.lat,lng:userPos.lng};}else{const fv=document.getElementById('from-inp').value.trim();if(!fv){btn.disabled=false;alert('Enter a starting location.');return;}A=await geocode(fv);}const B=await geocode(to);if(!A||!B){btn.disabled=false;alert('Could not find one of the locations.');return;}const rd=await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`).then(r=>r.json());const coords=rd?.routes?.[0]?.geometry?.coordinates;if(!coords){btn.disabled=false;alert('No route found.');return;}if(map.routeLine)map.removeLayer(map.routeLine);routeCoords=coords.map(c=>[c[1],c[0]]);map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});document.getElementById('progress-wrap').classList.add('visible');document.getElementById('mode-toggle').style.display='none';updateProgress();setStatus('Finding landmarks…');const pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);for(const pt of pts)await fetchArea(pt[1],pt[0]);btn.disabled=false;setMode('explore');}catch(e){btn.disabled=false;setStatus('Route error: '+e.message);}}
 
-// ── Force update / SW ─────────────────────────────────────────
-function forceUpdate(){ if('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).finally(()=>window.location.reload(true)); }
-function applyUpdate(){ if(newWorker) newWorker.postMessage('SKIP_WAITING'); }
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').then(reg=>{ reg.update(); reg.addEventListener('updatefound',()=>{ newWorker=reg.installing; newWorker.addEventListener('statechange',()=>{ if(newWorker.state==='installed'&&navigator.serviceWorker.controller) document.getElementById('update-bar').classList.add('visible'); }); }); });
-  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
-}
+// ── SW / Force update ─────────────────────────────────────────
+function forceUpdate(){if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).finally(()=>window.location.reload(true));}
+function applyUpdate(){if(newWorker)newWorker.postMessage('SKIP_WAITING');}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').then(reg=>{reg.update();reg.addEventListener('updatefound',()=>{newWorker=reg.installing;newWorker.addEventListener('statechange',()=>{if(newWorker.state==='installed'&&navigator.serviceWorker.controller)document.getElementById('update-bar').classList.add('visible');});});});navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());}
 
 // ── Utils ─────────────────────────────────────────────────────
-function haversine(a,b){ const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
+function haversine(a,b){const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 </script>
 </body>
 </html>
