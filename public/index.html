@@ -114,7 +114,7 @@ body { font-family:sans-serif; overflow:hidden; }
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <div id="status">Starting…</div>
-    <button id="menu-btn" onclick="toggleMenu()">☰</button>
+    <button id="menu-btn" onclick="toggleMenu(event)">☰</button>
   </div>
 </div>
 
@@ -225,7 +225,7 @@ body { font-family:sans-serif; overflow:hidden; }
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.0.85</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.0.86</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
@@ -459,12 +459,15 @@ async function addLMs(arr,lat,lng){
 }
 
 // ── Menu ──────────────────────────────────────────────────────
-function toggleMenu() {
+function toggleMenu(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
   document.getElementById('dropdown').classList.toggle('open');
 }
 function closeMenu() {
   document.getElementById('dropdown').classList.remove('open');
 }
+// Prevent dropdown clicks from closing the menu via map click
+document.getElementById('dropdown').addEventListener('click', e => e.stopPropagation());
 // Close menu when tapping map
 map.on('click', () => {
   closeMenu();
