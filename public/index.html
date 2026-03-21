@@ -171,7 +171,7 @@ body{font-family:sans-serif;overflow:hidden;}
     <span id="app-name">Story<span>Route</span></span>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
-    <div id="status">Starting…</div>
+    <div id="status" onclick="toggleDebug()" style="cursor:pointer;">Starting…</div>
     <button id="menu-btn" type="button">☰</button>
   </div>
 </div>
@@ -197,7 +197,10 @@ body{font-family:sans-serif;overflow:hidden;}
   <div id="progress-label">0%</div>
 </div>
 
-<!-- Mode toggle (96px down) -->
+<!-- Debug panel (tap status bar to toggle) -->
+<div id="debug-panel"></div>
+
+<!-- Mode toggle (76px down) -->
 <div id="mode-toggle">
   <button class="mode-btn active" id="btn-explore" onclick="setMode('explore')">📍 Explore</button>
   <button class="mode-btn" id="btn-route" onclick="setMode('route')">🗺️ Route</button>
@@ -298,7 +301,7 @@ body{font-family:sans-serif;overflow:hidden;}
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.1.0</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.1.1</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
@@ -418,7 +421,22 @@ function showToast(msg){
   t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3500);
 }
 
-// ── Boot ──────────────────────────────────────────────────────
+// ── Debug log ─────────────────────────────────────────────────
+const debugLines = [];
+function dbg(msg) {
+  console.log('[SR]', msg);
+  debugLines.unshift(msg);
+  if (debugLines.length > 20) debugLines.pop();
+  const el = document.getElementById('debug-panel');
+  if (el && el.style.display !== 'none') el.innerHTML = debugLines.join('<br>');
+}
+function toggleDebug() {
+  const el = document.getElementById('debug-panel');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'block') el.innerHTML = debugLines.join('<br>');
+}
+
+
 function initApp(){
   const u=new SpeechSynthesisUtterance(' '); u.volume=0; window.speechSynthesis.speak(u);
   document.getElementById('overlay').style.display='none';
@@ -436,17 +454,18 @@ function getGPS(){
   );
 }
 
-function startAt(lat,lng){
-  userPos={lat,lng};
-  map.setView([lat,lng],15);
-  const icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
-  const um=L.marker([lat,lng],{icon}).addTo(map);
-  if(navigator.geolocation){
+function startAt(lat, lng) {
+  userPos = {lat, lng};
+  map.setView([lat, lng], 15);
+  dbg(`GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+  const icon = L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>', iconSize:[14,14], iconAnchor:[7,7], className:''});
+  const um = L.marker([lat, lng], {icon}).addTo(map);
+  if (navigator.geolocation) {
     navigator.geolocation.watchPosition(p=>{
-      userPos={lat:p.coords.latitude,lng:p.coords.longitude};
-      um.setLatLng([userPos.lat,userPos.lng]);
+      userPos = {lat:p.coords.latitude, lng:p.coords.longitude};
+      um.setLatLng([userPos.lat, userPos.lng]);
       updateProgress(); checkProxAlert();
-    },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+    }, null, {enableHighAccuracy:true, maximumAge:5000, timeout:20000});
   }
   setStatus('Loading landmarks…');
   setTimeout(fetchVisibleBounds, 800);
@@ -541,22 +560,19 @@ function fetchVisibleBounds(){
 }
 
 // ── Fetch one area ────────────────────────────────────────────
-async function fetchArea(lat,lng){
-  const key=`${lat.toFixed(2)}_${lng.toFixed(2)}`;
-  if(fetched.has(key)) return;
+async function fetchArea(lat, lng) {
+  const key = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
+  if (fetched.has(key)) { dbg(`Skip (cached): ${key}`); return; }
   fetched.add(key);
+  dbg(`Fetching area: ${key}`);
 
-  // Use cache only if it has results
-  const cached=loadLM(lat,lng);
-  if(cached){
-    await addLMs(cached,lat,lng);
-    afterFetch();
-    return;
-  }
+  const cached = loadLM(lat, lng);
+  if (cached) { dbg(`Cache hit: ${cached.length} items`); await addLMs(cached, lat, lng); afterFetch(); return; }
 
   setStatus('Searching landmarks…');
-  try{
-    const raw=await callAI(
+  try {
+    dbg('Calling AI…');
+    const raw = await callAI(
       `You are a local Irish historian. List 14 interesting points for an audio tour within 1.5km of lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}.
 Include a mix:
 - 8 specific places: churches, graveyards, ruins, castles, Martello towers, townlands/estates with history, streets named after historical figures, famous people born/lived here (as "Birthplace of X"), parks, beaches, rivers, pubs, GAA clubs, railway stations, mills, docks
@@ -566,56 +582,76 @@ Return ONLY a JSON array, no markdown: [{"title":"Name","type":"monument","lat":
 Types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,beach,estate,school,sport,legend,region,city,other
 For legend/region/city set lat/lng to the area centre. For specific places only include real locations you are certain exist. Be hyper-local.`
     );
-    const s=raw.indexOf('['), e=raw.lastIndexOf(']');
-    if(s===-1||e===-1){ fetched.delete(key); setStatus('Bad response — tap 🔄 to retry'); return; }
-    const arr=JSON.parse(raw.slice(s,e+1));
-    if(!arr||!arr.length){ fetched.delete(key); return; }
-    saveLM(lat,lng,arr);
-    await addLMs(arr,lat,lng);
+    dbg(`AI response length: ${raw.length}`);
+    dbg(`AI preview: ${raw.slice(0,80)}`);
+
+    const s = raw.indexOf('['), e = raw.lastIndexOf(']');
+    if (s === -1 || e === -1) {
+      dbg(`No JSON array found in response`);
+      fetched.delete(key);
+      setStatus('Bad AI response — tap status to debug');
+      return;
+    }
+
+    const arr = JSON.parse(raw.slice(s, e + 1));
+    dbg(`Parsed ${arr.length} landmarks from AI`);
+
+    if (!arr || !arr.length) { fetched.delete(key); dbg('Empty array'); return; }
+    saveLM(lat, lng, arr);
+    await addLMs(arr, lat, lng);
     afterFetch();
-  }catch(err){
-    fetched.delete(key); // allow retry
-    setStatus('Error: '+err.message);
-    console.error('fetchArea error:',err);
+  } catch(err) {
+    fetched.delete(key);
+    dbg(`ERROR: ${err.message}`);
+    setStatus('Error — tap status bar for details');
+    console.error('fetchArea error:', err);
   }
 }
 
-function afterFetch(){
-  const n=Object.keys(markers).length;
-  setStatus(n+' landmark'+(n!==1?'s':''));
-  if(tourOn&&!speaking) playNearest();
+function afterFetch() {
+  const n = Object.keys(markers).length;
+  dbg(`Total markers on map: ${n}`);
+  setStatus(n + ' landmark' + (n !== 1 ? 's' : ''));
+  if (tourOn && !speaking) playNearest();
 }
 
-async function addLMs(arr,lat,lng){
-  let city='Ireland';
-  try{
-    const rev=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
-    city=rev?.address?.city||rev?.address?.town||rev?.address?.village||rev?.address?.county||'Ireland';
-  }catch(e){}
+async function addLMs(arr, lat, lng) {
+  let city = 'Ireland';
+  try {
+    const rev = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
+    city = rev?.address?.city || rev?.address?.town || rev?.address?.village || rev?.address?.county || 'Ireland';
+    dbg(`City context: ${city}`);
+  } catch(e) { dbg('Reverse geocode failed'); }
 
-  for(const p of arr){
-    if(!p.title) continue;
-    const id=p.title.replace(/\W+/g,'_');
-    if(markers[id]) continue;
+  let added = 0;
+  for (const p of arr) {
+    if (!p.title) continue;
+    const id = p.title.replace(/\W+/g, '_');
+    if (markers[id]) continue;
 
-    let coords=null;
-    const isGeneric=['legend','region','city'].includes(p.type);
-    if(isGeneric && p.lat && p.lng && p.lat!==0){
-      coords={lat:+p.lat, lng:+p.lng};
+    let coords = null;
+    const isGeneric = ['legend','region','city'].includes(p.type);
+    if (isGeneric && p.lat && p.lng && +p.lat !== 0) {
+      coords = {lat:+p.lat, lng:+p.lng};
     } else {
       await sleep(300);
-      coords=await geocode(`${p.title}, ${city}, Ireland`);
+      coords = await geocode(`${p.title}, ${city}, Ireland`);
+      if (!coords) {
+        dbg(`No coords for: ${p.title}`);
+        continue;
+      }
     }
-    if(!coords) continue;
 
-    const emoji=TYPE_ICON[p.type]||'📍';
-    const icon=L.divIcon({html:`<div class="lm-dot${isFaved(id)?' faved':''}" id="lm-${id}">${emoji}</div>`,iconSize:[28,28],iconAnchor:[14,14],className:''});
-    const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:p.type})
-      .addTo(map).bindTooltip(p.title,{direction:'top'});
-    const lm={id,title:p.title,type:p.type,lat:coords.lat,lng:coords.lng};
-    m.on('click',()=>onTapMarker(lm));
-    markers[id]=m;
+    const emoji = TYPE_ICON[p.type] || '📍';
+    const icon = L.divIcon({html:`<div class="lm-dot${isFaved(id)?' faved':''}" id="lm-${id}">${emoji}</div>`, iconSize:[28,28], iconAnchor:[14,14], className:''});
+    const m = L.marker([coords.lat, coords.lng], {icon, _title:p.title, _type:p.type})
+      .addTo(map).bindTooltip(p.title, {direction:'top'});
+    const lm = {id, title:p.title, type:p.type, lat:coords.lat, lng:coords.lng};
+    m.on('click', ()=>onTapMarker(lm));
+    markers[id] = m;
+    added++;
   }
+  dbg(`Added ${added} markers this batch`);
 }
 
 // ── Refresh ───────────────────────────────────────────────────
