@@ -225,6 +225,7 @@ body{font-family:sans-serif;overflow:hidden;}
     </button>
   </div>
   </div>
+  </div>
 </div>
 
 <!-- Progress bar -->
@@ -335,7 +336,7 @@ body{font-family:sans-serif;overflow:hidden;}
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.0.97</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.0.99</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
@@ -498,27 +499,49 @@ async function geocode(q){try{const d=await fetch(`https://nominatim.openstreetm
 
 // ── Fetch ─────────────────────────────────────────────────────
 function fetchVisibleBounds(){const b=map.getBounds(),z=map.getZoom(),s=z>=15?1:z>=13?2:3,pts=[];for(let i=0;i<=s;i++)for(let j=0;j<=s;j++)pts.push({lat:b.getSouth()+(b.getNorth()-b.getSouth())*(i/s),lng:b.getWest()+(b.getEast()-b.getWest())*(j/s)});pts.reduce((ch,pt)=>ch.then(()=>fetchArea(pt.lat,pt.lng)),Promise.resolve());}
-async function fetchArea(lat,lng){
-  const key=`${lat.toFixed(2)}_${lng.toFixed(2)}`;if(fetched.has(key))return;fetched.add(key);
-  const cached=loadLM(lat,lng);if(cached&&cached.length){await addLMs(cached,lat,lng);afterFetch();return;}
+async function fetchArea(lat, lng) {
+  const key = `${lat.toFixed(2)}_${lng.toFixed(2)}`;
+  if (fetched.has(key)) return;
+  fetched.add(key);
+
+  // Load from cache — but only if it has actual landmarks
+  const cached = loadLM(lat, lng);
+  if (cached && cached.length >= 1) {
+    await addLMs(cached, lat, lng);
+    afterFetch();
+    return;
+  }
+
   setStatus('Searching landmarks…');
-  try{const raw=await callAI(`You are a local Irish historian and storyteller. List 14 interesting points for an audio tour within 1.5km of lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}.
+  try {
+    const raw = await callAI(
+      `You are a local Irish historian and storyteller. List 14 interesting points for an audio tour within 1.5km of lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}.
 
 Include a MIX of these categories:
 SPECIFIC PLACES (8): churches, graveyards, ruins, castles, Martello towers, housing estates/townlands with origins, streets named after historical figures, famous people born/lived here (as "Birthplace of X"), parks, beaches, rivers, pubs, GAA clubs, railway stations, mills, docks.
-REGIONAL & LEGENDARY (4): local folklore, myths or legends tied to this area (e.g. "The Legend of [local place]"), historical events that shaped this region, Viking/Norman/Celtic history of the wider area, the origin story of the town or village name.
-CITY/AREA OVERVIEW (2): a broad "Welcome to [area name]" entry giving a vivid 2-sentence flavour of the place's character and history.
+REGIONAL & LEGENDARY (4): local folklore, myths or legends tied to this area, historical events that shaped this region, Viking/Norman/Celtic history of the wider area, the origin story of the town or village name.
+CITY/AREA OVERVIEW (2): a broad "Welcome to [area name]" entry giving a vivid flavour of the place's character and history.
 
-Return ONLY a JSON array: [{"title":"Name or legend title","type":"monument","lat":0.0,"lng":0.0}]
+Return ONLY a JSON array: [{"title":"Name","type":"monument","lat":0.0,"lng":0.0}]
 Types: monument,church,castle,street,building,bridge,park,museum,neighbourhood,person,nature,pub,beach,estate,school,sport,legend,region,city,other
 
-IMPORTANT rules:
-- For legend/region/city types, set lat/lng to the centre of the relevant area (approximate is fine)
+Rules:
+- For legend/region/city types, set lat/lng to the centre of the relevant area
 - For specific places, only include real locations you are certain exist
-- Be hyper-local — do not invent places`);
-  const s=raw.indexOf('['),e=raw.lastIndexOf(']');if(s===-1||e===-1)return;
-  const arr=JSON.parse(raw.slice(s,e+1));saveLM(lat,lng,arr);await addLMs(arr,lat,lng);afterFetch();}
-  catch(err){fetched.delete(key);setStatus('Error: '+err.message);}
+- Be hyper-local — do not invent places`
+    );
+    const s = raw.indexOf('['), e = raw.lastIndexOf(']');
+    if (s === -1 || e === -1) { fetched.delete(key); return; }
+    const arr = JSON.parse(raw.slice(s, e + 1));
+    if (!arr.length) { fetched.delete(key); return; }
+    saveLM(lat, lng, arr);
+    await addLMs(arr, lat, lng);
+    afterFetch();
+  } catch(err) {
+    fetched.delete(key); // allow retry on error
+    setStatus('Error: ' + err.message);
+    console.error('fetchArea:', err);
+  }
 }
 function afterFetch(){const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':''));if(tourOn&&!speaking)playNearest();}
 async function addLMs(arr,lat,lng){
