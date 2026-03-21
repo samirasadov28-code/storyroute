@@ -171,7 +171,8 @@ body{font-family:sans-serif;overflow:hidden;}
     <span id="app-name">Story<span>Route</span></span>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
-    <div id="status" onclick="toggleDebug()" style="cursor:pointer;">Starting…</div>
+    <div id="status">Starting…</div>
+    <button id="dbg-btn" type="button" onclick="toggleDebug()" style="width:32px;height:32px;background:rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.12);border-radius:8px;font-size:14px;cursor:pointer;">🔍</button>
     <button id="menu-btn" type="button">☰</button>
   </div>
 </div>
@@ -301,7 +302,7 @@ body{font-family:sans-serif;overflow:hidden;}
   <button id="overlay-btn" onclick="initApp()">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.1.1</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.1.2</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
