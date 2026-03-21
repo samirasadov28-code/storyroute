@@ -285,10 +285,10 @@ body{font-family:sans-serif;overflow:hidden;}
   <img src="/icon-512.png" style="width:90px;height:90px;border-radius:20px;" onerror="this.style.display='none'">
   <div style="font-size:28px;font-weight:800;color:#1a2240;">Story<span style="color:#f0a500;">Route</span></div>
   <div style="font-size:14px;color:#999;text-align:center;max-width:260px;line-height:1.6;">Historical stories about places around you.</div>
-  <button id="overlay-btn" onclick="initApp()">Open Map</button>
+  <button id="overlay-btn" onclick="initApp()" style="touch-action:manipulation;">Open Map</button>
   <div style="font-size:11px;color:#ccc;margin-top:4px;">Allow location access when prompted</div>
   <div style="margin-top:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);border-radius:8px;padding:6px 18px;">
-    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.3.0</span>
+    <span style="font-size:13px;font-weight:700;color:#f0a500;">v1.3.1</span>
   </div>
   <button onclick="forceUpdate()" style="margin-top:6px;padding:7px 18px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#aaa;cursor:pointer;">🔄 Force update</button>
 </div>
@@ -358,7 +358,7 @@ function closePaywall(){document.getElementById(‘paywall’).classList.remove(
 async function startCheckout(){track(‘upgrade_click’);try{const r=await fetch(’/api/create-checkout’,{method:‘POST’,headers:{‘Content-Type’:‘application/json’},body:JSON.stringify({})});const d=await r.json();if(d.url)window.location.href=d.url;else showToast(‘Checkout error’);}catch(e){showToast(‘Checkout error’);}}
 function showToast(msg){const t=document.createElement(‘div’);t.style.cssText=‘position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a2240;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:9999;white-space:nowrap;’;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);}
 
-function initApp(){const u=new SpeechSynthesisUtterance(’ ‘);u.volume=0;window.speechSynthesis.speak(u);document.getElementById(‘overlay’).style.display=‘none’;track(‘app_open’);getGPS();}
+function initApp(){try{const u=new SpeechSynthesisUtterance(’ ‘);u.volume=0;window.speechSynthesis.speak(u);}catch(e){}document.getElementById(‘overlay’).style.display=‘none’;track(‘app_open’);getGPS();}
 function getGPS(){setStatus(‘Getting location…’);if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1]);return;}navigator.geolocation.getCurrentPosition(p=>startAt(p.coords.latitude,p.coords.longitude),()=>startAt(DUBLIN[0],DUBLIN[1]),{enableHighAccuracy:true,timeout:15000,maximumAge:0});}
 function startAt(lat,lng){userPos={lat,lng};map.setView([lat,lng],15);const icon=L.divIcon({html:’<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>’,iconSize:[14,14],iconAnchor:[7,7],className:’’});const um=L.marker([lat,lng],{icon}).addTo(map);if(navigator.geolocation)navigator.geolocation.watchPosition(p=>{userPos={lat:p.coords.latitude,lng:p.coords.longitude};um.setLatLng([userPos.lat,userPos.lng]);updateProgress();checkProxAlert();},null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});setStatus(‘Loading landmarks…’);setTimeout(fetchVisibleBounds,600);}
 
