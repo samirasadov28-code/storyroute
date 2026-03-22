@@ -242,7 +242,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.5.8</div>
+  <div id="splash-version">v1.6.0</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
@@ -469,12 +469,9 @@ const VOICES=[
 ];
 
 const SPEEDS=[
-  {val:0.75, label:'🐢 Slow',         desc:'0.75×'},
   {val:0.9,  label:'🚶 Normal',       desc:'0.9×'},
-  {val:1.1,  label:'🏃 Slightly faster', desc:'1.1×'},
-  {val:1.25, label:'⚡ Fast',         desc:'1.25× — default'},
-  {val:1.5,  label:'🚀 Very fast',    desc:'1.5×'},
-  {val:2.0,  label:'💨 Ultra fast',   desc:'2.0×'}
+  {val:1.1,  label:'🏃 Slightly faster', desc:'1.1× — default'},
+  {val:1.25, label:'⚡ Fast',         desc:'1.25×'},
 ];
 
 const STORY_TYPES=[
@@ -502,7 +499,7 @@ const photoCache={};
 
 // Settings — loaded from localStorage
 let selectedVoice = JSON.parse(localStorage.getItem('sr_voice_cfg')||'null') || VOICES[0];
-let voiceSpeed    = parseFloat(localStorage.getItem('sr_speed') || '1.25');
+let voiceSpeed    = parseFloat(localStorage.getItem('sr_speed') || '1.1');
 let rotateVoices  = localStorage.getItem('sr_rotate') !== 'false'; // default ON
 
 // Active landmark filter — load saved, ensure all types present
