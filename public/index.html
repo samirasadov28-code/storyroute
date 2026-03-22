@@ -226,7 +226,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.5.4</div>
+  <div id="splash-version">v1.5.5</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
@@ -475,7 +475,14 @@ const ALL_TYPES=['monument','church','castle','street','building','bridge','park
   'person','nature','pub','beach','estate','school','sport','abbey','harbour','tower',
   'market','gate','hall','cinema','railway','canal','well','hill','island','history','legend',
   'area','neighbourhood','other'];
-let activeTypes=new Set(JSON.parse(localStorage.getItem('sr_type_filter')||'null')||ALL_TYPES);
+const CACHE_VERSION='v3';
+if(localStorage.getItem('sr_cache_ver')!==CACHE_VERSION){
+  // Bust landmark cache when app updates — types may have changed
+  Object.keys(localStorage).forEach(k=>{if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_'))localStorage.removeItem(k);});
+  localStorage.setItem('sr_cache_ver',CACHE_VERSION);
+}
+const _savedFilter=JSON.parse(localStorage.getItem('sr_type_filter')||'null');
+let activeTypes=new Set(_savedFilter?ALL_TYPES.filter(t=>_savedFilter.includes(t)):ALL_TYPES);
 const photoCache={};
 
 function track(n,p={}){try{gtag('event',n,p);}catch(e){}}
@@ -667,10 +674,26 @@ function updateRotateLabel(){
 function pickVoice(i){
   selectedVoice=VOICES[i];
   localStorage.setItem('sr_voice_cfg',JSON.stringify(VOICES[i]));
+  // Turn off rotation when user explicitly picks a voice
+  if(rotateVoices){
+    rotateVoices=false;
+    localStorage.setItem('sr_rotate','false');
+    updateRotateLabel();
+  }
   updateVoiceLabel();
-  cancelAudio();
   closeVoicePanel();
-  showToast('Voice: '+VOICES[i].label);
+  // If a story is currently showing, replay it immediately with the new voice
+  if(curStory&&curStory.text&&curStory.text!=='⏳ Loading story…'){
+    cancelAudio();
+    speaking=true;
+    tts(curStory.text,()=>{
+      speaking=false;
+      if(tourOn){const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}
+    });
+    showToast('Voice: '+VOICES[i].label+' — replaying…');
+  }else{
+    showToast('Voice: '+VOICES[i].label);
+  }
 }
 function updateVoiceLabel(){
   const el=document.getElementById('voice-label');
@@ -679,11 +702,12 @@ function updateVoiceLabel(){
 
 // ── Speed panel ───────────────────────────────────────────────
 const SPEEDS=[
-  {val:0.75,label:'🐢 Slow',     desc:'0.75×'},
-  {val:0.9, label:'🚶 Normal',   desc:'0.9×  — default'},
+  {val:0.75,label:'🐢 Slow',        desc:'0.75×'},
+  {val:0.9, label:'🚶 Normal',      desc:'0.9×  — default'},
   {val:1.1, label:'🏃 Slightly faster', desc:'1.1×'},
-  {val:1.25,label:'⚡ Fast',     desc:'1.25×'},
-  {val:1.5, label:'🚀 Very fast',desc:'1.5×'},
+  {val:1.25,label:'⚡ Fast',        desc:'1.25×'},
+  {val:1.5, label:'🚀 Very fast',   desc:'1.5×'},
+  {val:2.0, label:'💨 Ultra fast',  desc:'2.0×'},
 ];
 function openSpeedPanel(){
   const body=document.getElementById('speed-body');
@@ -896,14 +920,16 @@ async function addLMs(arr,lat,lng){
   try{const r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());city=r?.address?.city||r?.address?.town||r?.address?.village||r?.address?.county||'Ireland';currentCityName=city;}catch(e){}
   for(const p of arr){
     if(!p.title)continue;const id=p.title.replace(/\W+/g,'_');if(markers[id])continue;
-    // Skip types not in active filter
-    if(!activeTypes.has(p.type||'other')) continue;
+    // Normalise type — fall back to 'other' if AI returns something unexpected
+    const ptype=ALL_TYPES.includes(p.type)?p.type:'other';
+    // Skip if this type is filtered out
+    if(!activeTypes.has(ptype)) continue;
     await sleep(300);const coords=await geocode(p.title+', '+city+', Ireland');if(!coords)continue;
-    const html='<div class="lm-dot'+(isFaved(id)?' faved':'')+'" id="lm-'+id+'">'+(TYPE_ICON[p.type]||'📍')+'</div>';
+    const html='<div class="lm-dot'+(isFaved(id)?' faved':'')+'" id="lm-'+id+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
     const icon=L.divIcon({html,iconSize:[28,28],iconAnchor:[14,14],className:''});
-    const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:p.type}).addTo(map).bindTooltip(p.title,{direction:'top'});
-    const lm={id,title:p.title,type:p.type,lat:coords.lat,lng:coords.lng};
-    m.on('click',()=>{track('marker_tap',{title:p.title,type:p.type});onTapMarker(lm);});
+    const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:ptype}).addTo(map).bindTooltip(p.title,{direction:'top'});
+    const lm={id,title:p.title,type:ptype,lat:coords.lat,lng:coords.lng};
+    m.on('click',()=>{track('marker_tap',{title:p.title,type:ptype});onTapMarker(lm);});
     markers[id]=m;
   }
 }
