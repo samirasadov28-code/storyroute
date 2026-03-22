@@ -226,7 +226,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.4.6</div>
+  <div id="splash-version">v1.5.0</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
@@ -250,9 +250,34 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   <div id="menu-body">
     <button class="mi" id="refresh-mi"><span class="mi-icon">🔄</span>Refresh landmarks</button>
     <button class="mi" id="favs-mi"><span class="mi-icon">❤️</span>Favourites</button>
+    <button class="mi" id="voice-mi"><span class="mi-icon">🎙️</span>Voice <span id="voice-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
+    <button class="mi" id="filter-mi"><span class="mi-icon">🏷️</span>Landmark types <span id="filter-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
     <div class="mi-divider"></div>
     <button class="mi" id="upgrade-mi"><span class="mi-icon">⭐</span>Upgrade to Pro — €3.99/mo</button>
   </div>
+</div>
+
+<!-- VOICE PANEL -->
+<div id="voice-panel" style="position:fixed;top:0;right:0;bottom:0;width:min(290px,88vw);background:#fff;z-index:3000;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);">
+  <div style="padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;">
+    <h2 style="font-size:17px;font-weight:800;color:#1a2240;">🎙️ Voice</h2>
+    <button id="voice-close" style="width:36px;height:36px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;font-size:20px;cursor:pointer;touch-action:manipulation;">✕</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch;" id="voice-list"></div>
+</div>
+
+<!-- LANDMARK FILTER PANEL -->
+<div id="filter-panel" style="position:fixed;top:0;right:0;bottom:0;width:min(290px,88vw);background:#fff;z-index:3000;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);">
+  <div style="padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;">
+    <h2 style="font-size:17px;font-weight:800;color:#1a2240;">🏷️ Landmark types</h2>
+    <button id="filter-close" style="width:36px;height:36px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;font-size:20px;cursor:pointer;touch-action:manipulation;">✕</button>
+  </div>
+  <div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,0.06);display:flex;gap:8px;">
+    <button onclick="selectAllTypes()" style="flex:1;padding:7px;background:rgba(0,0,0,0.05);border:none;border-radius:7px;font-size:12px;font-weight:700;color:#333;cursor:pointer;touch-action:manipulation;">All on</button>
+    <button onclick="clearAllTypes()" style="flex:1;padding:7px;background:rgba(0,0,0,0.05);border:none;border-radius:7px;font-size:12px;font-weight:700;color:#333;cursor:pointer;touch-action:manipulation;">All off</button>
+    <button onclick="applyFilter()" style="flex:1;padding:7px;background:#f0a500;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;">Apply</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:10px 14px;-webkit-overflow-scrolling:touch;" id="filter-list"></div>
 </div>
 
 <!-- PROGRESS -->
@@ -407,6 +432,22 @@ let voicePool=[],newWorker=null,currentAudio=null;
 let longStories=[],currentLongStoryIdx=-1,longSpeaking=false;
 let currentAreaName='this area',currentCityName='Ireland';
 const VOICERSS_KEY='293997f94bec46f386498eb580855415';
+
+// VoiceRSS available voices
+const VOICES=[
+  {hl:'en-gb',v:'Linda',   label:'🇬🇧 Linda',   desc:'British female'},
+  {hl:'en-gb',v:'Harry',   label:'🇬🇧 Harry',   desc:'British male'},
+  {hl:'en-ie',v:'',        label:'🇮🇪 Irish',    desc:'Irish English'},
+  {hl:'en-us',v:'Amy',     label:'🇺🇸 Amy',      desc:'American female'},
+  {hl:'en-au',v:'Isla',    label:'🇦🇺 Isla',     desc:'Australian female'},
+];
+let selectedVoice=JSON.parse(localStorage.getItem('sr_voice_cfg')||'null')||VOICES[0];
+
+// Landmark type filter
+const ALL_TYPES=['monument','church','castle','street','building','bridge','park','museum',
+  'person','nature','pub','beach','estate','school','sport','abbey','harbour','tower',
+  'market','gate','hall','cinema','railway','canal','well','hill','island','history','legend','other'];
+let activeTypes=new Set(JSON.parse(localStorage.getItem('sr_type_filter')||'null')||ALL_TYPES);
 const photoCache={};
 
 function track(n,p={}){try{gtag('event',n,p);}catch(e){}}
@@ -428,10 +469,16 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('splash-force').addEventListener('click',forceUpdate);
   document.getElementById('menu-btn').addEventListener('click',openMenu);
   document.getElementById('menu-close-btn').addEventListener('click',closeMenu);
-  document.getElementById('menu-overlay').addEventListener('click',()=>{closeMenu();});
+  document.getElementById('menu-overlay').addEventListener('click',()=>{closeMenu();closeVoicePanel();closeFilterPanel();});
   document.getElementById('refresh-mi').addEventListener('click',()=>{refreshLandmarks();closeMenu();});
   document.getElementById('favs-mi').addEventListener('click',()=>{openFavPanel();closeMenu();});
+  document.getElementById('voice-mi').addEventListener('click',()=>{openVoicePanel();closeMenu();});
+  document.getElementById('filter-mi').addEventListener('click',()=>{openFilterPanel();closeMenu();});
   document.getElementById('upgrade-mi').addEventListener('click',()=>{startCheckout();closeMenu();});
+  document.getElementById('voice-close').addEventListener('click',closeVoicePanel);
+  document.getElementById('filter-close').addEventListener('click',closeFilterPanel);
+  updateVoiceLabel();
+  updateFilterLabel();
   document.getElementById('voice-close').addEventListener('click',closeVoicePanel);
 
   const consent=localStorage.getItem('sr_cookie');
@@ -497,8 +544,9 @@ async function tts(text,onDone,rate=0.88){
   try{
     const params=new URLSearchParams({
       key:VOICERSS_KEY,src:text,
-      hl:'en-gb',v:'Linda',r:'0',
-      c:'mp3',f:'44khz_128kbitrate_stereo',
+      hl:selectedVoice.hl,
+      ...(selectedVoice.v&&{v:selectedVoice.v}),
+      r:'0',c:'mp3',f:'44khz_128kbitrate_stereo',
       ssml:'false',b64:'false'
     });
     const resp=await fetch('https://api.voicerss.org/?'+params.toString());
@@ -533,6 +581,100 @@ function browserTTS(text,onDone,rate=0.88){
 
 function replayStory(){if(curStory)tts(curStory.text,()=>{speaking=false;if(tourOn)setTimeout(playNearest,1500);});}
 function shareStory(){if(!curStory)return;if(navigator.share){navigator.share({title:curStory.title,text:curStory.text,url:location.href}).catch(()=>{});}else{navigator.clipboard&&navigator.clipboard.writeText(curStory.title+'\n\n'+curStory.text+'\n\nStoryRoute: '+location.href).then(()=>showToast('Copied!'));}track('story_share',{title:curStory.title});}
+
+// ── Voice panel ───────────────────────────────────────────────
+function openVoicePanel(){
+  const list=document.getElementById('voice-list');
+  list.innerHTML=VOICES.map((v,i)=>`
+    <div onclick="pickVoice(${i})" style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid ${selectedVoice===VOICES[i]?'#f0a500':'rgba(0,0,0,0.08)'};background:${selectedVoice===VOICES[i]?'rgba(240,165,0,0.05)':'#fff'};border-radius:12px;margin-bottom:8px;cursor:pointer;touch-action:manipulation;">
+      <div style="font-size:22px;width:32px;text-align:center;">${v.label.split(' ')[0]}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:#1a2240;">${v.label.split(' ').slice(1).join(' ')}</div>
+        <div style="font-size:11px;color:#999;">${v.desc}</div>
+      </div>
+      ${selectedVoice===VOICES[i]?'<div style="width:20px;height:20px;background:#f0a500;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;">✓</div>':''}
+    </div>`).join('');
+  document.getElementById('voice-panel').style.transform='translateX(0)';
+  document.getElementById('menu-overlay').classList.add('open');
+}
+function closeVoicePanel(){
+  document.getElementById('voice-panel').style.transform='translateX(100%)';
+  document.getElementById('menu-overlay').classList.remove('open');
+}
+function pickVoice(i){
+  selectedVoice=VOICES[i];
+  localStorage.setItem('sr_voice_cfg',JSON.stringify(VOICES[i]));
+  updateVoiceLabel();
+  cancelAudio();
+  closeVoicePanel();
+  showToast('Voice: '+VOICES[i].label);
+}
+function updateVoiceLabel(){
+  const el=document.getElementById('voice-label');
+  if(el) el.textContent=selectedVoice.label;
+}
+
+// ── Landmark filter panel ─────────────────────────────────────
+const TYPE_LABELS={
+  monument:'🏛 Monument',church:'⛪ Church',castle:'🏰 Castle',street:'🛤 Street',
+  building:'🏢 Building',bridge:'🌉 Bridge',park:'🌿 Park',museum:'🎭 Museum',
+  person:'👤 Person',nature:'🌊 Nature',pub:'🍺 Pub',beach:'🏖 Beach',
+  estate:'🏡 Estate',school:'🏫 School',sport:'🏟 Sport',abbey:'🕍 Abbey',
+  harbour:'⚓ Harbour',tower:'🗼 Tower',market:'🛒 Market',gate:'🚪 Gate',
+  hall:'🏤 Hall',cinema:'🎬 Cinema',railway:'🚂 Railway',canal:'🚣 Canal',
+  well:'💧 Well',hill:'⛰️ Hill',island:'🏝️ Island',history:'📜 History',
+  legend:'🐉 Legend',other:'📍 Other'
+};
+function openFilterPanel(){
+  renderFilterList();
+  document.getElementById('filter-panel').style.transform='translateX(0)';
+  document.getElementById('menu-overlay').classList.add('open');
+}
+function closeFilterPanel(){
+  document.getElementById('filter-panel').style.transform='translateX(100%)';
+  document.getElementById('menu-overlay').classList.remove('open');
+}
+function renderFilterList(){
+  document.getElementById('filter-list').innerHTML=ALL_TYPES.map(t=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(0,0,0,0.05);cursor:pointer;touch-action:manipulation;">
+      <input type="checkbox" ${activeTypes.has(t)?'checked':''} onchange="toggleType('${t}',this.checked)"
+        style="width:18px;height:18px;accent-color:#f0a500;flex-shrink:0;cursor:pointer;">
+      <span style="font-size:14px;color:#1a2240;">${TYPE_LABELS[t]||t}</span>
+    </label>`).join('');
+}
+function toggleType(t,on){
+  on?activeTypes.add(t):activeTypes.delete(t);
+}
+function selectAllTypes(){
+  ALL_TYPES.forEach(t=>activeTypes.add(t));
+  renderFilterList();
+}
+function clearAllTypes(){
+  activeTypes.clear();
+  renderFilterList();
+}
+function applyFilter(){
+  if(activeTypes.size===0){showToast('Select at least one type');return;}
+  localStorage.setItem('sr_type_filter',JSON.stringify([...activeTypes]));
+  updateFilterLabel();
+  // Hide/show existing markers instantly
+  Object.entries(markers).forEach(([id,m])=>{
+    const t=m.options._type;
+    if(m.options._isNb)return; // always show neighbourhoods
+    if(activeTypes.has(t)) m.addTo(map);
+    else map.removeLayer(m);
+  });
+  closeFilterPanel();
+  const n=Object.keys(markers).filter(id=>map.hasLayer(markers[id])).length;
+  showToast(n+' landmarks visible');
+  track('filter_applied',{count:activeTypes.size});
+}
+function updateFilterLabel(){
+  const el=document.getElementById('filter-label');
+  if(!el)return;
+  if(activeTypes.size===ALL_TYPES.length) el.textContent='All';
+  else el.textContent=activeTypes.size+' types';
+}
 
 // ── Photos — Wikipedia ────────────────────────────────────────
 async function fetchPhoto(title){
@@ -644,6 +786,8 @@ async function addLMs(arr,lat,lng){
   try{const r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());city=r?.address?.city||r?.address?.town||r?.address?.village||r?.address?.county||'Ireland';currentCityName=city;}catch(e){}
   for(const p of arr){
     if(!p.title)continue;const id=p.title.replace(/\W+/g,'_');if(markers[id])continue;
+    // Skip types not in active filter
+    if(!activeTypes.has(p.type||'other')) continue;
     await sleep(300);const coords=await geocode(p.title+', '+city+', Ireland');if(!coords)continue;
     const html='<div class="lm-dot'+(isFaved(id)?' faved':'')+'" id="lm-'+id+'">'+(TYPE_ICON[p.type]||'📍')+'</div>';
     const icon=L.divIcon({html,iconSize:[28,28],iconAnchor:[14,14],className:''});
