@@ -226,7 +226,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.5.2</div>
+  <div id="splash-version">v1.5.4</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
@@ -251,6 +251,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
     <button class="mi" id="refresh-mi"><span class="mi-icon">🔄</span>Refresh landmarks</button>
     <button class="mi" id="favs-mi"><span class="mi-icon">❤️</span>Favourites</button>
     <button class="mi" id="voice-mi"><span class="mi-icon">🎙️</span>Voice <span id="voice-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
+    <button class="mi" id="speed-mi"><span class="mi-icon">⚡</span>Speed <span id="speed-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
     <button class="mi" id="rotate-mi"><span class="mi-icon">🔄</span>Rotate voices <span id="rotate-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
     <button class="mi" id="filter-mi"><span class="mi-icon">🏷️</span>Landmark types <span id="filter-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
     <div class="mi-divider"></div>
@@ -265,6 +266,15 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
     <button id="voice-close" style="width:36px;height:36px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;font-size:20px;cursor:pointer;touch-action:manipulation;">✕</button>
   </div>
   <div style="flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch;" id="voice-list"></div>
+</div>
+
+<!-- SPEED PANEL -->
+<div id="speed-panel" style="position:fixed;top:0;right:0;bottom:0;width:min(290px,88vw);background:#fff;z-index:3000;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);">
+  <div style="padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;">
+    <h2 style="font-size:17px;font-weight:800;color:#1a2240;">⚡ Speed</h2>
+    <button id="speed-close" style="width:36px;height:36px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;font-size:20px;cursor:pointer;touch-action:manipulation;">✕</button>
+  </div>
+  <div style="padding:20px 16px;" id="speed-body"></div>
 </div>
 
 <!-- LANDMARK FILTER PANEL -->
@@ -436,20 +446,35 @@ const VOICERSS_KEY='293997f94bec46f386498eb580855415';
 
 // VoiceRSS available voices
 const VOICES=[
-  {hl:'en-gb',v:'Linda',   label:'🇬🇧 Linda',   desc:'British female · VoiceRSS'},
-  {hl:'en-gb',v:'Harry',   label:'🇬🇧 Harry',   desc:'British male · VoiceRSS'},
-  {hl:'en-ie',v:'',        label:'🇮🇪 Irish',    desc:'Irish English · VoiceRSS'},
-  {hl:'en-us',v:'Amy',     label:'🇺🇸 Amy',      desc:'American female · VoiceRSS'},
-  {hl:'en-au',v:'Isla',    label:'🇦🇺 Isla',     desc:'Australian female · VoiceRSS'},
-  {hl:'device',v:'',       label:'📱 Device',    desc:'Built-in browser voice · free offline'},
+  // British English
+  {hl:'en-gb',v:'Alice',  label:'🇬🇧 Alice',   desc:'British female'},
+  {hl:'en-gb',v:'Nancy',  label:'🇬🇧 Nancy',   desc:'British female'},
+  {hl:'en-gb',v:'Harry',  label:'🇬🇧 Harry',   desc:'British male'},
+  {hl:'en-gb',v:'George', label:'🇬🇧 George',  desc:'British male'},
+  // American English
+  {hl:'en-us',v:'Linda',  label:'🇺🇸 Linda',   desc:'American female'},
+  {hl:'en-us',v:'Amy',    label:'🇺🇸 Amy',     desc:'American female'},
+  {hl:'en-us',v:'Mary',   label:'🇺🇸 Mary',    desc:'American female'},
+  {hl:'en-us',v:'Emma',   label:'🇺🇸 Emma',    desc:'American female'},
+  {hl:'en-us',v:'Mike',   label:'🇺🇸 Mike',    desc:'American male'},
+  {hl:'en-us',v:'Brian',  label:'🇺🇸 Brian',   desc:'American male'},
+  // Other accents
+  {hl:'en-au',v:'Nicole', label:'🇦🇺 Nicole',  desc:'Australian female'},
+  {hl:'en-ca',v:'Clara',  label:'🇨🇦 Clara',   desc:'Canadian female'},
+  {hl:'en-ca',v:'Steve',  label:'🇨🇦 Steve',   desc:'Canadian male'},
+  {hl:'en-ie',v:'',       label:'🇮🇪 Irish',   desc:'Irish English'},
+  // Device
+  {hl:'device',v:'',      label:'📱 Device',   desc:'Built-in browser voice · offline'},
 ];
 let selectedVoice=JSON.parse(localStorage.getItem('sr_voice_cfg')||'null')||VOICES[0];
 let rotateVoices=localStorage.getItem('sr_rotate')==='true'||false;
+let voiceSpeed=parseFloat(localStorage.getItem('sr_speed')||'1.0'); // 0.75–1.5
 
 // Landmark type filter
 const ALL_TYPES=['monument','church','castle','street','building','bridge','park','museum',
   'person','nature','pub','beach','estate','school','sport','abbey','harbour','tower',
-  'market','gate','hall','cinema','railway','canal','well','hill','island','history','legend','other'];
+  'market','gate','hall','cinema','railway','canal','well','hill','island','history','legend',
+  'area','neighbourhood','other'];
 let activeTypes=new Set(JSON.parse(localStorage.getItem('sr_type_filter')||'null')||ALL_TYPES);
 const photoCache={};
 
@@ -472,19 +497,21 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('splash-force').addEventListener('click',forceUpdate);
   document.getElementById('menu-btn').addEventListener('click',openMenu);
   document.getElementById('menu-close-btn').addEventListener('click',closeMenu);
-  document.getElementById('menu-overlay').addEventListener('click',()=>{closeMenu();closeVoicePanel();closeFilterPanel();});
+  document.getElementById('menu-overlay').addEventListener('click',()=>{closeMenu();closeVoicePanel();closeSpeedPanel();closeFilterPanel();});
   document.getElementById('refresh-mi').addEventListener('click',()=>{refreshLandmarks();closeMenu();});
   document.getElementById('favs-mi').addEventListener('click',()=>{openFavPanel();closeMenu();});
   document.getElementById('voice-mi').addEventListener('click',()=>{openVoicePanel();closeMenu();});
+  document.getElementById('speed-mi').addEventListener('click',()=>{openSpeedPanel();closeMenu();});
   document.getElementById('rotate-mi').addEventListener('click',()=>{toggleRotate(!rotateVoices);closeMenu();});
   document.getElementById('filter-mi').addEventListener('click',()=>{openFilterPanel();closeMenu();});
   document.getElementById('upgrade-mi').addEventListener('click',()=>{startCheckout();closeMenu();});
   document.getElementById('voice-close').addEventListener('click',closeVoicePanel);
+  document.getElementById('speed-close').addEventListener('click',closeSpeedPanel);
   document.getElementById('filter-close').addEventListener('click',closeFilterPanel);
   updateVoiceLabel();
   updateRotateLabel();
+  updateSpeedLabel();
   updateFilterLabel();
-  document.getElementById('voice-close').addEventListener('click',closeVoicePanel);
 
   const consent=localStorage.getItem('sr_cookie');
   if(!consent) setTimeout(()=>document.getElementById('cookie-banner').classList.add('visible'),2500);
@@ -564,16 +591,22 @@ async function tts(text,onDone,rate=0.88){
       key:VOICERSS_KEY,src:text,
       hl:voice.hl,
       ...(voice.v&&{v:voice.v}),
-      r:'0',c:'mp3',f:'44khz_128kbitrate_stereo',
+      r:String(Math.round((voiceSpeed-1)*10)), // -10 to +10 from speed 0–2
+      c:'mp3',f:'44khz_128kbitrate_stereo',
       ssml:'false',b64:'false'
     });
     const resp=await fetch('https://api.voicerss.org/?'+params.toString());
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const blob=await resp.blob();
-    if(blob.type.includes('text')||blob.size<500) throw new Error('Bad response');
+    // VoiceRSS returns errors as plain text starting with "ERROR"
+    if(blob.size<1000){
+      const txt=await blob.text();
+      if(txt.startsWith('ERROR')) throw new Error(txt.trim());
+    }
+    if(blob.size<500) throw new Error('Empty audio');
     const url=URL.createObjectURL(blob);
     currentAudio=new Audio(url);
-    currentAudio.playbackRate=rate;
+    currentAudio.playbackRate=voiceSpeed;
     currentAudio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;setBadge('voicerss');onDone();};
     currentAudio.onerror=()=>{URL.revokeObjectURL(url);currentAudio=null;browserTTS(text,onDone,rate);};
     await currentAudio.play();
@@ -585,7 +618,7 @@ async function tts(text,onDone,rate=0.88){
   browserTTS(text,onDone,rate);
 }
 
-function browserTTS(text,onDone,rate=0.88){
+function browserTTS(text,onDone,rate=voiceSpeed){
   setBadge('device');
   try{
     speechSynthesis.cancel();
@@ -644,6 +677,47 @@ function updateVoiceLabel(){
   if(el) el.textContent=selectedVoice.label;
 }
 
+// ── Speed panel ───────────────────────────────────────────────
+const SPEEDS=[
+  {val:0.75,label:'🐢 Slow',     desc:'0.75×'},
+  {val:0.9, label:'🚶 Normal',   desc:'0.9×  — default'},
+  {val:1.1, label:'🏃 Slightly faster', desc:'1.1×'},
+  {val:1.25,label:'⚡ Fast',     desc:'1.25×'},
+  {val:1.5, label:'🚀 Very fast',desc:'1.5×'},
+];
+function openSpeedPanel(){
+  const body=document.getElementById('speed-body');
+  body.innerHTML=SPEEDS.map((s,i)=>{
+    const isSel=voiceSpeed===s.val;
+    return `<div onclick="pickSpeed(${i})" style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid ${isSel?'#f0a500':'rgba(0,0,0,0.08)'};background:${isSel?'rgba(240,165,0,0.05)':'#fff'};border-radius:12px;margin-bottom:8px;cursor:pointer;touch-action:manipulation;">
+      <div style="font-size:20px;width:28px;text-align:center;">${s.label.split(' ')[0]}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:#1a2240;">${s.label.split(' ').slice(1).join(' ')}</div>
+        <div style="font-size:11px;color:#999;">${s.desc}</div>
+      </div>
+      ${isSel?'<div style="width:20px;height:20px;background:#f0a500;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;">✓</div>':''}
+    </div>`;
+  }).join('');
+  document.getElementById('speed-panel').style.transform='translateX(0)';
+  document.getElementById('menu-overlay').classList.add('open');
+}
+function closeSpeedPanel(){
+  document.getElementById('speed-panel').style.transform='translateX(100%)';
+  document.getElementById('menu-overlay').classList.remove('open');
+}
+function pickSpeed(i){
+  voiceSpeed=SPEEDS[i].val;
+  localStorage.setItem('sr_speed',String(voiceSpeed));
+  updateSpeedLabel();
+  closeSpeedPanel();
+  showToast('Speed: '+SPEEDS[i].label);
+}
+function updateSpeedLabel(){
+  const el=document.getElementById('speed-label');
+  if(!el)return;
+  const s=SPEEDS.find(s=>s.val===voiceSpeed)||SPEEDS[1];
+  el.textContent=s.label.split(' ')[0]+' '+s.val+'×';
+}
 // ── Landmark filter panel ─────────────────────────────────────
 const TYPE_LABELS={
   monument:'🏛 Monument',church:'⛪ Church',castle:'🏰 Castle',street:'🛤 Street',
@@ -653,7 +727,7 @@ const TYPE_LABELS={
   harbour:'⚓ Harbour',tower:'🗼 Tower',market:'🛒 Market',gate:'🚪 Gate',
   hall:'🏤 Hall',cinema:'🎬 Cinema',railway:'🚂 Railway',canal:'🚣 Canal',
   well:'💧 Well',hill:'⛰️ Hill',island:'🏝️ Island',history:'📜 History',
-  legend:'🐉 Legend',other:'📍 Other'
+  legend:'🐉 Legend',area:'🏙 Area / neighbourhood',neighbourhood:'🏘 Neighbourhood',other:'📍 Other'
 };
 function openFilterPanel(){
   renderFilterList();
@@ -689,10 +763,16 @@ function applyFilter(){
   updateFilterLabel();
   // Hide/show existing markers instantly
   Object.entries(markers).forEach(([id,m])=>{
-    const t=m.options._type;
-    if(m.options._isNb)return; // always show neighbourhoods
-    if(activeTypes.has(t)) m.addTo(map);
-    else map.removeLayer(m);
+    const t=m.options._type||'other';
+    const isNb=m.options._isNb;
+    // Neighbourhood markers use type 'area' — respect the filter
+    if(isNb){
+      if(activeTypes.has('area')||activeTypes.has('neighbourhood')) m.addTo(map);
+      else map.removeLayer(m);
+    } else {
+      if(activeTypes.has(t)) m.addTo(map);
+      else map.removeLayer(m);
+    }
   });
   closeFilterPanel();
   const n=Object.keys(markers).filter(id=>map.hasLayer(markers[id])).length;
