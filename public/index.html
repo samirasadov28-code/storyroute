@@ -226,7 +226,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.5.5</div>
+  <div id="splash-version">v1.5.7</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
@@ -467,8 +467,8 @@ const VOICES=[
   {hl:'device',v:'',      label:'📱 Device',   desc:'Built-in browser voice · offline'},
 ];
 let selectedVoice=JSON.parse(localStorage.getItem('sr_voice_cfg')||'null')||VOICES[0];
-let rotateVoices=localStorage.getItem('sr_rotate')==='true'||false;
-let voiceSpeed=parseFloat(localStorage.getItem('sr_speed')||'1.0'); // 0.75–1.5
+let rotateVoices=localStorage.getItem('sr_rotate')!=='false'; // default ON
+let voiceSpeed=parseFloat(localStorage.getItem('sr_speed')||'1.25');
 
 // Landmark type filter
 const ALL_TYPES=['monument','church','castle','street','building','bridge','park','museum',
@@ -582,9 +582,13 @@ async function tts(text,onDone,rate=0.88){
   // Determine which voice to use
   let voice;
   if(rotateVoices){
-    // Rotate through VoiceRSS voices only (skip device), every 3 landmarks
+    // Rotate through all VoiceRSS voices (skip device), every landmark
     const vrVoices=VOICES.filter(v=>v.hl!=='device');
-    voice=vrVoices[Math.floor(landmarkCount/3)%vrVoices.length];
+    voice=vrVoices[landmarkCount%vrVoices.length];
+    // Show which voice is active so rotation is visible
+    setBadge('voicerss');
+    const vbEl=document.getElementById('voice-badge');
+    if(vbEl){vbEl.textContent=voice.label;vbEl.className='azure';}
   }else{
     // Always use exactly the selected voice
     voice=selectedVoice;
@@ -598,7 +602,7 @@ async function tts(text,onDone,rate=0.88){
       key:VOICERSS_KEY,src:text,
       hl:voice.hl,
       ...(voice.v&&{v:voice.v}),
-      r:String(Math.round((voiceSpeed-1)*10)), // -10 to +10 from speed 0–2
+      r:'0', // always request normal speed from API; speed controlled via playbackRate below
       c:'mp3',f:'44khz_128kbitrate_stereo',
       ssml:'false',b64:'false'
     });
@@ -613,7 +617,7 @@ async function tts(text,onDone,rate=0.88){
     if(blob.size<500) throw new Error('Empty audio');
     const url=URL.createObjectURL(blob);
     currentAudio=new Audio(url);
-    currentAudio.playbackRate=voiceSpeed;
+    currentAudio.playbackRate=voiceSpeed; // speed applied here — reliable across all browsers
     currentAudio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;setBadge('voicerss');onDone();};
     currentAudio.onerror=()=>{URL.revokeObjectURL(url);currentAudio=null;browserTTS(text,onDone,rate);};
     await currentAudio.play();
@@ -896,6 +900,8 @@ async function fetchNeighbourhoods(lat,lng){
 }
 
 async function addNeighbourhoods(arr){
+  // Respect the area/neighbourhood filter
+  if(!activeTypes.has('area')&&!activeTypes.has('neighbourhood')) return;
   for(const p of arr){
     if(!p.title)continue;const id='nb_'+p.title.replace(/\W+/g,'_');if(markers[id])continue;
     await sleep(400);const coords=await geocode(p.title+', Ireland');if(!coords)continue;
