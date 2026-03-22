@@ -226,7 +226,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.5.0</div>
+  <div id="splash-version">v1.5.2</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
@@ -251,6 +251,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
     <button class="mi" id="refresh-mi"><span class="mi-icon">🔄</span>Refresh landmarks</button>
     <button class="mi" id="favs-mi"><span class="mi-icon">❤️</span>Favourites</button>
     <button class="mi" id="voice-mi"><span class="mi-icon">🎙️</span>Voice <span id="voice-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
+    <button class="mi" id="rotate-mi"><span class="mi-icon">🔄</span>Rotate voices <span id="rotate-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
     <button class="mi" id="filter-mi"><span class="mi-icon">🏷️</span>Landmark types <span id="filter-label" style="margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;"></span></button>
     <div class="mi-divider"></div>
     <button class="mi" id="upgrade-mi"><span class="mi-icon">⭐</span>Upgrade to Pro — €3.99/mo</button>
@@ -435,13 +436,15 @@ const VOICERSS_KEY='293997f94bec46f386498eb580855415';
 
 // VoiceRSS available voices
 const VOICES=[
-  {hl:'en-gb',v:'Linda',   label:'🇬🇧 Linda',   desc:'British female'},
-  {hl:'en-gb',v:'Harry',   label:'🇬🇧 Harry',   desc:'British male'},
-  {hl:'en-ie',v:'',        label:'🇮🇪 Irish',    desc:'Irish English'},
-  {hl:'en-us',v:'Amy',     label:'🇺🇸 Amy',      desc:'American female'},
-  {hl:'en-au',v:'Isla',    label:'🇦🇺 Isla',     desc:'Australian female'},
+  {hl:'en-gb',v:'Linda',   label:'🇬🇧 Linda',   desc:'British female · VoiceRSS'},
+  {hl:'en-gb',v:'Harry',   label:'🇬🇧 Harry',   desc:'British male · VoiceRSS'},
+  {hl:'en-ie',v:'',        label:'🇮🇪 Irish',    desc:'Irish English · VoiceRSS'},
+  {hl:'en-us',v:'Amy',     label:'🇺🇸 Amy',      desc:'American female · VoiceRSS'},
+  {hl:'en-au',v:'Isla',    label:'🇦🇺 Isla',     desc:'Australian female · VoiceRSS'},
+  {hl:'device',v:'',       label:'📱 Device',    desc:'Built-in browser voice · free offline'},
 ];
 let selectedVoice=JSON.parse(localStorage.getItem('sr_voice_cfg')||'null')||VOICES[0];
+let rotateVoices=localStorage.getItem('sr_rotate')==='true'||false;
 
 // Landmark type filter
 const ALL_TYPES=['monument','church','castle','street','building','bridge','park','museum',
@@ -473,11 +476,13 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('refresh-mi').addEventListener('click',()=>{refreshLandmarks();closeMenu();});
   document.getElementById('favs-mi').addEventListener('click',()=>{openFavPanel();closeMenu();});
   document.getElementById('voice-mi').addEventListener('click',()=>{openVoicePanel();closeMenu();});
+  document.getElementById('rotate-mi').addEventListener('click',()=>{toggleRotate(!rotateVoices);closeMenu();});
   document.getElementById('filter-mi').addEventListener('click',()=>{openFilterPanel();closeMenu();});
   document.getElementById('upgrade-mi').addEventListener('click',()=>{startCheckout();closeMenu();});
   document.getElementById('voice-close').addEventListener('click',closeVoicePanel);
   document.getElementById('filter-close').addEventListener('click',closeFilterPanel);
   updateVoiceLabel();
+  updateRotateLabel();
   updateFilterLabel();
   document.getElementById('voice-close').addEventListener('click',closeVoicePanel);
 
@@ -540,12 +545,25 @@ function cancelAudio(){
 
 async function tts(text,onDone,rate=0.88){
   cancelAudio();
+  // Determine which voice to use
+  let voice;
+  if(rotateVoices){
+    // Rotate through VoiceRSS voices only (skip device), every 3 landmarks
+    const vrVoices=VOICES.filter(v=>v.hl!=='device');
+    voice=vrVoices[Math.floor(landmarkCount/3)%vrVoices.length];
+  }else{
+    // Always use exactly the selected voice
+    voice=selectedVoice;
+  }
+  // Device TTS path
+  if(voice.hl==='device'){browserTTS(text,onDone,rate);return;}
+  // VoiceRSS path
   setBadge('loading');
   try{
     const params=new URLSearchParams({
       key:VOICERSS_KEY,src:text,
-      hl:selectedVoice.hl,
-      ...(selectedVoice.v&&{v:selectedVoice.v}),
+      hl:voice.hl,
+      ...(voice.v&&{v:voice.v}),
       r:'0',c:'mp3',f:'44khz_128kbitrate_stereo',
       ssml:'false',b64:'false'
     });
@@ -585,21 +603,33 @@ function shareStory(){if(!curStory)return;if(navigator.share){navigator.share({t
 // ── Voice panel ───────────────────────────────────────────────
 function openVoicePanel(){
   const list=document.getElementById('voice-list');
-  list.innerHTML=VOICES.map((v,i)=>`
-    <div onclick="pickVoice(${i})" style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid ${selectedVoice===VOICES[i]?'#f0a500':'rgba(0,0,0,0.08)'};background:${selectedVoice===VOICES[i]?'rgba(240,165,0,0.05)':'#fff'};border-radius:12px;margin-bottom:8px;cursor:pointer;touch-action:manipulation;">
+  list.innerHTML=VOICES.map((v,i)=>{
+    const isSel=JSON.stringify(selectedVoice)===JSON.stringify(v);
+    return `<div onclick="pickVoice(${i})" style="display:flex;align-items:center;gap:12px;padding:12px;border:2px solid ${isSel?'#f0a500':'rgba(0,0,0,0.08)'};background:${isSel?'rgba(240,165,0,0.05)':'#fff'};border-radius:12px;margin-bottom:8px;cursor:pointer;touch-action:manipulation;">
       <div style="font-size:22px;width:32px;text-align:center;">${v.label.split(' ')[0]}</div>
       <div style="flex:1;">
         <div style="font-size:14px;font-weight:700;color:#1a2240;">${v.label.split(' ').slice(1).join(' ')}</div>
         <div style="font-size:11px;color:#999;">${v.desc}</div>
       </div>
-      ${selectedVoice===VOICES[i]?'<div style="width:20px;height:20px;background:#f0a500;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;">✓</div>':''}
-    </div>`).join('');
+      ${isSel?'<div style="width:20px;height:20px;background:#f0a500;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;">✓</div>':''}
+    </div>`;
+  }).join('');
   document.getElementById('voice-panel').style.transform='translateX(0)';
   document.getElementById('menu-overlay').classList.add('open');
 }
 function closeVoicePanel(){
   document.getElementById('voice-panel').style.transform='translateX(100%)';
   document.getElementById('menu-overlay').classList.remove('open');
+}
+function toggleRotate(on){
+  rotateVoices=on;
+  localStorage.setItem('sr_rotate',String(on));
+  updateRotateLabel();
+  showToast(on?'🔄 Rotate voices ON — changes every 3 landmarks':'🔄 Rotate voices OFF');
+}
+function updateRotateLabel(){
+  const el=document.getElementById('rotate-label');
+  if(el) el.textContent=rotateVoices?'On':'Off';
 }
 function pickVoice(i){
   selectedVoice=VOICES[i];
