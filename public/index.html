@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html>
 <head>
 <meta charset="UTF-8">
@@ -28,40 +27,40 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 
 /* ── SPLASH ── */
 #splash{
-position:fixed;inset:0;z-index:99999;
-background:#fff;
-display:flex;flex-direction:column;align-items:center;justify-content:center;
-gap:14px;padding:32px;
+  position:fixed;inset:0;z-index:99999;
+  background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:32px;
 }
 #splash-logo{width:88px;height:88px;border-radius:20px;}
 #splash-title{font-size:30px;font-weight:800;color:#1a2240;}
 #splash-title span{color:#f0a500;}
 #splash-sub{font-size:14px;color:#999;text-align:center;max-width:240px;line-height:1.6;}
 #splash-btn{
-margin-top:8px;
-padding:16px 52px;
-background:#f0a500;color:#fff;
-border:none;border-radius:14px;
-font-size:19px;font-weight:800;
-cursor:pointer;
--webkit-appearance:none;
-touch-action:manipulation;
-box-shadow:0 4px 18px rgba(240,165,0,0.4);
-user-select:none;
+  margin-top:8px;
+  padding:16px 52px;
+  background:#f0a500;color:#fff;
+  border:none;border-radius:14px;
+  font-size:19px;font-weight:800;
+  cursor:pointer;
+  -webkit-appearance:none;
+  touch-action:manipulation;
+  box-shadow:0 4px 18px rgba(240,165,0,0.4);
+  user-select:none;
 }
 #splash-btn:active{background:#d4920a;transform:scale(0.97);}
 #splash-hint{font-size:11px;color:#bbb;}
 #splash-version{
-background:rgba(240,165,0,0.12);
-border:1px solid rgba(240,165,0,0.3);
-border-radius:8px;padding:5px 16px;
-font-size:13px;font-weight:700;color:#f0a500;
+  background:rgba(240,165,0,0.12);
+  border:1px solid rgba(240,165,0,0.3);
+  border-radius:8px;padding:5px 16px;
+  font-size:13px;font-weight:700;color:#f0a500;
 }
 #splash-force{
-padding:6px 16px;background:transparent;
-border:1px solid rgba(0,0,0,0.1);border-radius:8px;
-font-size:12px;color:#bbb;cursor:pointer;
-touch-action:manipulation;
+  padding:6px 16px;background:transparent;
+  border:1px solid rgba(0,0,0,0.1);border-radius:8px;
+  font-size:12px;color:#bbb;cursor:pointer;
+  touch-action:manipulation;
 }
 
 /* ── HEADER ── */
@@ -123,12 +122,12 @@ touch-action:manipulation;
 #next-info b{color:#e09400;}
 
 /* ── STORY PHOTO ── */
-#story-photo-wrap{display:none;margin-bottom:10px;border-radius:10px;overflow:hidden;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+#story-photo-wrap{display:none;margin:-14px -16px 12px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;min-height:180px;}
 @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-#story-photo-wrap.loaded{display:block;background:none;animation:none;}
-#story-photo{width:100%;max-height:160px;object-fit:cover;display:block;opacity:0;transition:opacity .3s;}
+#story-photo-wrap.loaded{display:block;background:none;animation:none;min-height:0;}
+#story-photo{width:100%;height:200px;object-fit:cover;display:block;opacity:0;transition:opacity .4s;}
 #story-photo-wrap.loaded #story-photo{opacity:1;}
-#story-photo-credit{font-size:9px;color:#bbb;text-align:right;padding:2px 4px 0;}
+#story-photo-credit{font-size:9px;color:#bbb;text-align:right;padding:3px 8px;background:rgba(0,0,0,0.03);}
 
 /* ── VOICE SETTINGS PANEL ── */
 #voice-panel{position:fixed;top:0;right:0;bottom:0;width:min(300px,90vw);background:#fff;z-index:3000;transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);}
@@ -230,7 +229,7 @@ touch-action:manipulation;
 .pw-box p{font-size:14px;color:#888;line-height:1.6;margin-bottom:16px;}
 .pw-perks{text-align:left;margin-bottom:18px;}
 .pw-perks li{font-size:13px;color:#555;margin-bottom:6px;list-style:none;}
-.pw-perks li::before{content:“✓ “;color:#22c55e;font-weight:700;}
+.pw-perks li::before{content:"✓ ";color:#22c55e;font-weight:700;}
 .pw-pro{display:block;width:100%;padding:14px;background:#f0a500;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;touch-action:manipulation;}
 .pw-close{font-size:12px;color:#ccc;background:none;border:none;cursor:pointer;touch-action:manipulation;}
 
@@ -261,39 +260,36 @@ touch-action:manipulation;
 #update-bar{position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#1a2240;color:#fff;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;}
 #update-bar.visible{display:flex;}
 </style>
-
 </head>
 <body>
 
 <div id="map"></div>
 
 <!-- ── SPLASH SCREEN ── -->
-
 <div id="splash">
   <img id="splash-logo" src="/icon-512.png" onerror="this.style.display='none'">
   <div id="splash-title">Story<span>Route</span></div>
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.4.0</div>
+  <div id="splash-version">v1.4.2</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
 <!-- ── HEADER ── -->
-
 <div id="header">
   <div style="display:flex;align-items:center;">
     <img src="/icon-512.png" style="height:40px;width:auto;" onerror="this.style.display='none'">
     <span id="app-name">Story<span>Route</span></span>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div id="voice-indicator" style="font-size:10px;padding:3px 7px;border-radius:8px;background:rgba(0,0,0,0.05);color:#999;display:none;"></div>
     <div id="status">Starting…</div>
     <button id="menu-btn" type="button">☰</button>
   </div>
 </div>
 
 <!-- ── MENU ── -->
-
 <div id="menu-overlay"></div>
 <div id="menu-panel">
   <div id="menu-top"><h2>Menu</h2><button id="menu-close-btn">✕</button></div>
@@ -307,18 +303,17 @@ touch-action:manipulation;
 </div>
 
 <!-- ── VOICE PANEL ── -->
-
 <div id="voice-panel">
   <div id="voice-panel-header"><h2>🎙️ Voice</h2><button id="voice-close">✕</button></div>
   <div id="voice-panel-body">
     <div class="voice-option" id="vo-browser" onclick="selectVoice('browser')">
       <div class="voice-option-top"><span class="voice-option-name">Device voice</span><span class="voice-badge badge-free">Fallback</span></div>
-      <div class="voice-option-desc">Your device's built-in text-to-speech. Works offline. Sounds robotic on Android, passable on iOS.</div>
-      <div class="voice-option-cost">Free · no setup</div>
+      <div class="voice-option-desc">Your device's built-in text-to-speech. Used automatically if Google TTS is unreachable.</div>
+      <div class="voice-option-cost">Free · no setup needed</div>
     </div>
     <div class="voice-option selected" id="vo-google" onclick="selectVoice('google')">
       <div class="voice-option-top"><span class="voice-option-name">Google Cloud TTS</span><span class="voice-badge badge-pro">Active</span></div>
-      <div class="voice-option-desc">Natural neural voice — en-IE-Standard-A (Irish English female). Major step up in quality. Requires <code>GOOGLE_TTS_KEY</code> on your backend.</div>
+      <div class="voice-option-desc">Natural Irish English neural voice (en-IE-Standard-A). Falls back to device voice if <code>/api/tts</code> is unreachable.</div>
       <div class="voice-option-cost">Free 1M chars/mo · then $4/1M</div>
     </div>
     <div style="background:rgba(0,0,0,0.03);border-radius:10px;padding:12px;margin-bottom:12px;">
@@ -331,14 +326,12 @@ touch-action:manipulation;
 </div>
 
 <!-- ── PROGRESS ── -->
-
 <div id="progress-wrap">
   <div id="progress-track"><div id="progress-fill"></div></div>
   <div id="progress-label">0%</div>
 </div>
 
 <!-- ── MODE TOGGLE ── -->
-
 <div id="mode-toggle">
   <button class="mode-btn active" id="btn-explore" onclick="setMode('explore')">📍 Explore</button>
   <button class="mode-btn" id="btn-route" onclick="setMode('route')">🗺️ Route</button>
@@ -346,7 +339,6 @@ touch-action:manipulation;
 </div>
 
 <!-- ── ROUTE PANEL ── -->
-
 <div id="route-panel">
   <div class="r-row">
     <input class="r-input" id="from-inp" placeholder="📍 From — type or use location"/>
@@ -359,7 +351,6 @@ touch-action:manipulation;
 </div>
 
 <!-- ── STORIES PANEL ── -->
-
 <div id="stories-panel">
   <div id="stories-inner">
     <div id="stories-header">
@@ -376,18 +367,15 @@ touch-action:manipulation;
 </div>
 
 <!-- ── PROXIMITY ALERT ── -->
-
 <div id="prox-alert">📍 <span id="prox-text"></span></div>
 
 <!-- ── ZOOM ── -->
-
 <div id="zoom">
   <button class="zbtn" onclick="map.setZoom(map.getZoom()+1)">+</button>
   <button class="zbtn" onclick="map.setZoom(map.getZoom()-1)">−</button>
 </div>
 
 <!-- ── STORY CARD ── -->
-
 <div id="story">
   <div id="story-header">
     <div style="display:flex;align-items:center;">
@@ -414,7 +402,6 @@ touch-action:manipulation;
 </div>
 
 <!-- ── BOTTOM BAR ── -->
-
 <div id="bottom-bar">
   <button id="tour-btn" onclick="toggleTour()">▶ Start Listening</button>
   <div id="travel-mode">
@@ -425,14 +412,12 @@ touch-action:manipulation;
 </div>
 
 <!-- ── FAVOURITES PANEL ── -->
-
 <div id="fav-panel">
   <div id="fav-panel-header"><h2>❤️ Favourites</h2><button id="fav-close" onclick="closeFavPanel()">✕</button></div>
   <div id="fav-list"></div>
 </div>
 
 <!-- ── PAYWALL ── -->
-
 <div id="paywall">
   <div class="pw-box">
     <div style="font-size:40px;margin-bottom:12px;">🗺️</div>
@@ -450,7 +435,6 @@ touch-action:manipulation;
 </div>
 
 <!-- ── COOKIE ── -->
-
 <div id="cookie-banner">
   <p>We use cookies to understand how StoryRoute is used. <a onclick="showCookieInfo()">Learn more</a></p>
   <div class="cookie-btns">
@@ -460,7 +444,6 @@ touch-action:manipulation;
 </div>
 
 <!-- ── UPDATE BAR ── -->
-
 <div id="update-bar">
   <span style="font-size:13px;">🆕 New version available</span>
   <button onclick="applyUpdate()" style="padding:8px 16px;background:#f0a500;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;touch-action:manipulation;">Update now</button>
@@ -614,26 +597,47 @@ function cancelAudio(){
 async function tts(text,onDone,rate=0.88){
   cancelAudio();
   if(voiceProvider==='google'){
+    setVoiceIndicator('🔄');
     try{
       const r=await fetch('/api/tts',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({text,voice:'en-IE-Standard-A'})
       });
-      if(!r.ok)throw new Error('TTS '+r.status);
+      if(!r.ok) throw new Error('HTTP '+r.status);
       const blob=await r.blob();
+      if(blob.size<100) throw new Error('Empty audio response');
       const url=URL.createObjectURL(blob);
       currentAudio=new Audio(url);
       currentAudio.playbackRate=rate;
-      currentAudio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;onDone();};
-      currentAudio.onerror=()=>{URL.revokeObjectURL(url);currentAudio=null;browserTTS(text,onDone,rate);};
+      currentAudio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;setVoiceIndicator('🇮🇪');onDone();};
+      currentAudio.onerror=(e)=>{
+        console.error('Audio playback error:',e);
+        URL.revokeObjectURL(url);currentAudio=null;
+        setVoiceIndicator('📱');
+        browserTTS(text,onDone,rate);
+      };
       await currentAudio.play();
+      setVoiceIndicator('🇮🇪');
       return;
     }catch(e){
-      console.warn('Google TTS failed, falling back to browser:',e);
+      console.warn('Google TTS failed:',e.message);
+      showToast('⚠️ Google voice unavailable — using device voice');
+      setVoiceIndicator('📱');
     }
+  } else {
+    setVoiceIndicator('📱');
   }
   browserTTS(text,onDone,rate);
+}
+
+function setVoiceIndicator(icon){
+  const el=document.getElementById('voice-indicator');
+  if(!el)return;
+  el.style.display='block';
+  el.textContent=icon==='🇮🇪'?'🇮🇪 Google':icon==='🔄'?'⏳ Loading…':'📱 Device';
+  el.style.background=icon==='🇮🇪'?'rgba(34,197,94,0.1)':icon==='🔄'?'rgba(240,165,0,0.1)':'rgba(0,0,0,0.05)';
+  el.style.color=icon==='🇮🇪'?'#15803d':icon==='🔄'?'#b36b00':'#999';
 }
 
 function browserTTS(text,onDone,rate=0.88){
@@ -678,32 +682,46 @@ function testCurrentVoice(){
   tts('Welcome to StoryRoute. Steeped in centuries of history, Ireland has a story waiting around every corner.',()=>{});
 }
 
-// ── Photos — Wikipedia API ────────────────────────────────────
+// ── Photos — Wikipedia full image API ────────────────────────
 const photoCache={};
 
 async function fetchPhoto(title){
   if(photoCache[title]!==undefined) return photoCache[title];
-  const attempts=[
+
+  const queries=[
     title,
     title+', Dublin',
     title+', Ireland',
-    title.replace(/^(The|St\.?|Saint)\s/i,'')
+    title.replace(/^(The |St\.? |Saint )/i,'')
   ];
-  for(const q of attempts){
+
+  for(const q of queries){
     try{
-      const slug=q.trim().replace(/ /g,'_');
-      const r=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(slug),{headers:{'User-Agent':'StoryRouteApp/1.0'}});
-      if(!r.ok) continue;
-      const d=await r.json();
-      if(d.thumbnail&&d.thumbnail.source){
-        // Request a larger version — replace any px size with 600px
-        const url=d.thumbnail.source.replace(/\/\d+px-/,'/600px-');
-        const result={url,credit:'Wikipedia'};
-        photoCache[title]=result;
-        return result;
-      }
+      // Step 1: find the Wikipedia page title
+      const search=await fetch(
+        'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+
+        encodeURIComponent(q+' Ireland')+'&srlimit=1&format=json&origin=*'
+      ).then(r=>r.json());
+
+      const pageTitle=search?.query?.search?.[0]?.title;
+      if(!pageTitle) continue;
+
+      // Step 2: get the main image for that page (not thumbnail — actual file)
+      const imgData=await fetch(
+        'https://en.wikipedia.org/w/api.php?action=query&titles='+
+        encodeURIComponent(pageTitle)+'&prop=pageimages&pithumbsize=1200&pilicense=any&format=json&origin=*'
+      ).then(r=>r.json());
+
+      const pages=imgData?.query?.pages;
+      const page=pages&&Object.values(pages)[0];
+      if(!page?.thumbnail?.source) continue;
+
+      const result={url:page.thumbnail.source,credit:pageTitle};
+      photoCache[title]=result;
+      return result;
     }catch(e){continue;}
   }
+
   photoCache[title]=null;
   return null;
 }
@@ -712,7 +730,6 @@ async function loadStoryPhoto(title){
   const wrap=document.getElementById('story-photo-wrap');
   const img=document.getElementById('story-photo');
   const credit=document.getElementById('story-photo-credit');
-  // Reset state
   wrap.classList.remove('loaded');
   img.src='';
   credit.textContent='';
@@ -721,7 +738,7 @@ async function loadStoryPhoto(title){
     img.onload=()=>wrap.classList.add('loaded');
     img.onerror=()=>wrap.classList.remove('loaded');
     img.src=photo.url;
-    credit.textContent='📷 Wikipedia';
+    credit.textContent='📷 '+photo.credit+' via Wikipedia';
   }
 }
 
@@ -1073,6 +1090,5 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').then
 // ── Utils ─────────────────────────────────────────────────────
 function haversine(a,b){const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 </script>
-
 </body>
 </html>
