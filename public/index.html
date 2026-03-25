@@ -19,13 +19,14 @@ gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-R6WMQEWZMV"></script>
 <script>gtag('js',new Date());gtag('config','G-R6WMQEWZMV');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #map{width:100vw;height:100vh;}
 .leaflet-control-container{display:none!important;}
 
-/* SPLASH */
+/* ── SPLASH ── */
 #splash{position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;}
 #splash-logo{width:88px;height:88px;border-radius:20px;}
 #splash-title{font-size:30px;font-weight:800;color:#1a2240;}
@@ -37,7 +38,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #splash-version{background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.3);border-radius:8px;padding:5px 16px;font-size:13px;font-weight:700;color:#f0a500;}
 #splash-force{padding:6px 16px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#bbb;cursor:pointer;touch-action:manipulation;}
 
-/* HEADER */
+/* ── HEADER ── */
 #header{position:fixed;top:0;left:0;right:0;z-index:1000;padding:10px 16px;background:rgba(255,255,255,0.97);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
 #app-name{font-size:20px;font-weight:800;color:#1a2240;margin-left:10px;}
 #app-name span{color:#f0a500;}
@@ -48,12 +49,12 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #voice-badge.loading{display:inline-block;background:rgba(240,165,0,0.12);color:#b36b00;}
 #menu-btn{width:52px;height:52px;background:#f0a500;color:#fff;border:none;border-radius:12px;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(240,165,0,0.4);touch-action:manipulation;flex-shrink:0;}
 
-/* MODE TOGGLE */
+/* ── MODE TOGGLE ── */
 #mode-toggle{position:fixed;top:78px;left:50%;transform:translateX(-50%);z-index:999;display:flex;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.1);border-radius:20px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);white-space:nowrap;}
 .mode-btn{padding:8px 14px;font-size:12px;font-weight:700;border:none;background:transparent;color:rgba(0,0,0,0.4);cursor:pointer;touch-action:manipulation;}
 .mode-btn.active{background:#f0a500;color:#fff;}
 
-/* ROUTE PANEL */
+/* ── ROUTE PANEL ── */
 #route-panel{position:fixed;top:124px;left:16px;right:16px;z-index:999;background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:14px;padding:14px;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.1);}
 #route-panel.visible{display:block;}
 .r-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
@@ -66,19 +67,19 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .r-btn{width:100%;padding:11px;background:#f0a500;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;touch-action:manipulation;}
 .r-btn:disabled{background:#ccc;color:#888;}
 
-/* PROGRESS */
+/* ── PROGRESS ── */
 #progress-wrap{position:fixed;top:62px;left:0;right:0;z-index:998;background:rgba(255,255,255,0.95);border-bottom:1px solid rgba(0,0,0,0.06);padding:6px 16px;display:none;align-items:center;gap:10px;}
 #progress-wrap.visible{display:flex;}
 #progress-track{flex:1;height:6px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden;}
 #progress-fill{height:100%;background:#f0a500;border-radius:3px;width:0%;transition:width .5s;}
 #progress-label{font-size:11px;color:#888;flex-shrink:0;}
 
-/* ZOOM */
+/* ── ZOOM ── */
 #zoom{position:fixed;bottom:240px;left:14px;z-index:1000;display:flex;flex-direction:column;gap:6px;}
 .zbtn{width:42px;height:42px;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.15);border-radius:8px;color:#333;font-size:22px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
 .zbtn:active{background:#f0a500;color:#fff;}
 
-/* STORY CARD */
+/* ── STORY CARD ── */
 #story{position:fixed;bottom:74px;left:0;right:0;padding:14px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.08);display:none;z-index:1001;box-shadow:0 -4px 20px rgba(0,0,0,0.08);transition:bottom .25s;}
 #story-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 #story-name{font-size:10px;font-weight:700;color:#f0a500;text-transform:uppercase;letter-spacing:1.2px;}
@@ -104,7 +105,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #next-info{margin-top:8px;font-size:11px;color:#999;}
 #next-info b{color:#e09400;}
 
-/* BOTTOM BAR */
+/* ── BOTTOM BAR ── */
 #bottom-bar{position:fixed;bottom:0;left:0;right:0;z-index:1002;background:#fff;border-top:1px solid rgba(0,0,0,0.08);padding:10px 16px 14px;box-shadow:0 -2px 12px rgba(0,0,0,0.08);}
 #tour-btn{width:100%;padding:14px;border:none;border-radius:12px;font-weight:800;font-size:17px;cursor:pointer;background:#22c55e;color:#fff;box-shadow:0 3px 12px rgba(34,197,94,0.3);touch-action:manipulation;}
 #tour-btn.stop{background:#ef4444;box-shadow:0 3px 12px rgba(239,68,68,0.3);}
@@ -113,7 +114,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .tm-btn{flex:1;padding:10px 4px;background:#fff;border:2px solid rgba(0,0,0,0.1);border-radius:10px;font-size:12px;font-weight:700;color:#666;cursor:pointer;text-align:center;touch-action:manipulation;}
 .tm-btn.active{border-color:#1a2240;color:#1a2240;}
 
-/* STORIES PANEL */
+/* ── STORIES PANEL ── */
 #stories-panel{position:fixed;top:124px;left:0;right:0;bottom:74px;z-index:998;display:none;flex-direction:column;background:#f8f7f4;overflow:hidden;}
 #stories-panel.visible{display:flex;}
 #stories-inner{flex:1;overflow-y:auto;padding:12px 16px 16px;-webkit-overflow-scrolling:touch;}
@@ -144,7 +145,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .pill-legend{background:rgba(139,92,246,0.12);color:#7c3aed;}
 .pill-history{background:rgba(20,184,166,0.12);color:#0f766e;}
 
-/* MENU */
+/* ── MENU ── */
 #menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:2999;display:none;}
 #menu-overlay.open{display:block;}
 #menu-panel{position:fixed;top:0;right:0;bottom:0;width:min(280px,85vw);background:#fff;z-index:3000;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);}
@@ -158,8 +159,12 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .mi-icon{font-size:20px;width:28px;text-align:center;}
 .mi-badge{margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;}
 .mi-divider{height:1px;background:rgba(0,0,0,0.07);margin:4px 16px;}
+/* Pro indicator in menu */
+#menu-user{padding:12px 20px;background:rgba(240,165,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);}
+#menu-user-email{font-size:12px;color:#888;margin-bottom:2px;}
+#menu-user-status{font-size:13px;font-weight:700;color:#1a2240;}
 
-/* SLIDE PANELS (voice / speed / filter) */
+/* ── SLIDE PANELS ── */
 .slide-panel{position:fixed;top:0;right:0;bottom:0;width:min(300px,90vw);background:#fff;z-index:3001;transform:translateX(110%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);}
 .slide-panel.open{transform:translateX(0);}
 .sp-header{padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;}
@@ -173,7 +178,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .pick-desc{font-size:11px;color:#999;}
 .pick-check{width:20px;height:20px;background:#f0a500;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;margin-left:auto;}
 
-/* FILTER items */
+/* ── FILTER PANEL ── */
 .filter-item{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid rgba(0,0,0,0.05);cursor:pointer;touch-action:manipulation;}
 .filter-item input[type=checkbox]{width:20px;height:20px;accent-color:#f0a500;flex-shrink:0;cursor:pointer;}
 .filter-item label{font-size:14px;color:#1a2240;cursor:pointer;flex:1;}
@@ -181,7 +186,32 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .filter-actions button{flex:1;padding:8px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#333;cursor:pointer;touch-action:manipulation;}
 .filter-apply{background:#f0a500!important;color:#fff!important;}
 
-/* FAVOURITES */
+/* ── AUTH PANEL ── */
+#auth-panel .sp-body{display:flex;flex-direction:column;gap:14px;padding:20px 16px;}
+.auth-title{font-size:15px;font-weight:700;color:#1a2240;margin-bottom:4px;}
+.auth-sub{font-size:13px;color:#888;line-height:1.5;margin-bottom:8px;}
+.auth-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,0.15);border-radius:10px;font-size:15px;outline:none;color:#222;}
+.auth-input:focus{border-color:#f0a500;}
+.auth-btn{width:100%;padding:13px;background:#f0a500;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.auth-btn:disabled{background:#ddd;color:#aaa;}
+.auth-msg{font-size:13px;text-align:center;color:#22c55e;min-height:18px;}
+.auth-divider{height:1px;background:rgba(0,0,0,0.08);margin:4px 0;}
+.auth-logout{width:100%;padding:11px;background:rgba(239,68,68,0.08);color:#ef4444;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.auth-pro-badge{background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.3);border-radius:10px;padding:12px 14px;text-align:center;}
+.auth-pro-badge .pro-icon{font-size:28px;margin-bottom:6px;}
+.auth-pro-badge .pro-text{font-size:14px;font-weight:700;color:#b36b00;}
+.auth-pro-badge .pro-sub{font-size:12px;color:#999;margin-top:3px;}
+
+/* ── FEEDBACK PANEL ── */
+#feedback-panel .sp-body{display:flex;flex-direction:column;gap:12px;padding:20px 16px;}
+.fb-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,0.12);border-radius:10px;font-size:14px;outline:none;color:#222;font-family:sans-serif;}
+.fb-input:focus{border-color:#f0a500;}
+textarea.fb-input{height:120px;resize:none;}
+.fb-btn{width:100%;padding:13px;background:#1a2240;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.fb-btn:disabled{background:#ddd;color:#aaa;}
+.fb-msg{font-size:13px;text-align:center;min-height:18px;}
+
+/* ── FAVOURITES ── */
 #fav-panel{position:fixed;top:0;left:0;bottom:0;width:min(320px,90vw);background:#fff;z-index:3000;transform:translateX(-100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,0.12);}
 #fav-panel.open{transform:translateX(0);}
 #fav-panel-header{padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;}
@@ -195,7 +225,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .fav-play{flex:1;padding:7px;background:#f0a500;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;}
 .fav-del{padding:7px 10px;background:rgba(0,0,0,0.05);color:#999;border:none;border-radius:7px;font-size:12px;cursor:pointer;touch-action:manipulation;}
 
-/* PROXIMITY / PAYWALL / COOKIE */
+/* ── PAYWALL / COOKIE / PROX ── */
 #prox-alert{position:fixed;top:120px;left:16px;right:16px;z-index:998;background:#1a2240;color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,0.2);}
 #prox-alert.visible{display:flex;}
 #paywall{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9990;display:none;align-items:center;justify-content:center;padding:24px;}
@@ -216,7 +246,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #cookie-accept{flex:1;padding:10px;background:#f0a500;color:#000;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;}
 #cookie-decline{flex:1;padding:10px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:8px;font-size:13px;cursor:pointer;touch-action:manipulation;}
 
-/* LANDMARK DOTS */
+/* ── LANDMARK DOTS ── */
 .lm-dot{font-size:22px;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));transition:transform .15s;}
 .lm-dot:hover{transform:scale(1.2);}
 .lm-dot.visited{opacity:0.3;filter:grayscale(1);}
@@ -242,7 +272,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.6.2</div>
+  <div id="splash-version">v1.7.1</div>
   <button id="splash-force">🔄 Force update</button>
 </div>
 
@@ -263,6 +293,10 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 <div id="menu-overlay"></div>
 <div id="menu-panel">
   <div id="menu-top"><h2>Menu</h2><button id="menu-close-btn">✕</button></div>
+  <div id="menu-user">
+    <div id="menu-user-email"></div>
+    <div id="menu-user-status"></div>
+  </div>
   <div id="menu-body">
     <button class="mi" id="refresh-mi"><span class="mi-icon">🔄</span>Refresh landmarks</button>
     <button class="mi" id="favs-mi"><span class="mi-icon">❤️</span>Favourites</button>
@@ -271,7 +305,10 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
     <button class="mi" id="rotate-mi"><span class="mi-icon">🔄</span>Rotate voices<span class="mi-badge" id="rotate-label"></span></button>
     <button class="mi" id="filter-mi"><span class="mi-icon">🏷️</span>Landmark types<span class="mi-badge" id="filter-label"></span></button>
     <div class="mi-divider"></div>
-    <button class="mi" id="upgrade-mi"><span class="mi-icon">⭐</span>Upgrade to Pro — €3.99/mo</button>
+    <button class="mi" id="account-mi"><span class="mi-icon">👤</span>Account / Pro<span class="mi-badge" id="account-label"></span></button>
+    <button class="mi" id="feedback-mi"><span class="mi-icon">💬</span>Send feedback</button>
+    <div class="mi-divider"></div>
+    <button class="mi" id="upgrade-mi"><span class="mi-icon">⭐</span>Upgrade to Pro<span class="mi-badge" style="color:#22c55e;">Launch offer</span></button>
   </div>
 </div>
 
@@ -294,9 +331,30 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
     <div class="filter-actions">
       <button onclick="selectAllTypes()">All on</button>
       <button onclick="clearAllTypes()">All off</button>
-      <button class="filter-apply" onclick="applyFilter()">Apply</button>
+      <button class="filter-apply" onclick="applyFilter()">✓ Apply</button>
     </div>
     <div id="filter-list"></div>
+  </div>
+</div>
+
+<!-- ACCOUNT PANEL -->
+<div class="slide-panel" id="auth-panel">
+  <div class="sp-header"><h2>👤 Account</h2><button class="sp-close" id="auth-close">✕</button></div>
+  <div class="sp-body" id="auth-body">
+    <!-- Rendered by JS -->
+  </div>
+</div>
+
+<!-- FEEDBACK PANEL -->
+<div class="slide-panel" id="feedback-panel">
+  <div class="sp-header"><h2>💬 Feedback</h2><button class="sp-close" id="feedback-close">✕</button></div>
+  <div class="sp-body">
+    <p style="font-size:13px;color:#888;line-height:1.6;margin-bottom:4px;">Tell us what you think — bugs, ideas, or anything else. We read every message.</p>
+    <input class="fb-input" id="fb-name" placeholder="Your name (optional)">
+    <input class="fb-input" id="fb-email" placeholder="Your email (optional)">
+    <textarea class="fb-input" id="fb-msg" placeholder="Your message…"></textarea>
+    <button class="fb-btn" id="fb-submit" onclick="submitFeedback()">Send feedback</button>
+    <div class="fb-msg" id="fb-result"></div>
   </div>
 </div>
 
@@ -354,7 +412,6 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
   </div>
   <div id="story-body">
     <div id="story-photo-row"><img id="story-photo-thumb" alt=""><div id="story-photo-info"><div id="story-text"></div><div id="story-photo-credit"></div></div></div>
-    <div id="story-text-plain" style="display:none;font-size:14px;line-height:1.7;color:#222;margin-bottom:10px;"></div>
     <div id="story-btns">
       <button id="replay-btn" onclick="replayStory()">▶ Replay</button>
       <button id="share-btn" onclick="shareStory()">↑ Share</button>
@@ -386,10 +443,11 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 <div id="paywall">
   <div class="pw-box">
     <div style="font-size:40px;margin-bottom:12px;">🗺️</div>
-    <h2>You've used your 5 free stories today</h2>
-    <p>Upgrade to StoryRoute Pro for unlimited stories.</p>
-    <ul class="pw-perks"><li>Unlimited stories every day</li><li>All travel modes</li><li>Favourites saved forever</li></ul>
-    <button class="pw-pro" onclick="startCheckout()">€3.99 / month — Upgrade to Pro</button>
+    <h2>You've explored today's free stories</h2>
+    <p>You've used your 20 free stories today. Upgrade for unlimited access.</p>
+    <ul class="pw-perks"><li>Unlimited stories every day</li><li>All travel modes</li><li>Favourites saved forever</li><li>Pro status across all devices</li></ul>
+    <button class="pw-pro" onclick="startCheckout('monthly')" style="margin-bottom:8px;">€3.99 / month</button>
+    <button class="pw-pro" onclick="startCheckout('annual')" style="background:#1a2240;margin-bottom:10px;">€29.99 / year <span style="font-size:12px;opacity:0.7;">— save 2 months</span></button>
     <button class="pw-close" onclick="closePaywall()">Maybe later</button>
   </div>
 </div>
@@ -413,15 +471,26 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 </audio>
 
 <script>
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // CONSTANTS
-// ─────────────────────────────────────────────────────────────
-const DUBLIN=[53.3438,-6.2546];
-const FREE_LIMIT=5;
-const TRAVEL_MODES={walking:{radius:200},driving:{radius:10000},long:{radius:25000}};
-const VOICERSS_KEY='293997f94bec46f386498eb580855415';
+// ═══════════════════════════════════════════════════════════════
+const DUBLIN = [53.3438, -6.2546];
+const FREE_LIMIT = 20; // raised from 5 for launch — revert to 5 after promo period
+const TRAVEL_MODES = { walking:{radius:200}, driving:{radius:10000}, long:{radius:25000} };
+const VOICERSS_KEY = '293997f94bec46f386498eb580855415';
+const FEEDBACK_EMAIL = 'samir.asadov.28@gmail.com';
 
-const TYPE_ICON={
+// ── Supabase config ──
+// Create a free project at supabase.com, then replace these:
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+// SQL to run in Supabase SQL editor:
+// CREATE TABLE profiles (id uuid PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE, email text, is_pro boolean DEFAULT false);
+// ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+// CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+// CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+const TYPE_ICON = {
   monument:'🏛',church:'⛪',castle:'🏰',street:'🛤',building:'🏢',bridge:'🌉',
   park:'🌿',museum:'🎭',neighbourhood:'🏘',person:'👤',nature:'🌊',pub:'🍺',
   beach:'🏖',estate:'🏡',school:'🏫',sport:'🏟',area:'🏙',legend:'🐉',
@@ -430,15 +499,14 @@ const TYPE_ICON={
   library:'📚',railway:'🚂',canal:'🚣',other:'📍'
 };
 
-// All landmark types — used for filter
-const ALL_TYPES=[
+const ALL_TYPES = [
   'monument','church','castle','street','building','bridge','park','museum',
   'person','nature','pub','beach','estate','school','sport','abbey','harbour',
   'tower','market','gate','hall','cinema','railway','canal','well','hill',
   'island','history','legend','area','neighbourhood','other'
 ];
 
-const TYPE_LABELS={
+const TYPE_LABELS = {
   monument:'🏛 Monument',church:'⛪ Church',castle:'🏰 Castle',street:'🛤 Street',
   building:'🏢 Building',bridge:'🌉 Bridge',park:'🌿 Park',museum:'🎭 Museum',
   person:'👤 Person',nature:'🌊 Nature',pub:'🍺 Pub',beach:'🏖 Beach',
@@ -450,7 +518,7 @@ const TYPE_LABELS={
   other:'📍 Other'
 };
 
-const VOICES=[
+const VOICES = [
   {hl:'en-gb',v:'Alice',  label:'🇬🇧 Alice',  desc:'British female'},
   {hl:'en-gb',v:'Nancy',  label:'🇬🇧 Nancy',  desc:'British female'},
   {hl:'en-gb',v:'Harry',  label:'🇬🇧 Harry',  desc:'British male'},
@@ -468,124 +536,294 @@ const VOICES=[
   {hl:'device',v:'',      label:'📱 Device',  desc:'Built-in browser voice'}
 ];
 
-const SPEEDS=[
+const SPEEDS = [
   {val:0.9,  label:'🚶 Slow',     desc:'0.9×'},
   {val:1.0,  label:'🎯 Normal',   desc:'1.0×'},
   {val:1.1,  label:'⚡ Fast',     desc:'1.1× — default'},
   {val:1.25, label:'🚀 Faster',   desc:'1.25×'},
 ];
 
-const STORY_TYPES=[
+const STORY_TYPES = [
   {type:'area',icon:'🏙',label:'Character',pill:'pill-area',
    prompt:(a,c)=>`You are a captivating Irish storyteller. Write a vivid story of around 200 words about the character and soul of ${a} in ${c}, Ireland. Warm spoken style. Story only.`},
   {type:'legend',icon:'🐉',label:'Local legend',pill:'pill-legend',
-   prompt:(a,c)=>`You are a captivating Irish storyteller. Tell a local legend or ghost story from ${a}, ${c}, Ireland. Around 200 words. Spoken style. Story only, no title.`},
+   prompt:(a,c)=>`You are a captivating Irish storyteller. Tell a local legend or ghost story from ${a}, ${c}, Ireland. Around 200 words. Story only.`},
   {type:'history',icon:'📜',label:'History',pill:'pill-history',
-   prompt:(a,c)=>`You are an Irish historian and storyteller. Narrate a significant historical moment connected to ${a}, ${c}, Ireland. Around 200 words. Spoken style. Story only.`}
+   prompt:(a,c)=>`You are an Irish historian and storyteller. Narrate a significant historical moment connected to ${a}, ${c}, Ireland. Around 200 words. Story only.`}
 ];
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // STATE
-// ─────────────────────────────────────────────────────────────
-let markers={}, visited=new Set(), fetched=new Set(), fetchedNb=new Set();
-let userPos=null, tourOn=false, speaking=false;
-let curStory=null, nxtStory=null, prefetchId=null;
-let useCurrentLocFrom=false, routeCoords=[];
-let landmarkCount=0, favourites=[], proxTimer=null;
-let travelMode='walking', PROXIMITY_RADIUS=200;
-let voicePool=[], newWorker=null, currentAudio=null;
-let longStories=[], currentLongStoryIdx=-1, longSpeaking=false;
-let currentAreaName='this area', currentCityName='Ireland';
-const photoCache={};
+// ═══════════════════════════════════════════════════════════════
+let markers = {}, visited = new Set(), fetched = new Set(), fetchedNb = new Set();
+let userPos = null, tourOn = false, speaking = false;
+let curStory = null, nxtStory = null, prefetchId = null;
+let useCurrentLocFrom = false, routeCoords = [];
+let landmarkCount = 0, favourites = [], proxTimer = null;
+let travelMode = 'walking', PROXIMITY_RADIUS = 200;
+let voicePool = [], newWorker = null, currentAudio = null;
+let longStories = [], currentLongStoryIdx = -1, longSpeaking = false;
+let currentAreaName = 'this area', currentCityName = 'Ireland';
+const photoCache = {};
 
-// Settings — loaded from localStorage
-let selectedVoice = JSON.parse(localStorage.getItem('sr_voice_cfg')||'null') || VOICES[0];
-// Speed always resets to 1.1 on every page load — user can change during session
-let voiceSpeed = 1.1;
+// Settings
+let selectedVoice = JSON.parse(localStorage.getItem('sr_voice_cfg') || 'null') || VOICES[0];
+let voiceSpeed    = 1.1; // always reset to 1.1 on load
 let rotateVoices  = localStorage.getItem('sr_rotate') !== 'false'; // default ON
 
-// Active landmark filter — load saved, ensure all types present
-const _saved = JSON.parse(localStorage.getItem('sr_type_filter') || 'null');
-let activeTypes = new Set(_saved ? ALL_TYPES.filter(t => _saved.includes(t)) : ALL_TYPES);
+// ── FILTER STATE ── The single source of truth for which types are visible
+const _savedFilter = JSON.parse(localStorage.getItem('sr_type_filter') || 'null');
+let activeTypes = new Set(
+  _savedFilter
+    ? ALL_TYPES.filter(t => _savedFilter.includes(t))  // restore saved, but always include any newly added types
+    : ALL_TYPES
+);
+
+// ── Auth state ──
+let supabaseClient = null;
+let currentUser = null;
+let userIsPro = false;
 
 function track(n,p={}){try{gtag('event',n,p);}catch(e){}}
 
-// ─────────────────────────────────────────────────────────────
-// MAP
-// ─────────────────────────────────────────────────────────────
-const map=L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-map.on('moveend',fetchVisibleBounds);
-map.on('click',()=>document.getElementById('story').style.display='none');
+// ═══════════════════════════════════════════════════════════════
+// SUPABASE AUTH
+// ═══════════════════════════════════════════════════════════════
+function initSupabase(){
+  try{
+    if(typeof supabase !== 'undefined' && SUPABASE_URL !== 'YOUR_SUPABASE_URL'){
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabaseClient.auth.onAuthStateChange(async(event, session)=>{
+        currentUser = session?.user || null;
+        if(currentUser){
+          await loadProStatus();
+        } else {
+          userIsPro = localStorage.getItem('sr_pro') === 'true'; // fallback
+        }
+        updateMenuUser();
+        updateMenuLabels();
+      });
+      supabaseClient.auth.getSession().then(({data})=>{
+        currentUser = data?.session?.user || null;
+        if(currentUser) loadProStatus();
+        else userIsPro = localStorage.getItem('sr_pro') === 'true';
+        updateMenuUser();
+      });
+    } else {
+      // Supabase not configured — use localStorage fallback
+      userIsPro = localStorage.getItem('sr_pro') === 'true';
+      updateMenuUser();
+    }
+  } catch(e){
+    userIsPro = localStorage.getItem('sr_pro') === 'true';
+    updateMenuUser();
+  }
+}
 
-// ─────────────────────────────────────────────────────────────
+async function loadProStatus(){
+  if(!supabaseClient||!currentUser)return;
+  try{
+    const {data} = await supabaseClient
+      .from('profiles')
+      .select('is_pro')
+      .eq('id', currentUser.id)
+      .single();
+    userIsPro = data?.is_pro || false;
+    if(userIsPro) localStorage.setItem('sr_pro','true');
+  }catch(e){ userIsPro = localStorage.getItem('sr_pro')==='true'; }
+}
+
+function updateMenuUser(){
+  const emailEl = document.getElementById('menu-user-email');
+  const statusEl = document.getElementById('menu-user-status');
+  const accountLabel = document.getElementById('account-label');
+  if(currentUser){
+    emailEl.textContent = currentUser.email;
+    statusEl.textContent = userIsPro ? '⭐ Pro member' : 'Free plan';
+    if(accountLabel) accountLabel.textContent = userIsPro ? 'Pro ⭐' : '';
+  } else {
+    emailEl.textContent = 'Not signed in';
+    statusEl.textContent = userIsPro ? '⭐ Pro (local)' : 'Free plan';
+    if(accountLabel) accountLabel.textContent = '';
+  }
+}
+
+function renderAuthPanel(){
+  const body = document.getElementById('auth-body');
+  if(currentUser){
+    body.innerHTML = `
+      <div class="auth-pro-badge" style="margin-bottom:16px;">
+        <div class="pro-icon">${userIsPro?'⭐':'👤'}</div>
+        <div class="pro-text">${currentUser.email}</div>
+        <div class="pro-sub">${userIsPro?'Pro member — unlimited stories across all devices':'Free plan — 5 stories/day'}</div>
+      </div>
+      ${userIsPro ? '' : `
+        <button class="auth-btn" onclick="startCheckout('monthly')" style="margin-bottom:8px;">⭐ €3.99 / month</button>
+        <button class="auth-btn" onclick="startCheckout('annual')" style="background:#1a2240;margin-bottom:12px;">⭐ €29.99 / year <span style="font-size:11px;opacity:0.7;">save 2 months</span></button>
+      `}
+      <div class="auth-divider"></div>
+      <button class="auth-logout" onclick="signOut()">Sign out</button>`;
+  } else {
+    body.innerHTML = `
+      <div class="auth-title">Sign in for persistent Pro</div>
+      <div class="auth-sub">Sign in with your email to keep Pro status across devices and after clearing browser data. We'll send a magic link — no password needed.</div>
+      <input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com">
+      <button class="auth-btn" id="auth-send-btn" onclick="sendMagicLink()">Send magic link</button>
+      <div class="auth-msg" id="auth-msg"></div>
+      <div class="auth-divider"></div>
+      <div style="font-size:12px;color:#bbb;text-align:center;">Already paid? Sign in with the email you used at checkout to restore Pro.</div>`;
+  }
+}
+
+async function sendMagicLink(){
+  const email = document.getElementById('auth-email-input')?.value?.trim();
+  const btn = document.getElementById('auth-send-btn');
+  const msg = document.getElementById('auth-msg');
+  if(!email||!email.includes('@')){msg.style.color='#ef4444';msg.textContent='Enter a valid email';return;}
+  if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Supabase not configured yet';return;}
+  btn.disabled=true;btn.textContent='Sending…';
+  try{
+    const {error} = await supabaseClient.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin}});
+    if(error)throw error;
+    msg.style.color='#22c55e';
+    msg.textContent='✓ Magic link sent! Check your email.';
+    btn.textContent='Sent ✓';
+  }catch(e){
+    msg.style.color='#ef4444';
+    msg.textContent=e.message||'Error sending link';
+    btn.disabled=false;btn.textContent='Send magic link';
+  }
+}
+
+async function signOut(){
+  if(supabaseClient) await supabaseClient.auth.signOut();
+  currentUser=null;userIsPro=false;
+  localStorage.removeItem('sr_pro');
+  updateMenuUser();
+  renderAuthPanel();
+  showToast('Signed out');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FEEDBACK
+// ═══════════════════════════════════════════════════════════════
+async function submitFeedback(){
+  const name  = document.getElementById('fb-name').value.trim();
+  const email = document.getElementById('fb-email').value.trim();
+  const msg   = document.getElementById('fb-msg').value.trim();
+  const btn   = document.getElementById('fb-submit');
+  const res   = document.getElementById('fb-result');
+  if(!msg){res.style.color='#ef4444';res.textContent='Please write a message';return;}
+  btn.disabled=true;btn.textContent='Sending…';
+  try{
+    // Use Netlify Forms — add netlify attribute to form or use fetch to /api/feedback
+    // We call /api/feedback Netlify function which emails samir.asadov.28@gmail.com
+    const r = await fetch('/api/feedback',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, email, message: msg, userEmail: currentUser?.email||'anonymous'})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    res.style.color='#22c55e';
+    res.textContent='✓ Thank you! Your feedback was sent.';
+    document.getElementById('fb-name').value='';
+    document.getElementById('fb-email').value='';
+    document.getElementById('fb-msg').value='';
+    btn.textContent='Send feedback';
+    btn.disabled=false;
+    track('feedback_sent');
+  }catch(e){
+    res.style.color='#ef4444';
+    res.textContent='Could not send — please try again';
+    btn.disabled=false;btn.textContent='Send feedback';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAP
+// ═══════════════════════════════════════════════════════════════
+const map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+map.on('moveend', fetchVisibleBounds);
+map.on('click', ()=>document.getElementById('story').style.display='none');
+
+// ═══════════════════════════════════════════════════════════════
 // BOOT
-// ─────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded',function(){
-  document.getElementById('splash-btn').addEventListener('click',function(){
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('splash-btn').addEventListener('click', function(){
     document.getElementById('splash').style.display='none';
     try{const u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}
-    track('app_open'); getGPS();
+    track('app_open');
+    getGPS();
   });
-  document.getElementById('splash-force').addEventListener('click',forceUpdate);
-  document.getElementById('menu-btn').addEventListener('click',openMenu);
-  document.getElementById('menu-close-btn').addEventListener('click',closeMenu);
-  document.getElementById('menu-overlay').addEventListener('click',closeAllPanels);
-  document.getElementById('refresh-mi').addEventListener('click',()=>{refreshLandmarks();closeMenu();});
-  document.getElementById('favs-mi').addEventListener('click',()=>{openFavPanel();closeMenu();});
-  document.getElementById('voice-mi').addEventListener('click',()=>{openPanel('voice');closeMenu();});
-  document.getElementById('speed-mi').addEventListener('click',()=>{openPanel('speed');closeMenu();});
-  document.getElementById('rotate-mi').addEventListener('click',()=>{toggleRotate();closeMenu();});
-  document.getElementById('filter-mi').addEventListener('click',()=>{openPanel('filter');closeMenu();});
-  document.getElementById('upgrade-mi').addEventListener('click',()=>{startCheckout();closeMenu();});
-  document.getElementById('voice-close').addEventListener('click',()=>closePanel('voice'));
-  document.getElementById('speed-close').addEventListener('click',()=>closePanel('speed'));
-  document.getElementById('filter-close').addEventListener('click',()=>closePanel('filter'));
+  document.getElementById('splash-force').addEventListener('click', forceUpdate);
+  document.getElementById('menu-btn').addEventListener('click', openMenu);
+  document.getElementById('menu-close-btn').addEventListener('click', closeMenu);
+  document.getElementById('menu-overlay').addEventListener('click', closeAllPanels);
+  document.getElementById('refresh-mi').addEventListener('click', ()=>{refreshLandmarks();closeMenu();});
+  document.getElementById('favs-mi').addEventListener('click', ()=>{openFavPanel();closeMenu();});
+  document.getElementById('voice-mi').addEventListener('click', ()=>{openPanel('voice');closeMenu();});
+  document.getElementById('speed-mi').addEventListener('click', ()=>{openPanel('speed');closeMenu();});
+  document.getElementById('rotate-mi').addEventListener('click', ()=>{toggleRotate();closeMenu();});
+  document.getElementById('filter-mi').addEventListener('click', ()=>{openPanel('filter');closeMenu();});
+  document.getElementById('account-mi').addEventListener('click', ()=>{renderAuthPanel();openPanel('auth');closeMenu();});
+  document.getElementById('feedback-mi').addEventListener('click', ()=>{openPanel('feedback');closeMenu();});
+  document.getElementById('upgrade-mi').addEventListener('click', ()=>{startCheckout();closeMenu();});
+  document.getElementById('voice-close').addEventListener('click', ()=>closePanel('voice'));
+  document.getElementById('speed-close').addEventListener('click', ()=>closePanel('speed'));
+  document.getElementById('filter-close').addEventListener('click', ()=>closePanel('filter'));
+  document.getElementById('auth-close').addEventListener('click', ()=>closePanel('auth'));
+  document.getElementById('feedback-close').addEventListener('click', ()=>closePanel('feedback'));
 
   // Cookie
-  const consent=localStorage.getItem('sr_cookie');
+  const consent = localStorage.getItem('sr_cookie');
   if(!consent) setTimeout(()=>document.getElementById('cookie-banner').classList.add('visible'),2500);
   else if(consent==='accepted') gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
 
   if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('✅ Pro unlocked!'),800);}
   if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('🎉 Welcome to Pro!'),800);}
 
+  // Handle Supabase magic link on return
+  if(location.hash.includes('access_token')){
+    showToast('✅ Signed in successfully!');
+    history.replaceState({},'',location.pathname);
+  }
+
   loadFavs();
   loadVoices();
   updateMenuLabels();
+  initSupabase();
 });
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // PANELS
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function openMenu(){document.getElementById('menu-panel').classList.add('open');document.getElementById('menu-overlay').classList.add('open');}
 function closeMenu(){document.getElementById('menu-panel').classList.remove('open');document.getElementById('menu-overlay').classList.remove('open');}
-
 function openPanel(name){
-  closePanel('voice');closePanel('speed');closePanel('filter');
+  ['voice','speed','filter','auth','feedback'].forEach(n=>closePanel(n));
   if(name==='voice') renderVoicePanel();
   if(name==='speed') renderSpeedPanel();
   if(name==='filter') renderFilterPanel();
   document.getElementById(name+'-panel').classList.add('open');
   document.getElementById('menu-overlay').classList.add('open');
 }
-function closePanel(name){
-  document.getElementById(name+'-panel').classList.remove('open');
-}
+function closePanel(name){document.getElementById(name+'-panel').classList.remove('open');}
 function closeAllPanels(){
-  closeMenu();closePanel('voice');closePanel('speed');closePanel('filter');
+  closeMenu();
+  ['voice','speed','filter','auth','feedback'].forEach(n=>closePanel(n));
   document.getElementById('menu-overlay').classList.remove('open');
 }
-
 function openFavPanel(){renderFavs();document.getElementById('fav-panel').classList.add('open');}
 function closeFavPanel(){document.getElementById('fav-panel').classList.remove('open');}
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // VOICE PANEL
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function renderVoicePanel(){
-  document.getElementById('voice-list').innerHTML=VOICES.map((v,i)=>{
-    const sel=JSON.stringify(selectedVoice)===JSON.stringify(v);
+  document.getElementById('voice-list').innerHTML = VOICES.map((v,i)=>{
+    const sel = JSON.stringify(selectedVoice)===JSON.stringify(v);
     return `<div class="pick-item${sel?' selected':''}" onclick="pickVoice(${i})">
       <div class="pick-icon">${v.label.split(' ')[0]}</div>
       <div><div class="pick-name">${v.label.split(' ').slice(1).join(' ')}</div><div class="pick-desc">${v.desc}</div></div>
@@ -593,29 +831,26 @@ function renderVoicePanel(){
     </div>`;
   }).join('');
 }
-
 function pickVoice(i){
-  selectedVoice=VOICES[i];
-  localStorage.setItem('sr_voice_cfg',JSON.stringify(VOICES[i]));
-  // Turn off rotation when user explicitly picks one voice
-  rotateVoices=false;
+  selectedVoice = VOICES[i];
+  localStorage.setItem('sr_voice_cfg', JSON.stringify(VOICES[i]));
+  rotateVoices = false;
   localStorage.setItem('sr_rotate','false');
   updateMenuLabels();
   closePanel('voice');
   showToast('Voice: '+VOICES[i].label);
-  // Replay current story immediately so change is heard
   if(curStory&&curStory.text&&curStory.text!=='⏳ Loading story…'){
     cancelAudio(); speaking=true;
     tts(curStory.text,()=>{speaking=false;if(tourOn){const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}});
   }
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // SPEED PANEL
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function renderSpeedPanel(){
-  document.getElementById('speed-list').innerHTML=SPEEDS.map((s,i)=>{
-    const sel=voiceSpeed===s.val;
+  document.getElementById('speed-list').innerHTML = SPEEDS.map((s,i)=>{
+    const sel = voiceSpeed===s.val;
     return `<div class="pick-item${sel?' selected':''}" onclick="pickSpeed(${i})">
       <div class="pick-icon">${s.label.split(' ')[0]}</div>
       <div><div class="pick-name">${s.label.split(' ').slice(1).join(' ')}</div><div class="pick-desc">${s.desc}</div></div>
@@ -623,118 +858,121 @@ function renderSpeedPanel(){
     </div>`;
   }).join('');
 }
-
 function pickSpeed(i){
-  voiceSpeed=SPEEDS[i].val;
-  localStorage.setItem('sr_speed',String(voiceSpeed));
+  voiceSpeed = SPEEDS[i].val;
   updateMenuLabels();
   closePanel('speed');
   showToast('Speed: '+SPEEDS[i].label);
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // ROTATION
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function toggleRotate(){
-  rotateVoices=!rotateVoices;
-  localStorage.setItem('sr_rotate',String(rotateVoices));
+  rotateVoices = !rotateVoices;
+  localStorage.setItem('sr_rotate', String(rotateVoices));
   updateMenuLabels();
-  showToast(rotateVoices?'🔄 Rotate voices ON':'🔄 Rotate voices OFF');
+  showToast(rotateVoices ? '🔄 Rotate voices ON' : '🔄 Rotate voices OFF');
 }
 
-// ─────────────────────────────────────────────────────────────
-// FILTER PANEL
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// FILTER PANEL  — single source of truth is activeTypes Set
+// ═══════════════════════════════════════════════════════════════
 function renderFilterPanel(){
-  document.getElementById('filter-list').innerHTML=ALL_TYPES.map(t=>`
+  document.getElementById('filter-list').innerHTML = ALL_TYPES.map(t=>`
     <div class="filter-item">
       <input type="checkbox" id="ft-${t}" ${activeTypes.has(t)?'checked':''}
         onchange="toggleType('${t}',this.checked)">
       <label for="ft-${t}">${TYPE_LABELS[t]||t}</label>
     </div>`).join('');
 }
-function toggleType(t,on){ on?activeTypes.add(t):activeTypes.delete(t); }
+function toggleType(t,on){ on ? activeTypes.add(t) : activeTypes.delete(t); }
 function selectAllTypes(){ ALL_TYPES.forEach(t=>activeTypes.add(t)); renderFilterPanel(); }
 function clearAllTypes(){ activeTypes.clear(); renderFilterPanel(); }
+
 function applyFilter(){
-  if(activeTypes.size===0){showToast('Select at least one type');return;}
-  localStorage.setItem('sr_type_filter',JSON.stringify([...activeTypes]));
+  if(activeTypes.size===0){ showToast('Select at least one type'); return; }
+  // Persist
+  localStorage.setItem('sr_type_filter', JSON.stringify([...activeTypes]));
   updateMenuLabels();
-
-  // Immediately show/hide ALL markers based on updated activeTypes
-  Object.entries(markers).forEach(([id,m])=>{
-    const t = m.options._type || 'other';
-    // Neighbourhood markers always have type 'area'
-    let visible;
-    if(t === 'area'){
-      visible = activeTypes.has('area') || activeTypes.has('neighbourhood');
-    } else {
-      visible = activeTypes.has(t);
-    }
-    if(visible){
-      if(!map.hasLayer(m)) m.addTo(map);
-    } else {
-      if(map.hasLayer(m)) map.removeLayer(m);
-    }
-  });
-
+  // Apply to ALL existing markers immediately
+  syncAllMarkerVisibility();
   closePanel('filter');
-  const vis=Object.values(markers).filter(m=>map.hasLayer(m)).length;
+  const vis = Object.values(markers).filter(m=>map.hasLayer(m)).length;
   showToast(vis+' landmarks visible');
   track('filter_applied',{count:activeTypes.size});
 }
 
-// ─────────────────────────────────────────────────────────────
-// MENU LABELS
-// ─────────────────────────────────────────────────────────────
-function updateMenuLabels(){
-  document.getElementById('voice-label').textContent=
-    rotateVoices ? '🔄 Rotating' : selectedVoice.label;
-  const sp=SPEEDS.find(s=>s.val===voiceSpeed)||SPEEDS[3];
-  document.getElementById('speed-label').textContent=sp.label.split(' ')[0]+' '+sp.val+'×';
-  document.getElementById('rotate-label').textContent=rotateVoices?'On':'Off';
-  document.getElementById('filter-label').textContent=
-    activeTypes.size===ALL_TYPES.length?'All':activeTypes.size+' types';
+// The one function that decides visibility for every marker
+function isTypeVisible(markerType){
+  // Neighbourhood markers have type 'area'
+  if(markerType === 'area') return activeTypes.has('area') || activeTypes.has('neighbourhood');
+  return activeTypes.has(markerType);
 }
 
-// ─────────────────────────────────────────────────────────────
+// Walk all markers and sync map visibility to current activeTypes
+function syncAllMarkerVisibility(){
+  Object.values(markers).forEach(m=>{
+    const t = m.options._type || 'other';
+    const visible = isTypeVisible(t);
+    if(visible){ if(!map.hasLayer(m)) m.addTo(map); }
+    else        { if(map.hasLayer(m))  map.removeLayer(m); }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MENU LABELS
+// ═══════════════════════════════════════════════════════════════
+function updateMenuLabels(){
+  const vl = document.getElementById('voice-label');
+  if(vl) vl.textContent = rotateVoices ? '🔄 Rotating' : selectedVoice.label;
+  const sp = SPEEDS.find(s=>s.val===voiceSpeed) || SPEEDS[2];
+  const sl = document.getElementById('speed-label');
+  if(sl) sl.textContent = sp.label.split(' ')[0]+' '+sp.val+'×';
+  const rl = document.getElementById('rotate-label');
+  if(rl) rl.textContent = rotateVoices ? 'On' : 'Off';
+  const fl = document.getElementById('filter-label');
+  if(fl) fl.textContent = activeTypes.size===ALL_TYPES.length ? 'All' : activeTypes.size+' types';
+}
+
+// ═══════════════════════════════════════════════════════════════
 // COOKIE / MONETISATION
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function acceptCookies(){localStorage.setItem('sr_cookie','accepted');document.getElementById('cookie-banner').classList.remove('visible');gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});}
 function declineCookies(){localStorage.setItem('sr_cookie','declined');document.getElementById('cookie-banner').classList.remove('visible');}
 function showCookieInfo(){alert('StoryRoute uses Google Analytics to count visits. No personal data is collected.');}
-function isPro(){return localStorage.getItem('sr_pro')==='true';}
-function todayKey(){return new Date().toDateString();}
-function getCount(){if(localStorage.getItem('sr_day')!==todayKey()){localStorage.setItem('sr_day',todayKey());localStorage.setItem('sr_n','0');}return parseInt(localStorage.getItem('sr_n')||'0');}
-function bumpCount(){localStorage.setItem('sr_n',String(getCount()+1));}
-function canPlay(){return isPro()||getCount()<FREE_LIMIT;}
-function showPaywall(){track('paywall_shown');document.getElementById('paywall').classList.add('visible');}
-function closePaywall(){document.getElementById('paywall').classList.remove('visible');}
-async function startCheckout(){track('upgrade_click');try{const r=await fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const d=await r.json();if(d.url)window.location.href=d.url;else showToast('Checkout error');}catch(e){showToast('Checkout error');}}
-function showToast(msg,dur=3000){const t=document.createElement('div');t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a2240;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:99999;white-space:nowrap;pointer-events:none;';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),dur);}
+function isPro(){ return userIsPro || localStorage.getItem('sr_pro')==='true'; }
+function todayKey(){ return new Date().toDateString(); }
+function getCount(){ if(localStorage.getItem('sr_day')!==todayKey()){localStorage.setItem('sr_day',todayKey());localStorage.setItem('sr_n','0');} return parseInt(localStorage.getItem('sr_n')||'0'); }
+function bumpCount(){ localStorage.setItem('sr_n',String(getCount()+1)); }
+function canPlay(){ return isPro() || getCount()<FREE_LIMIT; }
+function showPaywall(){ track('paywall_shown'); document.getElementById('paywall').classList.add('visible'); }
+function closePaywall(){ document.getElementById('paywall').classList.remove('visible'); }
+async function startCheckout(plan='monthly'){ track('upgrade_click',{plan}); try{ const r=await fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan, email:currentUser?.email||''})}); const d=await r.json(); if(d.url)window.location.href=d.url; else showToast('Checkout error'); }catch(e){showToast('Checkout error');} }
+function showToast(msg,dur=3000){ const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a2240;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:99999;white-space:nowrap;pointer-events:none;'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),dur); }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // GPS
-// ─────────────────────────────────────────────────────────────
-function getGPS(){setStatus('Getting location…');if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1]);return;}navigator.geolocation.getCurrentPosition(p=>startAt(p.coords.latitude,p.coords.longitude),()=>startAt(DUBLIN[0],DUBLIN[1]),{enableHighAccuracy:true,timeout:15000,maximumAge:0});}
+// ═══════════════════════════════════════════════════════════════
+function getGPS(){ setStatus('Getting location…'); if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1]);return;} navigator.geolocation.getCurrentPosition(p=>startAt(p.coords.latitude,p.coords.longitude),()=>startAt(DUBLIN[0],DUBLIN[1]),{enableHighAccuracy:true,timeout:15000,maximumAge:0}); }
 function startAt(lat,lng){
-  userPos={lat,lng};map.setView([lat,lng],15);
+  userPos={lat,lng}; map.setView([lat,lng],15);
   const icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
   const um=L.marker([lat,lng],{icon}).addTo(map);
-  if(navigator.geolocation)navigator.geolocation.watchPosition(p=>{userPos={lat:p.coords.latitude,lng:p.coords.longitude};um.setLatLng([userPos.lat,userPos.lng]);updateProgress();checkProxAlert();},null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-  setStatus('Loading landmarks…');setTimeout(fetchVisibleBounds,600);
+  if(navigator.geolocation) navigator.geolocation.watchPosition(p=>{userPos={lat:p.coords.latitude,lng:p.coords.longitude};um.setLatLng([userPos.lat,userPos.lng]);updateProgress();checkProxAlert();},null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+  setStatus('Loading landmarks…'); setTimeout(fetchVisibleBounds,600);
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // BROWSER TTS VOICES
-// ─────────────────────────────────────────────────────────────
-function loadVoices(){const all=speechSynthesis.getVoices();if(!all.length)return;const pref=['Moira','Daniel','Karen','Samantha','Google UK English Female','Google UK English Male'];voicePool=[];pref.forEach(n=>{const v=all.find(x=>x.name===n);if(v)voicePool.push(v);});if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en')&&v.localService);if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en'));if(!voicePool.length&&all.length)voicePool=[all[0]];}
-if(typeof speechSynthesis!=='undefined'&&speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=loadVoices;
-function currentVoice(){return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null;}
+// ═══════════════════════════════════════════════════════════════
+function loadVoices(){ const all=speechSynthesis.getVoices(); if(!all.length)return; const pref=['Moira','Daniel','Karen','Samantha','Google UK English Female','Google UK English Male']; voicePool=[]; pref.forEach(n=>{const v=all.find(x=>x.name===n);if(v)voicePool.push(v);}); if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en')&&v.localService); if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en')); if(!voicePool.length&&all.length)voicePool=[all[0]]; }
+if(typeof speechSynthesis!=='undefined'&&speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=loadVoices;
+function currentVoice(){ return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null; }
 
-// ─────────────────────────────────────────────────────────────
-// TTS  — VoiceRSS with playbackRate for speed + device fallback
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// TTS — VoiceRSS + playbackRate speed + device fallback
+// ═══════════════════════════════════════════════════════════════
 function setBadge(label){
   const el=document.getElementById('voice-badge');
   if(!el)return;
@@ -743,29 +981,26 @@ function setBadge(label){
   el.className=label==='⏳'?'loading':'on';
   el.textContent=label;
 }
-
 function cancelAudio(){
   try{speechSynthesis.cancel();}catch(e){}
   if(currentAudio){currentAudio.pause();currentAudio=null;}
 }
 
-async function tts(text,onDone,rate){
-  // rate param ignored — always use voiceSpeed global
-  const speed=voiceSpeed;
+async function tts(text, onDone, _rate){
+  const speed = voiceSpeed; // always use the global — ignore _rate param
   cancelAudio();
 
-  // Pick voice
+  // Decide which voice
   let voice;
   if(rotateVoices){
-    const vrVoices=VOICES.filter(v=>v.hl!=='device');
-    voice=vrVoices[landmarkCount % vrVoices.length];
-    setBadge(voice.label);
-  }else{
-    voice=selectedVoice;
-    setBadge(voice.hl==='device'?'📱':voice.label);
+    const vrs = VOICES.filter(v=>v.hl!=='device');
+    voice = vrs[landmarkCount % vrs.length];
+  } else {
+    voice = selectedVoice;
   }
+  setBadge(voice.label);
 
-  // Device TTS
+  // Device TTS path
   if(voice.hl==='device'){
     try{
       speechSynthesis.cancel();
@@ -778,45 +1013,43 @@ async function tts(text,onDone,rate){
     return;
   }
 
-  // VoiceRSS — r param always 0 (speed controlled by playbackRate only)
+  // VoiceRSS — always r=0, speed via playbackRate only
   setBadge('⏳');
   try{
-    const params=new URLSearchParams({
-      key:VOICERSS_KEY, src:text,
-      hl:voice.hl, r:'0', c:'mp3',
-      f:'44khz_128kbitrate_stereo',
-      ssml:'false', b64:'false'
+    const params = new URLSearchParams({
+      key: VOICERSS_KEY, src: text,
+      hl: voice.hl, r: '0', c: 'mp3',
+      f: '44khz_128kbitrate_stereo',
+      ssml: 'false', b64: 'false'
     });
-    if(voice.v) params.set('v',voice.v);
+    if(voice.v) params.set('v', voice.v);
 
-    const resp=await fetch('https://api.voicerss.org/?'+params.toString());
+    const resp = await fetch('https://api.voicerss.org/?'+params.toString());
     if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const blob=await resp.blob();
+    const blob = await resp.blob();
 
-    // VoiceRSS sends errors as short text
-    if(blob.size<1000){
-      const txt=await blob.text();
+    if(blob.size < 1000){
+      const txt = await blob.text();
       if(txt.trim().startsWith('ERROR')) throw new Error(txt.trim());
     }
-    if(blob.size<500) throw new Error('Empty audio');
+    if(blob.size < 500) throw new Error('Empty audio');
 
-    const url=URL.createObjectURL(blob);
-    currentAudio=new Audio(url);
-    // KEY: playbackRate is the ONLY speed control — set before play
-    currentAudio.playbackRate=speed;
-    currentAudio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;setBadge(voice.label);onDone();};
-    currentAudio.onerror=()=>{URL.revokeObjectURL(url);currentAudio=null;setBadge('📱');browserTTSFallback(text,onDone,speed);};
+    const url = URL.createObjectURL(blob);
+    currentAudio = new Audio(url);
+    currentAudio.playbackRate = speed; // ← THE ONLY speed control
+    currentAudio.onended = ()=>{ URL.revokeObjectURL(url); currentAudio=null; setBadge(voice.label); onDone(); };
+    currentAudio.onerror = ()=>{ URL.revokeObjectURL(url); currentAudio=null; deviceTTSFallback(text,onDone,speed); };
     await currentAudio.play();
     setBadge(voice.label);
     return;
   }catch(e){
-    console.warn('VoiceRSS error:',e.message);
-    showToast('⚠️ VoiceRSS: '+e.message.slice(0,60));
+    console.warn('VoiceRSS error:', e.message);
+    showToast('⚠️ '+e.message.slice(0,60));
   }
-  browserTTSFallback(text,onDone,speed);
+  deviceTTSFallback(text, onDone, speed);
 }
 
-function browserTTSFallback(text,onDone,speed){
+function deviceTTSFallback(text, onDone, speed){
   setBadge('📱');
   try{
     speechSynthesis.cancel();
@@ -828,15 +1061,15 @@ function browserTTSFallback(text,onDone,speed){
   }catch(e){onDone();}
 }
 
-function replayStory(){if(curStory)tts(curStory.text,()=>{speaking=false;if(tourOn)setTimeout(playNearest,1500);});}
-function shareStory(){if(!curStory)return;if(navigator.share){navigator.share({title:curStory.title,text:curStory.text,url:location.href}).catch(()=>{});}else{navigator.clipboard&&navigator.clipboard.writeText(curStory.title+'\n\n'+curStory.text+'\n\nStoryRoute: '+location.href).then(()=>showToast('Copied!'));}track('story_share',{title:curStory.title});}
+function replayStory(){ if(curStory) tts(curStory.text,()=>{speaking=false;if(tourOn)setTimeout(playNearest,1500);}); }
+function shareStory(){ if(!curStory)return; if(navigator.share){navigator.share({title:curStory.title,text:curStory.text,url:location.href}).catch(()=>{});}else{navigator.clipboard&&navigator.clipboard.writeText(curStory.title+'\n\n'+curStory.text+'\n\nStoryRoute: '+location.href).then(()=>showToast('Copied!'));} track('story_share',{title:curStory.title}); }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // PHOTOS
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 async function fetchPhoto(title){
-  if(photoCache[title]!==undefined)return photoCache[title];
-  const queries=[title,title+', Dublin',title+', Ireland',title.replace(/^(The |St\.? |Saint )/i,'')];
+  if(photoCache[title]!==undefined) return photoCache[title];
+  const queries=[title, title+', Dublin', title+', Ireland', title.replace(/^(The |St\.? |Saint )/i,'')];
   for(const q of queries){
     try{
       const s=await fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q+' Ireland')+'&srlimit=1&format=json&origin=*').then(r=>r.json());
@@ -844,10 +1077,10 @@ async function fetchPhoto(title){
       const d=await fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(pt)+'&prop=pageimages&pithumbsize=600&pilicense=any&format=json&origin=*').then(r=>r.json());
       const pg=Object.values(d?.query?.pages||{})[0];
       if(!pg?.thumbnail?.source)continue;
-      const r={url:pg.thumbnail.source,credit:pt};photoCache[title]=r;return r;
+      const r={url:pg.thumbnail.source,credit:pt}; photoCache[title]=r; return r;
     }catch(e){continue;}
   }
-  photoCache[title]=null;return null;
+  photoCache[title]=null; return null;
 }
 async function loadStoryPhoto(title){
   const row=document.getElementById('story-photo-row');
@@ -855,12 +1088,12 @@ async function loadStoryPhoto(title){
   const cred=document.getElementById('story-photo-credit');
   row.classList.remove('loaded'); img.src=''; cred.textContent='';
   const p=await fetchPhoto(title);
-  if(p){img.onload=()=>row.classList.add('loaded');img.onerror=()=>row.classList.remove('loaded');img.src=p.url;cred.textContent='📷 '+p.credit;}
+  if(p){ img.onload=()=>row.classList.add('loaded'); img.onerror=()=>row.classList.remove('loaded'); img.src=p.url; cred.textContent='📷 '+p.credit; }
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // CACHE
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function saveLM(la,ln,a,pfx='sr_lm_'){try{localStorage.setItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2),JSON.stringify(a));}catch(e){}}
 function loadLM(la,ln,pfx='sr_lm_'){try{const d=localStorage.getItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2));const a=d?JSON.parse(d):null;return(a&&a.length)?a:null;}catch(e){return null;}}
 function saveStory(id,t){try{localStorage.setItem('sr_s_'+id,t);}catch(e){}}
@@ -868,9 +1101,9 @@ function loadStory(id){try{return localStorage.getItem('sr_s_'+id)||null;}catch(
 function saveLongStory(k,t){try{localStorage.setItem('sr_ls_'+k,t);}catch(e){}}
 function loadLongStory(k){try{return localStorage.getItem('sr_ls_'+k)||null;}catch(e){return null;}}
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // FAVOURITES
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function loadFavs(){try{favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');}catch(e){favourites=[];}}
 function saveFavs(){try{localStorage.setItem('sr_favs',JSON.stringify(favourites));}catch(e){}}
 function isFaved(id){return favourites.some(f=>f.id===id);}
@@ -879,19 +1112,19 @@ function renderFavs(){const el=document.getElementById('fav-list');if(!favourite
 function playFav(i){tts(favourites[i].text,()=>{});closeFavPanel();}
 function delFav(i){favourites.splice(i,1);saveFavs();renderFavs();}
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // AI
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-async function callAI(prompt){const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();if(d.error)throw new Error(d.error);const t=d?.content?.[0]?.text||'';if(!t)throw new Error('Empty');return t;}
-async function geocode(q){try{const d=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null;}catch{return null;}}
+async function callAI(prompt){ const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})}); if(!r.ok)throw new Error('HTTP '+r.status); const d=await r.json(); if(d.error)throw new Error(d.error); const t=d?.content?.[0]?.text||''; if(!t)throw new Error('Empty'); return t; }
+async function geocode(q){ try{const d=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null;}catch{return null;} }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // FETCH LANDMARKS
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function fetchVisibleBounds(){
-  const b=map.getBounds(),z=map.getZoom(),s=z>=15?1:z>=13?2:3,pts=[];
-  for(let i=0;i<=s;i++)for(let j=0;j<=s;j++)pts.push({lat:b.getSouth()+(b.getNorth()-b.getSouth())*(i/s),lng:b.getWest()+(b.getEast()-b.getWest())*(j/s)});
+  const b=map.getBounds(), z=map.getZoom(), s=z>=15?1:z>=13?2:3, pts=[];
+  for(let i=0;i<=s;i++) for(let j=0;j<=s;j++) pts.push({lat:b.getSouth()+(b.getNorth()-b.getSouth())*(i/s),lng:b.getWest()+(b.getEast()-b.getWest())*(j/s)});
   pts.reduce((ch,pt)=>ch.then(()=>fetchArea(pt.lat,pt.lng).then(()=>fetchNeighbourhoods(pt.lat,pt.lng))),Promise.resolve());
 }
 
@@ -899,7 +1132,7 @@ async function fetchArea(lat,lng){
   const key=lat.toFixed(2)+'_'+lng.toFixed(2);
   if(fetched.has(key))return; fetched.add(key);
   const cached=loadLM(lat,lng);
-  if(cached){await addLMs(cached,lat,lng);afterFetch();return;}
+  if(cached){ await addLMs(cached,lat,lng); afterFetch(); return; }
   setStatus('Searching…');
   try{
     const raw=await callAI(
@@ -915,14 +1148,14 @@ async function fetchArea(lat,lng){
     saveLM(lat,lng,arr);
     await addLMs(arr,lat,lng);
     afterFetch();
-  }catch(err){fetched.delete(key);setStatus('Error — tap Refresh');console.error(err);}
+  }catch(err){ fetched.delete(key); setStatus('Error — tap Refresh'); console.error(err); }
 }
 
 async function fetchNeighbourhoods(lat,lng){
   const key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
   if(fetchedNb.has(key))return; fetchedNb.add(key);
   const cached=loadLM(lat,lng,'sr_nb_');
-  if(cached){await addNeighbourhoods(cached);return;}
+  if(cached){ await addNeighbourhoods(cached); return; }
   try{
     const raw=await callAI(
       'List 8 distinct neighbourhoods, villages or districts within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in Ireland.\n'+
@@ -935,101 +1168,95 @@ async function fetchNeighbourhoods(lat,lng){
     if(!arr.length)return;
     saveLM(lat,lng,arr,'sr_nb_');
     await addNeighbourhoods(arr);
-  }catch(err){fetchedNb.delete(key);console.error('NB:',err);}
+  }catch(err){ fetchedNb.delete(key); console.error('NB:',err); }
 }
 
 async function addNeighbourhoods(arr){
-  const nbAllowed=activeTypes.has('area')||activeTypes.has('neighbourhood');
   for(const p of arr){
-    if(!p.title)continue;
+    if(!p.title) continue;
     const id='nb_'+p.title.replace(/\W+/g,'_');
-    // Marker already exists — just sync its visibility to current filter
     if(markers[id]){
-      if(nbAllowed){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
-      else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}
+      // Marker exists — sync visibility to current filter
+      if(isTypeVisible('area')){ if(!map.hasLayer(markers[id])) markers[id].addTo(map); }
+      else{ if(map.hasLayer(markers[id])) map.removeLayer(markers[id]); }
       continue;
     }
-    // Don't add new marker if type is filtered out
-    if(!nbAllowed)continue;
+    // Only create if currently visible
+    if(!isTypeVisible('area')) continue;
     await sleep(400);
     const coords=await geocode(p.title+', Ireland');
-    if(!coords)continue;
+    if(!coords) continue;
     const html='<div style="text-align:center"><div class="nb-dot" id="lm-'+id+'">🏙</div><div class="nb-label">'+p.title+'</div></div>';
     const icon=L.divIcon({html,iconSize:[60,42],iconAnchor:[30,14],className:''});
     const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:'area'}).addTo(map).bindTooltip(p.title+' — tap for story',{direction:'top'});
     const lm={id,title:p.title,type:'area',lat:coords.lat,lng:coords.lng,isNb:true};
-    m.on('click',()=>{track('marker_tap',{title:p.title,type:'area'});onTapMarker(lm);});
+    m.on('click',()=>{ track('marker_tap',{title:p.title,type:'area'}); onTapMarker(lm); });
     markers[id]=m;
   }
 }
 
 async function addLMs(arr,lat,lng){
   let city='Ireland';
-  try{const r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());city=r?.address?.city||r?.address?.town||r?.address?.village||r?.address?.county||'Ireland';currentCityName=city;}catch(e){}
+  try{ const r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json()); city=r?.address?.city||r?.address?.town||r?.address?.village||r?.address?.county||'Ireland'; currentCityName=city; }catch(e){}
   for(const p of arr){
-    if(!p.title)continue;
+    if(!p.title) continue;
     const id=p.title.replace(/\W+/g,'_');
     const ptype=ALL_TYPES.includes(p.type)?p.type:'other';
-    const visible=activeTypes.has(ptype);
-    // Marker already exists — sync its visibility to current filter
     if(markers[id]){
-      if(visible){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
-      else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}
+      // Marker exists — sync visibility to current filter
+      if(isTypeVisible(ptype)){ if(!map.hasLayer(markers[id])) markers[id].addTo(map); }
+      else{ if(map.hasLayer(markers[id])) map.removeLayer(markers[id]); }
       continue;
     }
-    // Don't create new marker if type is filtered out
-    if(!visible)continue;
+    // Only create if currently visible
+    if(!isTypeVisible(ptype)) continue;
     await sleep(300);
     const coords=await geocode(p.title+', '+city+', Ireland');
-    if(!coords)continue;
+    if(!coords) continue;
     const html='<div class="lm-dot" id="lm-'+id+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
     const icon=L.divIcon({html,iconSize:[28,28],iconAnchor:[14,14],className:''});
     const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:ptype}).addTo(map).bindTooltip(p.title,{direction:'top'});
     const lm={id,title:p.title,type:ptype,lat:coords.lat,lng:coords.lng};
-    m.on('click',()=>{track('marker_tap',{title:p.title,type:ptype});onTapMarker(lm);});
+    m.on('click',()=>{ track('marker_tap',{title:p.title,type:ptype}); onTapMarker(lm); });
     markers[id]=m;
   }
 }
 
 function afterFetch(){
   const n=Object.keys(markers).length;
-  if(userPos){
-    let best=null,bestD=Infinity;
-    Object.entries(markers).forEach(([id,m])=>{if(visited.has(id))return;const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<bestD){bestD=d;best=m.options._title;}});
-    if(best&&bestD<2000)setStatus(n+' landmarks · '+Math.round(bestD)+'m to '+best);
-    else setStatus(n+' landmark'+(n!==1?'s':''));
-  }else setStatus(n+' landmark'+(n!==1?'s':''));
-  if(tourOn&&!speaking)playNearest();
+  if(userPos){ let best=null,bestD=Infinity; Object.entries(markers).forEach(([id,m])=>{if(visited.has(id))return;const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<bestD){bestD=d;best=m.options._title;}}); if(best&&bestD<2000)setStatus(n+' landmarks · '+Math.round(bestD)+'m to '+best); else setStatus(n+' landmark'+(n!==1?'s':'')); }
+  else setStatus(n+' landmark'+(n!==1?'s':''));
+  if(tourOn&&!speaking) playNearest();
 }
 
 function refreshLandmarks(){
-  fetched.clear();fetchedNb.clear();
-  Object.keys(localStorage).forEach(k=>{if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_')){try{const v=JSON.parse(localStorage.getItem(k));if(!v||!v.length)localStorage.removeItem(k);}catch(e){localStorage.removeItem(k);}}});
+  fetched.clear(); fetchedNb.clear();
+  Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_')){ try{const v=JSON.parse(localStorage.getItem(k));if(!v||!v.length)localStorage.removeItem(k);}catch(e){localStorage.removeItem(k);} } });
   Object.values(markers).forEach(m=>map.removeLayer(m));
-  markers={};visited.clear();nxtStory=null;prefetchId=null;
+  markers={}; visited.clear(); nxtStory=null; prefetchId=null;
   document.getElementById('next-info').textContent='';
   document.getElementById('skip-btn').disabled=true;
-  setStatus('Refreshing…');fetchVisibleBounds();
+  setStatus('Refreshing…'); fetchVisibleBounds();
 }
 
-function setTravelMode(m){travelMode=m;PROXIMITY_RADIUS=TRAVEL_MODES[m].radius;document.querySelectorAll('.tm-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tm-'+m).classList.add('active');track('travel_mode',{mode:m});}
-function checkProxAlert(){if(!userPos)return;let best=null,bestD=Infinity;Object.entries(markers).forEach(([id,m])=>{if(visited.has(id))return;const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:m.options._title,dist:Math.round(d)};}});const el=document.getElementById('prox-alert');if(best){document.getElementById('prox-text').textContent=best.name+' is '+best.dist+'m away';el.classList.add('visible');clearTimeout(proxTimer);proxTimer=setTimeout(()=>el.classList.remove('visible'),5000);}else el.classList.remove('visible');}
-function updateProgress(){if(!routeCoords.length||!userPos)return;let minD=Infinity,minI=0;routeCoords.forEach(([la,ln],i)=>{const d=haversine(userPos,{lat:la,lng:ln});if(d<minD){minD=d;minI=i;}});const pct=Math.round((minI/(routeCoords.length-1))*100);document.getElementById('progress-fill').style.width=pct+'%';document.getElementById('progress-label').textContent=pct+'%';}
+function setTravelMode(m){ travelMode=m; PROXIMITY_RADIUS=TRAVEL_MODES[m].radius; document.querySelectorAll('.tm-btn').forEach(b=>b.classList.remove('active')); document.getElementById('tm-'+m).classList.add('active'); track('travel_mode',{mode:m}); }
+function checkProxAlert(){ if(!userPos)return; let best=null,bestD=Infinity; Object.entries(markers).forEach(([id,m])=>{ if(visited.has(id))return; const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng}); if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:m.options._title,dist:Math.round(d)};} }); const el=document.getElementById('prox-alert'); if(best){document.getElementById('prox-text').textContent=best.name+' is '+best.dist+'m away';el.classList.add('visible');clearTimeout(proxTimer);proxTimer=setTimeout(()=>el.classList.remove('visible'),5000);}else el.classList.remove('visible'); }
+function updateProgress(){ if(!routeCoords.length||!userPos)return; let minD=Infinity,minI=0; routeCoords.forEach(([la,ln],i)=>{const d=haversine(userPos,{lat:la,lng:ln});if(d<minD){minD=d;minI=i;}}); const pct=Math.round((minI/(routeCoords.length-1))*100); document.getElementById('progress-fill').style.width=pct+'%'; document.getElementById('progress-label').textContent=pct+'%'; }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // TOUR
-// ─────────────────────────────────────────────────────────────
-function toggleTour(){if(!tourOn)startTour();else stopTour();}
-function startTour(){tourOn=true;document.getElementById('silent-audio').play().catch(()=>{});const btn=document.getElementById('tour-btn');btn.textContent='⏹ Stop Listening';btn.classList.add('stop');document.getElementById('prox-alert').classList.remove('visible');document.getElementById('travel-mode').classList.add('visible');document.getElementById('story').style.bottom='132px';setStatus('Tour active');track('tour_start',{mode:travelMode});playNearest();}
-function stopTour(){tourOn=false;speaking=false;nxtStory=null;prefetchId=null;curStory=null;cancelAudio();const sa=document.getElementById('silent-audio');sa.pause();sa.currentTime=0;const btn=document.getElementById('tour-btn');btn.textContent='▶ Start Listening';btn.classList.remove('stop');document.getElementById('story').style.display='none';document.getElementById('story').style.bottom='74px';document.getElementById('travel-mode').classList.remove('visible');document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));track('tour_stop',{stories_heard:landmarkCount});const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':''));}
-function nearest(excl=[]){if(!userPos)return null;let best=null,bestD=Infinity;for(const [id,m] of Object.entries(markers)){if(visited.has(id)||excl.includes(id))continue;const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<=PROXIMITY_RADIUS&&d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,isNb:m.options._isNb||false};}}return best;}
-function playNearest(){if(!tourOn||speaking)return;const p=nearest();if(p)playLandmark(p);else setStatus('No unvisited landmarks in range');}
+// ═══════════════════════════════════════════════════════════════
+function toggleTour(){ if(!tourOn)startTour(); else stopTour(); }
+function startTour(){ tourOn=true; document.getElementById('silent-audio').play().catch(()=>{}); const btn=document.getElementById('tour-btn'); btn.textContent='⏹ Stop Listening'; btn.classList.add('stop'); document.getElementById('prox-alert').classList.remove('visible'); document.getElementById('travel-mode').classList.add('visible'); document.getElementById('story').style.bottom='132px'; setStatus('Tour active'); track('tour_start',{mode:travelMode}); playNearest(); }
+function stopTour(){ tourOn=false;speaking=false;nxtStory=null;prefetchId=null;curStory=null; cancelAudio(); const sa=document.getElementById('silent-audio');sa.pause();sa.currentTime=0; const btn=document.getElementById('tour-btn');btn.textContent='▶ Start Listening';btn.classList.remove('stop'); document.getElementById('story').style.display='none'; document.getElementById('story').style.bottom='74px'; document.getElementById('travel-mode').classList.remove('visible'); document.getElementById('skip-btn').disabled=true; document.getElementById('next-info').textContent=''; document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing')); track('tour_stop',{stories_heard:landmarkCount}); const n=Object.keys(markers).length; setStatus(n+' landmark'+(n!==1?'s':'')); }
+function nearest(excl=[]){ if(!userPos)return null; let best=null,bestD=Infinity; for(const [id,m] of Object.entries(markers)){ if(visited.has(id)||excl.includes(id))continue; if(!map.hasLayer(m))continue; // skip hidden markers const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng}); if(d<=PROXIMITY_RADIUS&&d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,isNb:m.options._type==='area'};} } return best; }
+function playNearest(){ if(!tourOn||speaking)return; const p=nearest(); if(p)playLandmark(p); else setStatus('No unvisited landmarks in range'); }
 
 async function playLandmark(p){
   if(speaking||visited.has(p.id))return;
   if(!canPlay()){speaking=false;showPaywall();return;}
-  bumpCount();visited.add(p.id);speaking=true;landmarkCount++;
-  dotVisited(p.id);setPulse(p.id);
+  bumpCount(); visited.add(p.id); speaking=true; landmarkCount++;
+  dotVisited(p.id); setPulse(p.id);
   setStatus('📖 '+p.title);
   showStory(p.title,'⏳ Loading story…',p.type);
   document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';
@@ -1037,81 +1264,69 @@ async function playLandmark(p){
   track('story_play',{title:p.title,type:p.type});
   const cached=loadStory(p.id);
   if(cached){finishPlay(p,cached);return;}
-  try{const txt=await getStory(p);saveStory(p.id,txt);finishPlay(p,txt);}
-  catch(e){speaking=false;setStatus('Story error — retrying');if(tourOn)setTimeout(playNearest,4000);}
+  try{ const txt=await getStory(p); saveStory(p.id,txt); finishPlay(p,txt); }
+  catch(e){ speaking=false; setStatus('Story error — retrying'); if(tourOn)setTimeout(playNearest,4000); }
 }
 
 function finishPlay(p,txt){
   if(!speaking)return;
-  curStory={...p,text:txt};showStory(p.title,txt,p.type);
-  if(tourOn){const nxt=nearest([p.id]);if(nxt)prefetchStory(nxt);}
+  curStory={...p,text:txt}; showStory(p.title,txt,p.type);
+  if(tourOn){ const nxt=nearest([p.id]); if(nxt)prefetchStory(nxt); }
   tts(txt,()=>{
-    speaking=false;
-    if(!tourOn)return;
-    if(nxtStory){const s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(()=>playLandmark(s),1200);}
-    else{const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1500);else setTimeout(playNearest,2000);}
+    speaking=false; if(!tourOn)return;
+    if(nxtStory){ const s=nxtStory; nxtStory=null; prefetchId=null; document.getElementById('next-info').textContent=''; document.getElementById('skip-btn').disabled=true; setTimeout(()=>playLandmark(s),1200); }
+    else{ const cn=nearest(); if(cn)setTimeout(()=>playLandmark(cn),1500); else setTimeout(playNearest,2000); }
   });
 }
 
-async function prefetchStory(p){if(visited.has(p.id)||prefetchId===p.id||nxtStory)return;prefetchId=p.id;document.getElementById('next-info').innerHTML='⏳ Preparing: <b>'+p.title+'</b>';const cached=loadStory(p.id);if(cached&&!visited.has(p.id)){nxtStory={...p,text:cached};document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;return;}try{const txt=await getStory(p);if(!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory={...p,text:txt};document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}}catch(e){prefetchId=null;document.getElementById('next-info').textContent='';}}
+async function prefetchStory(p){ if(visited.has(p.id)||prefetchId===p.id||nxtStory)return; prefetchId=p.id; document.getElementById('next-info').innerHTML='⏳ Preparing: <b>'+p.title+'</b>'; const cached=loadStory(p.id); if(cached&&!visited.has(p.id)){nxtStory={...p,text:cached};document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;return;} try{const txt=await getStory(p);if(!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory={...p,text:txt};document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}}catch(e){prefetchId=null;document.getElementById('next-info').textContent='';} }
 
 async function getStory(p){
-  if(p.isNb||p.type==='area')return callAI('GPS audio tour guide in Ireland. 5 vivid sentences about the neighbourhood of "'+p.title+'". Cover its character, history, what makes it distinct. Warm spoken style. Max 120 words. Story only.');
-  if(p.type==='legend')return callAI('Irish storyteller. 3-4 vivid sentences retelling the legend or folklore of "'+p.title+'" in Ireland. Atmospheric tone. Max 80 words. Story only.');
-  if(p.type==='history')return callAI('Irish historian guide. 3-4 vivid sentences about the historical significance of "'+p.title+'" in Ireland. Max 80 words. Story only.');
-  return callAI('GPS audio tour guide. 3 vivid sentences about "'+p.title+'" ('+p.type+') in Ireland. Varied opener — try "Steeped in history…", "Few locals know that…", "Legend has it that…". Max 65 words. Story only.');
+  if(p.isNb||p.type==='area') return callAI('GPS audio tour guide in Ireland. 5 vivid sentences about the neighbourhood of "'+p.title+'". Cover its character, history, what makes it distinct. Max 120 words. Story only.');
+  if(p.type==='legend') return callAI('Irish storyteller. 3-4 vivid sentences retelling the legend of "'+p.title+'" in Ireland. Atmospheric tone. Max 80 words. Story only.');
+  if(p.type==='history') return callAI('Irish historian. 3-4 vivid sentences about the historical significance of "'+p.title+'" in Ireland. Max 80 words. Story only.');
+  return callAI('GPS audio tour guide. 3 vivid sentences about "'+p.title+'" ('+p.type+') in Ireland. Varied opener. Max 65 words. Story only.');
 }
 
-function stopCurrentStory(){cancelAudio();speaking=false;nxtStory=null;prefetchId=null;document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));if(tourOn)setTimeout(playNearest,1500);else{const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':''));}}
-function hideStoryBody(){document.getElementById('story-body').style.display='none';document.getElementById('unhide-btn').style.display='inline-block';}
-function showStoryBody(){document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';}
-function skipStory(){if(!nxtStory)return;cancelAudio();speaking=false;const s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(()=>playLandmark(s),300);}
+function stopCurrentStory(){ cancelAudio();speaking=false;nxtStory=null;prefetchId=null;document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));if(tourOn)setTimeout(playNearest,1500);else{const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':''));} }
+function hideStoryBody(){ document.getElementById('story-body').style.display='none'; document.getElementById('unhide-btn').style.display='inline-block'; }
+function showStoryBody(){ document.getElementById('story-body').style.display='block'; document.getElementById('unhide-btn').style.display='none'; }
+function skipStory(){ if(!nxtStory)return; cancelAudio();speaking=false;const s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(()=>playLandmark(s),300); }
 
-function onTapMarker(p){if(!speaking&&!tourOn){try{const u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}}if(speaking){setStatus('Queuing: '+p.title);nxtStory=null;prefetchId=null;prefetchStory(p);return;}playLandmarkOnDemand(p);}
+function onTapMarker(p){ if(!speaking&&!tourOn){try{const u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}} if(speaking){setStatus('Queuing: '+p.title);nxtStory=null;prefetchId=null;prefetchStory(p);return;} playLandmarkOnDemand(p); }
 
 async function playLandmarkOnDemand(p){
-  if(speaking)return;if(!canPlay()){showPaywall();return;}
+  if(speaking)return; if(!canPlay()){showPaywall();return;}
   const wasVis=visited.has(p.id);
   if(!wasVis){visited.add(p.id);landmarkCount++;bumpCount();dotVisited(p.id);}
-  setPulse(p.id);speaking=true;setStatus('📖 '+p.title);
+  setPulse(p.id); speaking=true; setStatus('📖 '+p.title);
   showStory(p.title,'⏳ Loading story…',p.type);
   document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';
   document.getElementById('skip-btn').disabled=true;
   track('story_play',{title:p.title,type:p.type,mode:'tap'});
-  const onDone=()=>{speaking=false;document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));if(tourOn){const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}else{const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':''));}};
+  const onDone=()=>{ speaking=false; document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing')); if(tourOn){const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}else{const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':''));} };
   const cached=loadStory(p.id);
   if(cached){curStory={...p,text:cached};showStory(p.title,cached,p.type);tts(cached,onDone);return;}
-  try{const txt=await getStory(p);saveStory(p.id,txt);curStory={...p,text:txt};showStory(p.title,txt,p.type);tts(txt,onDone);}
-  catch(e){speaking=false;setStatus('Story error — tap to retry');}
+  try{ const txt=await getStory(p); saveStory(p.id,txt); curStory={...p,text:txt}; showStory(p.title,txt,p.type); tts(txt,onDone); }
+  catch(e){ speaking=false; setStatus('Story error — tap to retry'); }
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // STORIES MODE
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 async function openStoriesMode(){
   if(!userPos){showToast('Waiting for location…');return;}
-  try{
-    const r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+userPos.lat+'&lon='+userPos.lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());
-    const nb=r?.address?.suburb||r?.address?.neighbourhood||r?.address?.quarter||r?.address?.village||r?.address?.town||r?.address?.city||'this area';
-    const city=r?.address?.city||r?.address?.town||r?.address?.county||'Ireland';
-    currentAreaName=nb;currentCityName=city;
-    document.getElementById('stories-area-name').textContent=nb+', '+city;
-  }catch(e){document.getElementById('stories-area-name').textContent='Nearby area';}
+  try{ const r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+userPos.lat+'&lon='+userPos.lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json()); const nb=r?.address?.suburb||r?.address?.neighbourhood||r?.address?.quarter||r?.address?.village||r?.address?.town||r?.address?.city||'this area'; const city=r?.address?.city||r?.address?.town||r?.address?.county||'Ireland'; currentAreaName=nb; currentCityName=city; document.getElementById('stories-area-name').textContent=nb+', '+city; }catch(e){document.getElementById('stories-area-name').textContent='Nearby area';}
   const areaKey=currentAreaName.replace(/\W+/g,'_');
   const cached=STORY_TYPES.map(st=>{const t=loadLongStory(areaKey+'_'+st.type);return t?{...st,text:t,area:currentAreaName}:null;});
   if(cached.filter(Boolean).length===STORY_TYPES.length){longStories=cached;renderStoriesPanel();document.getElementById('gen-story-btn').disabled=false;return;}
   document.getElementById('stories-list').innerHTML='<div class="story-generating"><span class="spin">🌀</span>Generating stories for '+currentAreaName+'…</div>';
-  document.getElementById('gen-story-btn').disabled=true;longStories=[];
-  for(let i=0;i<STORY_TYPES.length;i++){
-    const st=STORY_TYPES[i];
-    if(cached[i]){longStories.push(cached[i]);renderStoriesPanel();continue;}
-    try{const txt=await callAI(st.prompt(currentAreaName,currentCityName));saveLongStory(areaKey+'_'+st.type,txt);longStories.push({...st,text:txt,area:currentAreaName});renderStoriesPanel();}
-    catch(e){console.error('Story gen:',e);}
-  }
+  document.getElementById('gen-story-btn').disabled=true; longStories=[];
+  for(let i=0;i<STORY_TYPES.length;i++){ const st=STORY_TYPES[i]; if(cached[i]){longStories.push(cached[i]);renderStoriesPanel();continue;} try{const txt=await callAI(st.prompt(currentAreaName,currentCityName));saveLongStory(areaKey+'_'+st.type,txt);longStories.push({...st,text:txt,area:currentAreaName});renderStoriesPanel();}catch(e){console.error('Story gen:',e);} }
   document.getElementById('gen-story-btn').disabled=false;
   track('stories_mode_open',{area:currentAreaName});
 }
-async function generateMoreStories(){const btn=document.getElementById('gen-story-btn');btn.disabled=true;btn.textContent='…';const st=STORY_TYPES[Math.floor(Math.random()*STORY_TYPES.length)];try{const txt=await callAI(st.prompt(currentAreaName,currentCityName));longStories.push({...st,text:txt,area:currentAreaName});renderStoriesPanel();}catch(e){showToast('Could not generate story');}btn.disabled=false;btn.textContent='+ More';}
+async function generateMoreStories(){ const btn=document.getElementById('gen-story-btn');btn.disabled=true;btn.textContent='…';const st=STORY_TYPES[Math.floor(Math.random()*STORY_TYPES.length)];try{const txt=await callAI(st.prompt(currentAreaName,currentCityName));longStories.push({...st,text:txt,area:currentAreaName});renderStoriesPanel();}catch(e){showToast('Could not generate story');}btn.disabled=false;btn.textContent='+ More'; }
 function renderStoriesPanel(){
   if(!longStories.length)return;
   document.getElementById('stories-list').innerHTML=longStories.map((s,i)=>{
@@ -1125,9 +1340,9 @@ function expandStoryCard(i){const el=document.getElementById('scp-'+i);if(!el||!
 function toggleLongStory(i){if(longSpeaking&&currentLongStoryIdx===i){cancelAudio();longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();return;}if(!canPlay()){showPaywall();return;}bumpCount();cancelAudio();longSpeaking=true;currentLongStoryIdx=i;renderStoriesPanel();const s=longStories[i];track('long_story_play',{type:s.type,area:s.area});tts(s.text,()=>{longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();});}
 function favLongStory(i){if(!longStories[i])return;const s=longStories[i],id='ls_'+s.area.replace(/\W+/g,'_')+'_'+s.type;if(!isFaved(id)){favourites.push({id,title:s.area+' — '+s.label,text:s.text});saveFavs();showToast('Added to favourites ❤️');}}
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // UI HELPERS
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 function showStory(name,text,type){
   document.getElementById('story-name').textContent=name;
   document.getElementById('story-text').textContent=text;
@@ -1135,25 +1350,25 @@ function showStory(name,text,type){
   document.getElementById('story-body').style.display='block';
   document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
-  if(text!=='⏳ Loading story…')loadStoryPhoto(name);
+  if(text!=='⏳ Loading story…') loadStoryPhoto(name);
 }
 function setMode(m){
-  ['explore','route','stories'].forEach(x=>{document.getElementById('btn-'+x).classList.toggle('active',x===m);});
+  ['explore','route','stories'].forEach(x=>{ document.getElementById('btn-'+x).classList.toggle('active',x===m); });
   document.getElementById('route-panel').classList.toggle('visible',m==='route');
   document.getElementById('stories-panel').classList.toggle('visible',m==='stories');
-  if(m==='stories')openStoriesMode();
+  if(m==='stories') openStoriesMode();
 }
-function setPulse(id){document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));const el=document.getElementById('lm-'+id);if(el)el.classList.add('playing');}
-function dotVisited(id){const el=document.getElementById('lm-'+id);if(el)el.classList.add('visited');}
-function setStatus(t){document.getElementById('status').textContent=t;}
-function toggleFromLoc(){useCurrentLocFrom=!useCurrentLocFrom;const i=document.getElementById('from-inp'),b=document.getElementById('from-loc-btn');if(useCurrentLocFrom){i.value='📍 My current location';i.disabled=true;b.classList.add('active');}else{i.value='';i.disabled=false;b.classList.remove('active');}}
+function setPulse(id){ document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing')); const el=document.getElementById('lm-'+id); if(el)el.classList.add('playing'); }
+function dotVisited(id){ const el=document.getElementById('lm-'+id); if(el)el.classList.add('visited'); }
+function setStatus(t){ document.getElementById('status').textContent=t; }
+function toggleFromLoc(){ useCurrentLocFrom=!useCurrentLocFrom; const i=document.getElementById('from-inp'),b=document.getElementById('from-loc-btn'); if(useCurrentLocFrom){i.value='📍 My current location';i.disabled=true;b.classList.add('active');}else{i.value='';i.disabled=false;b.classList.remove('active');} }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // ROUTE
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 async function planRoute(){
-  const to=document.getElementById('to-inp').value.trim();if(!to)return;
-  const btn=document.getElementById('route-btn');btn.disabled=true;setStatus('Planning…');
+  const to=document.getElementById('to-inp').value.trim(); if(!to)return;
+  const btn=document.getElementById('route-btn'); btn.disabled=true; setStatus('Planning…');
   try{
     let A;
     if(useCurrentLocFrom&&userPos){A={lat:userPos.lat,lng:userPos.lng};}
@@ -1163,30 +1378,30 @@ async function planRoute(){
     const rd=await fetch('https://router.project-osrm.org/route/v1/driving/'+A.lng+','+A.lat+';'+B.lng+','+B.lat+'?overview=full&geometries=geojson').then(r=>r.json());
     const coords=rd?.routes?.[0]?.geometry?.coordinates;
     if(!coords){btn.disabled=false;alert('No route found.');return;}
-    if(map.routeLine)map.removeLayer(map.routeLine);
+    if(map.routeLine) map.removeLayer(map.routeLine);
     routeCoords=coords.map(c=>[c[1],c[0]]);
     map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
     map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
     document.getElementById('progress-wrap').classList.add('visible');
     document.getElementById('mode-toggle').style.display='flex';
-    updateProgress();setStatus('Finding landmarks…');track('route_planned');
+    updateProgress(); setStatus('Finding landmarks…'); track('route_planned');
     const pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);
-    for(const pt of pts){await fetchArea(pt[1],pt[0]);await fetchNeighbourhoods(pt[1],pt[0]);}
-    btn.disabled=false;setMode('explore');
-  }catch(e){btn.disabled=false;setStatus('Route error');}
+    for(const pt of pts){ await fetchArea(pt[1],pt[0]); await fetchNeighbourhoods(pt[1],pt[0]); }
+    btn.disabled=false; setMode('explore');
+  }catch(e){ btn.disabled=false; setStatus('Route error'); }
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // SW
-// ─────────────────────────────────────────────────────────────
-function forceUpdate(){if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).finally(()=>location.reload(true));}
-function applyUpdate(){if(newWorker)newWorker.postMessage('SKIP_WAITING');}
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').then(reg=>{reg.update();reg.addEventListener('updatefound',()=>{newWorker=reg.installing;newWorker.addEventListener('statechange',()=>{if(newWorker.state==='installed'&&navigator.serviceWorker.controller)document.getElementById('update-bar').classList.add('visible');});});});navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload());}
+// ═══════════════════════════════════════════════════════════════
+function forceUpdate(){ if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).finally(()=>location.reload(true)); }
+function applyUpdate(){ if(newWorker)newWorker.postMessage('SKIP_WAITING'); }
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').then(reg=>{ reg.update(); reg.addEventListener('updatefound',()=>{ newWorker=reg.installing; newWorker.addEventListener('statechange',()=>{ if(newWorker.state==='installed'&&navigator.serviceWorker.controller) document.getElementById('update-bar').classList.add('visible'); }); }); }); navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload()); }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // UTILS
-// ─────────────────────────────────────────────────────────────
-function haversine(a,b){const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+// ═══════════════════════════════════════════════════════════════
+function haversine(a,b){ const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
 </script>
 </body>
 </html>
