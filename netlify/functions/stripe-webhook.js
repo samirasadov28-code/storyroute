@@ -1,67 +1,137 @@
-import crypto from 'crypto';
+// netlify/functions/stripe-webhook.js
+// Handles Stripe webhook events — unlocks Pro in Supabase after successful payment
+//
+// Setup:
+// 1. Stripe dashboard → Developers → Webhooks → Add endpoint
+//    URL: https://YOUR-SITE.netlify.app/api/stripe-webhook
+//    Events: checkout.session.completed, customer.subscription.deleted
+// 2. Copy the webhook signing secret → add to Netlify env vars as STRIPE_WEBHOOK_SECRET
+// 3. Also needs: STRIPE_SECRET_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+//    (Service role key is in Supabase → Settings → API — NOT the anon key)
+
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 export default async (req) => {
-  const sig    = req.headers.get('stripe-signature');
-  const body   = await req.text();
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const sig = req.headers.get('stripe-signature');
+  const rawBody = await req.text();
 
-  if (!verifyStripeSignature(body, sig, secret)) {
-    return new Response('Invalid signature', { status: 400 });
+  // Verify the webhook came from Stripe
+  let event;
+  try {
+    event = await verifyStripeWebhook(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return new Response('Webhook Error: ' + err.message, { status: 400 });
   }
 
-  const event = JSON.parse(body);
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY // service role bypasses RLS
+  );
 
-  // Payment succeeded — upgrade user to Pro
+  // ── Handle events ──────────────────────────────────────────
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const userId  = session.client_reference_id;
-    if (userId && userId !== 'anonymous') {
-      await setUserPlan(userId, 'pro');
+    const email = session.customer_details?.email || session.customer_email;
+
+    if (!email) {
+      console.error('No email in checkout session');
+      return new Response('No email', { status: 400 });
+    }
+
+    // Find user by email in Supabase auth
+    const { data: users, error: userErr } = await supabase.auth.admin.listUsers();
+    if (userErr) {
+      console.error('Error listing users:', userErr);
+      return new Response('Supabase error', { status: 500 });
+    }
+
+    const user = users?.users?.find(u => u.email === email);
+
+    if (user) {
+      // User is signed in — update their profile to Pro
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({ id: user.id, email, is_pro: true })
+        .eq('id', user.id);
+
+      if (error) console.error('Error updating profile:', error);
+      else console.log('Pro unlocked for user:', email);
+    } else {
+      // User paid but hasn't signed in yet — store pending pro by email
+      // When they sign in, they'll need to be matched (see notes below)
+      const { error } = await supabase
+        .from('pending_pro')
+        .upsert({ email, created_at: new Date().toISOString() });
+
+      if (error) console.error('Error storing pending pro:', error);
+      else console.log('Pending pro stored for:', email);
     }
   }
 
-  // Subscription cancelled — downgrade back to free
   if (event.type === 'customer.subscription.deleted') {
-    const customerId = event.data.object.customer;
-    const userId = await getUserIdByCustomer(customerId);
-    if (userId) await setUserPlan(userId, 'free');
+    // Subscription cancelled — revoke Pro
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+
+    // Get customer email from Stripe
+    const customerRes = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+      headers: { 'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}` }
+    });
+    const customer = await customerRes.json();
+    const email = customer.email;
+
+    if (email) {
+      const { data: users } = await supabase.auth.admin.listUsers();
+      const user = users?.users?.find(u => u.email === email);
+      if (user) {
+        await supabase.from('profiles').update({ is_pro: false }).eq('id', user.id);
+        console.log('Pro revoked for:', email);
+      }
+    }
   }
 
-  return new Response('OK', { status: 200 });
+  return new Response(JSON.stringify({ received: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
 };
 
-// ── Netlify Identity admin API ────────────────────────────────
-async function setUserPlan(userId, plan) {
-  const url   = `${process.env.URL}/.netlify/identity/admin/users/${userId}`;
-  const token = process.env.NETLIFY_IDENTITY_TOKEN;
-  await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ app_metadata: { plan } })
-  });
-}
+// ── Stripe webhook signature verification ──────────────────
+// Stripe uses HMAC-SHA256 — we verify manually since no SDK
+async function verifyStripeWebhook(payload, sigHeader, secret) {
+  if (!sigHeader || !secret) throw new Error('Missing signature or secret');
 
-async function getUserIdByCustomer(customerId) {
-  // Look up Netlify Identity users and find by stripe_customer_id in app_metadata
-  const url   = `${process.env.URL}/.netlify/identity/admin/users?per_page=500`;
-  const token = process.env.NETLIFY_IDENTITY_TOKEN;
-  const r     = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-  const data  = await r.json();
-  const user  = (data.users || []).find(u => u.app_metadata?.stripe_customer_id === customerId);
-  return user?.id || null;
-}
+  const parts = sigHeader.split(',').reduce((acc, part) => {
+    const [k, v] = part.split('=');
+    acc[k] = v;
+    return acc;
+  }, {});
 
-// ── Stripe signature verification ─────────────────────────────
-function verifyStripeSignature(payload, sigHeader, secret) {
-  try {
-    const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=')));
-    const signed  = `${parts.t}.${payload}`;
-    const expected = crypto.createHmac('sha256', secret).update(signed).digest('hex');
-    return crypto.timingSafeEqual(Buffer.from(parts.v1, 'hex'), Buffer.from(expected, 'hex'));
-  } catch(e) { return false; }
+  const timestamp = parts['t'];
+  const signature = parts['v1'];
+  if (!timestamp || !signature) throw new Error('Invalid signature header');
+
+  // Reject webhooks older than 5 minutes
+  const tolerance = 300;
+  if (Math.abs(Date.now() / 1000 - parseInt(timestamp)) > tolerance) {
+    throw new Error('Webhook timestamp too old');
+  }
+
+  const signedPayload = `${timestamp}.${payload}`;
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload));
+  const expected = Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (expected !== signature) throw new Error('Signature mismatch');
+
+  return JSON.parse(payload);
 }
 
 export const config = { path: '/api/stripe-webhook' };
