@@ -18,15 +18,13 @@ gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-R6WMQEWZMV"></script>
 <script>gtag('js',new Date());gtag('config','G-R6WMQEWZMV');</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #map{width:100vw;height:100vh;}
 .leaflet-control-container{display:none!important;}
 
-/* ── SPLASH ── */
+/* SPLASH */
 #splash{position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;}
 #splash-logo{width:88px;height:88px;border-radius:20px;}
 #splash-title{font-size:30px;font-weight:800;color:#1a2240;}
@@ -38,7 +36,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #splash-version{background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.3);border-radius:8px;padding:5px 16px;font-size:13px;font-weight:700;color:#f0a500;}
 #splash-force{padding:6px 16px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#bbb;cursor:pointer;touch-action:manipulation;}
 
-/* ── HEADER ── */
+/* HEADER */
 #header{position:fixed;top:0;left:0;right:0;z-index:1000;padding:10px 16px;background:rgba(255,255,255,0.97);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
 #app-name{font-size:20px;font-weight:800;color:#1a2240;margin-left:10px;}
 #app-name span{color:#f0a500;}
@@ -49,12 +47,12 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #voice-badge.loading{display:inline-block;background:rgba(240,165,0,0.12);color:#b36b00;}
 #menu-btn{width:52px;height:52px;background:#f0a500;color:#fff;border:none;border-radius:12px;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(240,165,0,0.4);touch-action:manipulation;flex-shrink:0;}
 
-/* ── MODE TOGGLE ── */
+/* MODE TOGGLE */
 #mode-toggle{position:fixed;top:78px;left:50%;transform:translateX(-50%);z-index:999;display:flex;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.1);border-radius:20px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);white-space:nowrap;}
 .mode-btn{padding:8px 14px;font-size:12px;font-weight:700;border:none;background:transparent;color:rgba(0,0,0,0.4);cursor:pointer;touch-action:manipulation;}
 .mode-btn.active{background:#f0a500;color:#fff;}
 
-/* ── ROUTE PANEL ── */
+/* ROUTE PANEL */
 #route-panel{position:fixed;top:124px;left:16px;right:16px;z-index:999;background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:14px;padding:14px;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.1);}
 #route-panel.visible{display:block;}
 .r-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
@@ -67,19 +65,19 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .r-btn{width:100%;padding:11px;background:#f0a500;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;touch-action:manipulation;}
 .r-btn:disabled{background:#ccc;color:#888;}
 
-/* ── PROGRESS ── */
+/* PROGRESS */
 #progress-wrap{position:fixed;top:62px;left:0;right:0;z-index:998;background:rgba(255,255,255,0.95);border-bottom:1px solid rgba(0,0,0,0.06);padding:6px 16px;display:none;align-items:center;gap:10px;}
 #progress-wrap.visible{display:flex;}
 #progress-track{flex:1;height:6px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden;}
 #progress-fill{height:100%;background:#f0a500;border-radius:3px;width:0%;transition:width .5s;}
 #progress-label{font-size:11px;color:#888;flex-shrink:0;}
 
-/* ── ZOOM ── */
+/* ZOOM */
 #zoom{position:fixed;bottom:240px;left:14px;z-index:1000;display:flex;flex-direction:column;gap:6px;}
 .zbtn{width:42px;height:42px;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.15);border-radius:8px;color:#333;font-size:22px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
 .zbtn:active{background:#f0a500;color:#fff;}
 
-/* ── STORY CARD ── */
+/* STORY CARD */
 #story{position:fixed;bottom:74px;left:0;right:0;padding:14px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.08);display:none;z-index:1001;box-shadow:0 -4px 20px rgba(0,0,0,0.08);transition:bottom .25s;}
 #story-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 #story-name{font-size:10px;font-weight:700;color:#f0a500;text-transform:uppercase;letter-spacing:1.2px;}
@@ -105,7 +103,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #next-info{margin-top:8px;font-size:11px;color:#999;}
 #next-info b{color:#e09400;}
 
-/* ── BOTTOM BAR ── */
+/* BOTTOM BAR */
 #bottom-bar{position:fixed;bottom:0;left:0;right:0;z-index:1002;background:#fff;border-top:1px solid rgba(0,0,0,0.08);padding:10px 16px 14px;box-shadow:0 -2px 12px rgba(0,0,0,0.08);}
 #tour-btn{width:100%;padding:14px;border:none;border-radius:12px;font-weight:800;font-size:17px;cursor:pointer;background:#22c55e;color:#fff;box-shadow:0 3px 12px rgba(34,197,94,0.3);touch-action:manipulation;}
 #tour-btn.stop{background:#ef4444;box-shadow:0 3px 12px rgba(239,68,68,0.3);}
@@ -114,7 +112,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .tm-btn{flex:1;padding:10px 4px;background:#fff;border:2px solid rgba(0,0,0,0.1);border-radius:10px;font-size:12px;font-weight:700;color:#666;cursor:pointer;text-align:center;touch-action:manipulation;}
 .tm-btn.active{border-color:#1a2240;color:#1a2240;}
 
-/* ── STORIES PANEL ── */
+/* STORIES PANEL */
 #stories-panel{position:fixed;top:124px;left:0;right:0;bottom:74px;z-index:998;display:none;flex-direction:column;background:#f8f7f4;overflow:hidden;}
 #stories-panel.visible{display:flex;}
 #stories-inner{flex:1;overflow-y:auto;padding:12px 16px 16px;-webkit-overflow-scrolling:touch;}
@@ -145,7 +143,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .pill-legend{background:rgba(139,92,246,0.12);color:#7c3aed;}
 .pill-history{background:rgba(20,184,166,0.12);color:#0f766e;}
 
-/* ── MENU ── */
+/* MENU */
 #menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:2999;display:none;}
 #menu-overlay.open{display:block;}
 #menu-panel{position:fixed;top:0;right:0;bottom:0;width:min(280px,85vw);background:#fff;z-index:3000;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);}
@@ -154,17 +152,16 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #menu-top h2{font-size:18px;font-weight:800;color:#1a2240;}
 #menu-close-btn{width:36px;height:36px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;font-size:20px;cursor:pointer;touch-action:manipulation;}
 #menu-body{flex:1;overflow-y:auto;padding:8px 0;}
+#menu-user{padding:12px 20px;background:rgba(240,165,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);}
+#menu-user-email{font-size:12px;color:#888;margin-bottom:2px;}
+#menu-user-status{font-size:13px;font-weight:700;color:#1a2240;}
 .mi{display:flex;align-items:center;gap:14px;padding:15px 20px;font-size:15px;font-weight:600;color:#333;cursor:pointer;border:none;background:none;width:100%;text-align:left;touch-action:manipulation;}
 .mi:active{background:rgba(240,165,0,0.08);color:#f0a500;}
 .mi-icon{font-size:20px;width:28px;text-align:center;}
 .mi-badge{margin-left:auto;font-size:11px;color:#f0a500;font-weight:700;}
 .mi-divider{height:1px;background:rgba(0,0,0,0.07);margin:4px 16px;}
-/* Pro indicator in menu */
-#menu-user{padding:12px 20px;background:rgba(240,165,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);}
-#menu-user-email{font-size:12px;color:#888;margin-bottom:2px;}
-#menu-user-status{font-size:13px;font-weight:700;color:#1a2240;}
 
-/* ── SLIDE PANELS ── */
+/* SLIDE PANELS */
 .slide-panel{position:fixed;top:0;right:0;bottom:0;width:min(300px,90vw);background:#fff;z-index:3001;transform:translateX(110%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);}
 .slide-panel.open{transform:translateX(0);}
 .sp-header{padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;}
@@ -178,7 +175,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .pick-desc{font-size:11px;color:#999;}
 .pick-check{width:20px;height:20px;background:#f0a500;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;margin-left:auto;}
 
-/* ── FILTER PANEL ── */
+/* FILTER */
 .filter-item{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid rgba(0,0,0,0.05);cursor:pointer;touch-action:manipulation;}
 .filter-item input[type=checkbox]{width:20px;height:20px;accent-color:#f0a500;flex-shrink:0;cursor:pointer;}
 .filter-item label{font-size:14px;color:#1a2240;cursor:pointer;flex:1;}
@@ -186,32 +183,31 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .filter-actions button{flex:1;padding:8px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#333;cursor:pointer;touch-action:manipulation;}
 .filter-apply{background:#f0a500!important;color:#fff!important;}
 
-/* ── AUTH PANEL ── */
-#auth-panel .sp-body{display:flex;flex-direction:column;gap:14px;padding:20px 16px;}
+/* AUTH PANEL */
 .auth-title{font-size:15px;font-weight:700;color:#1a2240;margin-bottom:4px;}
-.auth-sub{font-size:13px;color:#888;line-height:1.5;margin-bottom:8px;}
-.auth-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,0.15);border-radius:10px;font-size:15px;outline:none;color:#222;}
+.auth-sub{font-size:13px;color:#888;line-height:1.5;margin-bottom:12px;}
+.auth-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,0.15);border-radius:10px;font-size:15px;outline:none;color:#222;margin-bottom:10px;}
 .auth-input:focus{border-color:#f0a500;}
-.auth-btn{width:100%;padding:13px;background:#f0a500;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.auth-btn{width:100%;padding:13px;background:#f0a500;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;margin-bottom:10px;}
+.auth-btn.dark{background:#1a2240;}
 .auth-btn:disabled{background:#ddd;color:#aaa;}
-.auth-msg{font-size:13px;text-align:center;color:#22c55e;min-height:18px;}
-.auth-divider{height:1px;background:rgba(0,0,0,0.08);margin:4px 0;}
+.auth-msg{font-size:13px;text-align:center;min-height:18px;margin-bottom:6px;}
+.auth-divider{height:1px;background:rgba(0,0,0,0.08);margin:10px 0;}
 .auth-logout{width:100%;padding:11px;background:rgba(239,68,68,0.08);color:#ef4444;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;}
-.auth-pro-badge{background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.3);border-radius:10px;padding:12px 14px;text-align:center;}
+.auth-pro-badge{background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.3);border-radius:10px;padding:12px 14px;text-align:center;margin-bottom:14px;}
 .auth-pro-badge .pro-icon{font-size:28px;margin-bottom:6px;}
 .auth-pro-badge .pro-text{font-size:14px;font-weight:700;color:#b36b00;}
 .auth-pro-badge .pro-sub{font-size:12px;color:#999;margin-top:3px;}
 
-/* ── FEEDBACK PANEL ── */
-#feedback-panel .sp-body{display:flex;flex-direction:column;gap:12px;padding:20px 16px;}
-.fb-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,0.12);border-radius:10px;font-size:14px;outline:none;color:#222;font-family:sans-serif;}
+/* FEEDBACK */
+.fb-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,0.12);border-radius:10px;font-size:14px;outline:none;color:#222;font-family:sans-serif;margin-bottom:10px;}
 .fb-input:focus{border-color:#f0a500;}
 textarea.fb-input{height:120px;resize:none;}
 .fb-btn{width:100%;padding:13px;background:#1a2240;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;}
 .fb-btn:disabled{background:#ddd;color:#aaa;}
-.fb-msg{font-size:13px;text-align:center;min-height:18px;}
+.fb-msg{font-size:13px;text-align:center;min-height:18px;margin-top:8px;}
 
-/* ── FAVOURITES ── */
+/* FAVOURITES */
 #fav-panel{position:fixed;top:0;left:0;bottom:0;width:min(320px,90vw);background:#fff;z-index:3000;transform:translateX(-100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,0.12);}
 #fav-panel.open{transform:translateX(0);}
 #fav-panel-header{padding:16px;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;}
@@ -225,7 +221,7 @@ textarea.fb-input{height:120px;resize:none;}
 .fav-play{flex:1;padding:7px;background:#f0a500;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;}
 .fav-del{padding:7px 10px;background:rgba(0,0,0,0.05);color:#999;border:none;border-radius:7px;font-size:12px;cursor:pointer;touch-action:manipulation;}
 
-/* ── PAYWALL / COOKIE / PROX ── */
+/* PAYWALL / COOKIE / PROX */
 #prox-alert{position:fixed;top:120px;left:16px;right:16px;z-index:998;background:#1a2240;color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,0.2);}
 #prox-alert.visible{display:flex;}
 #paywall{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9990;display:none;align-items:center;justify-content:center;padding:24px;}
@@ -236,7 +232,8 @@ textarea.fb-input{height:120px;resize:none;}
 .pw-perks{text-align:left;margin-bottom:18px;}
 .pw-perks li{font-size:13px;color:#555;margin-bottom:6px;list-style:none;}
 .pw-perks li::before{content:"✓ ";color:#22c55e;font-weight:700;}
-.pw-pro{display:block;width:100%;padding:14px;background:#f0a500;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;touch-action:manipulation;}
+.pw-pro{display:block;width:100%;padding:14px;background:#f0a500;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:8px;touch-action:manipulation;}
+.pw-pro.dark{background:#1a2240;}
 .pw-close{font-size:12px;color:#ccc;background:none;border:none;cursor:pointer;touch-action:manipulation;}
 #cookie-banner{position:fixed;bottom:80px;left:12px;right:12px;z-index:9996;background:#1a2240;color:#fff;padding:14px 16px;border-radius:14px;display:none;flex-direction:column;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,0.35);}
 #cookie-banner.visible{display:flex;}
@@ -246,7 +243,7 @@ textarea.fb-input{height:120px;resize:none;}
 #cookie-accept{flex:1;padding:10px;background:#f0a500;color:#000;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;}
 #cookie-decline{flex:1;padding:10px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:8px;font-size:13px;cursor:pointer;touch-action:manipulation;}
 
-/* ── LANDMARK DOTS ── */
+/* LANDMARK DOTS */
 .lm-dot{font-size:22px;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));transition:transform .15s;}
 .lm-dot:hover{transform:scale(1.2);}
 .lm-dot.visited{opacity:0.3;filter:grayscale(1);}
@@ -263,6 +260,7 @@ textarea.fb-input{height:120px;resize:none;}
 </style>
 </head>
 <body>
+
 <div id="map"></div>
 
 <!-- SPLASH -->
@@ -270,10 +268,10 @@ textarea.fb-input{height:120px;resize:none;}
   <img id="splash-logo" src="/icon-512.png" onerror="this.style.display='none'">
   <div id="splash-title">Story<span>Route</span></div>
   <div id="splash-sub">Historical stories about the places around you.</div>
-  <button id="splash-btn">Open Map</button>
+  <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
   <div id="splash-version">v1.7.2</div>
-  <button id="splash-force">🔄 Force update</button>
+  <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
 <!-- HEADER -->
@@ -285,48 +283,48 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="header-right">
     <span id="voice-badge"></span>
     <div id="status">Starting…</div>
-    <button id="menu-btn" type="button">☰</button>
+    <button id="menu-btn" onclick="openMenu()">☰</button>
   </div>
 </div>
 
 <!-- MENU -->
-<div id="menu-overlay"></div>
+<div id="menu-overlay" onclick="closeAllPanels()"></div>
 <div id="menu-panel">
-  <div id="menu-top"><h2>Menu</h2><button id="menu-close-btn">✕</button></div>
+  <div id="menu-top"><h2>Menu</h2><button id="menu-close-btn" onclick="closeMenu()">✕</button></div>
   <div id="menu-user">
-    <div id="menu-user-email"></div>
-    <div id="menu-user-status"></div>
+    <div id="menu-user-email">Not signed in</div>
+    <div id="menu-user-status">Free plan</div>
   </div>
   <div id="menu-body">
-    <button class="mi" id="refresh-mi"><span class="mi-icon">🔄</span>Refresh landmarks</button>
-    <button class="mi" id="favs-mi"><span class="mi-icon">❤️</span>Favourites</button>
-    <button class="mi" id="voice-mi"><span class="mi-icon">🎙️</span>Voice<span class="mi-badge" id="voice-label"></span></button>
-    <button class="mi" id="speed-mi"><span class="mi-icon">⚡</span>Speed<span class="mi-badge" id="speed-label"></span></button>
-    <button class="mi" id="rotate-mi"><span class="mi-icon">🔄</span>Rotate voices<span class="mi-badge" id="rotate-label"></span></button>
-    <button class="mi" id="filter-mi"><span class="mi-icon">🏷️</span>Landmark types<span class="mi-badge" id="filter-label"></span></button>
+    <button class="mi" onclick="refreshLandmarks();closeMenu();"><span class="mi-icon">🔄</span>Refresh landmarks</button>
+    <button class="mi" onclick="openFavPanel();closeMenu();"><span class="mi-icon">❤️</span>Favourites</button>
+    <button class="mi" onclick="openPanel('voice');closeMenu();"><span class="mi-icon">🎙️</span>Voice<span class="mi-badge" id="voice-label"></span></button>
+    <button class="mi" onclick="openPanel('speed');closeMenu();"><span class="mi-icon">⚡</span>Speed<span class="mi-badge" id="speed-label"></span></button>
+    <button class="mi" onclick="toggleRotate();closeMenu();"><span class="mi-icon">🔄</span>Rotate voices<span class="mi-badge" id="rotate-label"></span></button>
+    <button class="mi" onclick="openPanel('filter');closeMenu();"><span class="mi-icon">🏷️</span>Landmark types<span class="mi-badge" id="filter-label"></span></button>
     <div class="mi-divider"></div>
-    <button class="mi" id="account-mi"><span class="mi-icon">👤</span>Account / Pro<span class="mi-badge" id="account-label"></span></button>
-    <button class="mi" id="feedback-mi"><span class="mi-icon">💬</span>Send feedback</button>
+    <button class="mi" onclick="renderAuthPanel();openPanel('auth');closeMenu();"><span class="mi-icon">👤</span>Account / Pro<span class="mi-badge" id="account-label"></span></button>
+    <button class="mi" onclick="openPanel('feedback');closeMenu();"><span class="mi-icon">💬</span>Send feedback</button>
     <div class="mi-divider"></div>
-    <button class="mi" id="upgrade-mi"><span class="mi-icon">⭐</span>Upgrade to Pro<span class="mi-badge" style="color:#22c55e;">Launch offer</span></button>
+    <button class="mi" onclick="showPaywall();closeMenu();"><span class="mi-icon">⭐</span>Upgrade to Pro<span class="mi-badge" style="color:#22c55e;">Launch offer</span></button>
   </div>
 </div>
 
 <!-- VOICE PANEL -->
 <div class="slide-panel" id="voice-panel">
-  <div class="sp-header"><h2>🎙️ Voice</h2><button class="sp-close" id="voice-close">✕</button></div>
+  <div class="sp-header"><h2>🎙️ Voice</h2><button class="sp-close" onclick="closePanel('voice')">✕</button></div>
   <div class="sp-body" id="voice-list"></div>
 </div>
 
 <!-- SPEED PANEL -->
 <div class="slide-panel" id="speed-panel">
-  <div class="sp-header"><h2>⚡ Speed</h2><button class="sp-close" id="speed-close">✕</button></div>
+  <div class="sp-header"><h2>⚡ Speed</h2><button class="sp-close" onclick="closePanel('speed')">✕</button></div>
   <div class="sp-body" id="speed-list"></div>
 </div>
 
 <!-- FILTER PANEL -->
 <div class="slide-panel" id="filter-panel">
-  <div class="sp-header"><h2>🏷️ Landmark types</h2><button class="sp-close" id="filter-close">✕</button></div>
+  <div class="sp-header"><h2>🏷️ Landmark types</h2><button class="sp-close" onclick="closePanel('filter')">✕</button></div>
   <div class="sp-body">
     <div class="filter-actions">
       <button onclick="selectAllTypes()">All on</button>
@@ -339,21 +337,19 @@ textarea.fb-input{height:120px;resize:none;}
 
 <!-- ACCOUNT PANEL -->
 <div class="slide-panel" id="auth-panel">
-  <div class="sp-header"><h2>👤 Account</h2><button class="sp-close" id="auth-close">✕</button></div>
-  <div class="sp-body" id="auth-body">
-    <!-- Rendered by JS -->
-  </div>
+  <div class="sp-header"><h2>👤 Account</h2><button class="sp-close" onclick="closePanel('auth')">✕</button></div>
+  <div class="sp-body" id="auth-body"></div>
 </div>
 
 <!-- FEEDBACK PANEL -->
 <div class="slide-panel" id="feedback-panel">
-  <div class="sp-header"><h2>💬 Feedback</h2><button class="sp-close" id="feedback-close">✕</button></div>
+  <div class="sp-header"><h2>💬 Feedback</h2><button class="sp-close" onclick="closePanel('feedback')">✕</button></div>
   <div class="sp-body">
-    <p style="font-size:13px;color:#888;line-height:1.6;margin-bottom:4px;">Tell us what you think — bugs, ideas, or anything else. We read every message.</p>
+    <p style="font-size:13px;color:#888;line-height:1.6;margin-bottom:12px;">Tell us what you think — bugs, ideas, or anything else.</p>
     <input class="fb-input" id="fb-name" placeholder="Your name (optional)">
     <input class="fb-input" id="fb-email" placeholder="Your email (optional)">
     <textarea class="fb-input" id="fb-msg" placeholder="Your message…"></textarea>
-    <button class="fb-btn" id="fb-submit" onclick="submitFeedback()">Send feedback</button>
+    <button class="fb-btn" onclick="submitFeedback()">Send feedback</button>
     <div class="fb-msg" id="fb-result"></div>
   </div>
 </div>
@@ -380,7 +376,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div class="r-row">
     <input class="r-input" id="to-inp" placeholder="🏁 To — e.g. Trinity College"/>
   </div>
-  <button class="r-btn" id="route-btn" onclick="planRoute()">Plan Route & Discover Stories</button>
+  <button class="r-btn" onclick="planRoute()">Plan Route & Discover Stories</button>
 </div>
 
 <!-- STORIES PANEL -->
@@ -411,7 +407,7 @@ textarea.fb-input{height:120px;resize:none;}
     </div>
   </div>
   <div id="story-body">
-    <div id="story-photo-row"><img id="story-photo-thumb" alt=""><div id="story-photo-info"><div id="story-text"></div><div id="story-photo-credit"></div></div></div>
+    <div id="story-photo-row"><img id="story-photo-thumb" alt=""><div><div id="story-text"></div><div id="story-photo-credit"></div></div></div>
     <div id="story-btns">
       <button id="replay-btn" onclick="replayStory()">▶ Replay</button>
       <button id="share-btn" onclick="shareStory()">↑ Share</button>
@@ -444,10 +440,10 @@ textarea.fb-input{height:120px;resize:none;}
   <div class="pw-box">
     <div style="font-size:40px;margin-bottom:12px;">🗺️</div>
     <h2>You've explored today's free stories</h2>
-    <p>You've used your 20 free stories today. Upgrade for unlimited access.</p>
-    <ul class="pw-perks"><li>Unlimited stories every day</li><li>All travel modes</li><li>Favourites saved forever</li><li>Pro status across all devices</li></ul>
-    <button class="pw-pro" onclick="startCheckout('monthly')" style="margin-bottom:8px;">€3.99 / month</button>
-    <button class="pw-pro" onclick="startCheckout('annual')" style="background:#1a2240;margin-bottom:10px;">€29.99 / year <span style="font-size:12px;opacity:0.7;">— save 2 months</span></button>
+    <p>Upgrade for unlimited access — launch offer now on.</p>
+    <ul class="pw-perks"><li>Unlimited stories every day</li><li>All travel modes</li><li>Favourites saved forever</li><li>Pro across all devices</li></ul>
+    <button class="pw-pro" onclick="startCheckout('monthly')">€3.99 / month</button>
+    <button class="pw-pro dark" onclick="startCheckout('annual')" style="margin-bottom:10px;">€29.99 / year <span style="font-size:12px;opacity:0.7;">— save 2 months</span></button>
     <button class="pw-close" onclick="closePaywall()">Maybe later</button>
   </div>
 </div>
@@ -470,33 +466,27 @@ textarea.fb-input{height:120px;resize:none;}
   <source src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVbwIwSAAS4hACCAAAgYMUPAggDBUEBAGUIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" type="audio/mpeg"/>
 </audio>
 
+<!-- ALL SCRIPTS AT BOTTOM — after DOM is ready -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════
 const DUBLIN = [53.3438, -6.2546];
-const FREE_LIMIT = 20; // raised from 5 for launch — revert to 5 after promo period
+const FREE_LIMIT = 20;
 const TRAVEL_MODES = { walking:{radius:200}, driving:{radius:10000}, long:{radius:25000} };
 const VOICERSS_KEY = '293997f94bec46f386498eb580855415';
-const FEEDBACK_EMAIL = 'samir.asadov.28@gmail.com';
-
-// ── Supabase config ──
-// Create a free project at supabase.com, then replace these:
 const SUPABASE_URL = 'https://ruihamvwpzynerggufif.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1aWhhbXZ3cHp5bmVyZ2d1ZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg1MTAsImV4cCI6MjA5MDA1NDUxMH0.G2gf88U1N4wp1p_xt-xlJfG3e9d3FTfN4qdu8hOfYmE';
-// SQL to run in Supabase SQL editor:
-// CREATE TABLE profiles (id uuid PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE, email text, is_pro boolean DEFAULT false);
-// ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
-// CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 const TYPE_ICON = {
   monument:'🏛',church:'⛪',castle:'🏰',street:'🛤',building:'🏢',bridge:'🌉',
-  park:'🌿',museum:'🎭',neighbourhood:'🏘',person:'👤',nature:'🌊',pub:'🍺',
-  beach:'🏖',estate:'🏡',school:'🏫',sport:'🏟',area:'🏙',legend:'🐉',
-  history:'📜',district:'🗺️',market:'🛒',harbour:'⚓',tower:'🗼',abbey:'🕍',
-  well:'💧',hill:'⛰️',island:'🏝️',gate:'🚪',hall:'🏤',cinema:'🎬',
-  library:'📚',railway:'🚂',canal:'🚣',other:'📍'
+  park:'🌿',museum:'🎭',person:'👤',nature:'🌊',pub:'🍺',beach:'🏖',
+  estate:'🏡',school:'🏫',sport:'🏟',area:'🏙',legend:'🐉',history:'📜',
+  market:'🛒',harbour:'⚓',tower:'🗼',abbey:'🕍',well:'💧',hill:'⛰️',
+  island:'🏝️',gate:'🚪',hall:'🏤',cinema:'🎬',railway:'🚂',canal:'🚣',
+  neighbourhood:'🏘',other:'📍'
 };
 
 const ALL_TYPES = [
@@ -537,10 +527,10 @@ const VOICES = [
 ];
 
 const SPEEDS = [
-  {val:0.9,  label:'🚶 Slow',     desc:'0.9×'},
-  {val:1.0,  label:'🎯 Normal',   desc:'1.0×'},
-  {val:1.1,  label:'⚡ Fast',     desc:'1.1× — default'},
-  {val:1.25, label:'🚀 Faster',   desc:'1.25×'},
+  {val:0.9,  label:'🚶 Slow',    desc:'0.9×'},
+  {val:1.0,  label:'🎯 Normal',  desc:'1.0×'},
+  {val:1.1,  label:'⚡ Fast',    desc:'1.1× — default'},
+  {val:1.25, label:'🚀 Faster',  desc:'1.25×'},
 ];
 
 const STORY_TYPES = [
@@ -555,246 +545,167 @@ const STORY_TYPES = [
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
-let markers = {}, visited = new Set(), fetched = new Set(), fetchedNb = new Set();
-let userPos = null, tourOn = false, speaking = false;
-let curStory = null, nxtStory = null, prefetchId = null;
-let useCurrentLocFrom = false, routeCoords = [];
-let landmarkCount = 0, favourites = [], proxTimer = null;
-let travelMode = 'walking', PROXIMITY_RADIUS = 200;
-let voicePool = [], newWorker = null, currentAudio = null;
-let longStories = [], currentLongStoryIdx = -1, longSpeaking = false;
-let currentAreaName = 'this area', currentCityName = 'Ireland';
-const photoCache = {};
+var markers = {}, visited = new Set(), fetched = new Set(), fetchedNb = new Set();
+var userPos = null, tourOn = false, speaking = false;
+var curStory = null, nxtStory = null, prefetchId = null;
+var useCurrentLocFrom = false, routeCoords = [];
+var landmarkCount = 0, favourites = [], proxTimer = null;
+var travelMode = 'walking', PROXIMITY_RADIUS = 200;
+var voicePool = [], newWorker = null, currentAudio = null;
+var longStories = [], currentLongStoryIdx = -1, longSpeaking = false;
+var currentAreaName = 'this area', currentCityName = 'Ireland';
+var photoCache = {};
+var supabaseClient = null, currentUser = null, userIsPro = false;
+var map; // initialised in openMap()
 
 // Settings
-let selectedVoice = JSON.parse(localStorage.getItem('sr_voice_cfg') || 'null') || VOICES[0];
-let voiceSpeed    = 1.1; // always reset to 1.1 on load
-let rotateVoices  = localStorage.getItem('sr_rotate') !== 'false'; // default ON
+var selectedVoice = JSON.parse(localStorage.getItem('sr_voice_cfg') || 'null') || VOICES[0];
+var voiceSpeed = 1.1;
+var rotateVoices = localStorage.getItem('sr_rotate') !== 'false';
 
-// ── FILTER STATE ── The single source of truth for which types are visible
-const _savedFilter = JSON.parse(localStorage.getItem('sr_type_filter') || 'null');
-let activeTypes = new Set(
-  _savedFilter
-    ? ALL_TYPES.filter(t => _savedFilter.includes(t))  // restore saved, but always include any newly added types
-    : ALL_TYPES
-);
+// Filter state
+var _sf = JSON.parse(localStorage.getItem('sr_type_filter') || 'null');
+var activeTypes = new Set(_sf ? ALL_TYPES.filter(function(t){return _sf.includes(t);}) : ALL_TYPES);
 
-// ── Auth state ──
-let supabaseClient = null;
-let currentUser = null;
-let userIsPro = false;
+function track(n,p){try{gtag('event',n,p||{});}catch(e){}}
 
-function track(n,p={}){try{gtag('event',n,p);}catch(e){}}
+// ═══════════════════════════════════════════════════════════════
+// OPEN MAP — called by splash button, initialises everything
+// ═══════════════════════════════════════════════════════════════
+function openMap(){
+  document.getElementById('splash').style.display = 'none';
+  // Unlock audio on iOS
+  try{var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}
+  // Init map now that DOM is visible
+  if(!map){
+    map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+    map.on('moveend', fetchVisibleBounds);
+    map.on('click', function(){document.getElementById('story').style.display='none';});
+  }
+  track('app_open');
+  loadFavs();
+  loadVoices();
+  updateMenuLabels();
+  updateMenuUser();
+  initSupabase();
+  // Cookie
+  var consent = localStorage.getItem('sr_cookie');
+  if(!consent) setTimeout(function(){document.getElementById('cookie-banner').classList.add('visible');},2500);
+  else if(consent==='accepted') gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
+  if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('✅ Pro unlocked!');},800);}
+  if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('🎉 Welcome to Pro!');},800);}
+  if(location.hash.includes('access_token')){showToast('✅ Signed in!');history.replaceState({},'',location.pathname);}
+  getGPS();
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SUPABASE AUTH
 // ═══════════════════════════════════════════════════════════════
 function initSupabase(){
   try{
-    if(typeof supabase !== 'undefined' && SUPABASE_URL !== 'YOUR_SUPABASE_URL'){
+    if(typeof supabase !== 'undefined'){
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      supabaseClient.auth.onAuthStateChange(async(event, session)=>{
-        currentUser = session?.user || null;
-        if(currentUser){
-          await loadProStatus();
-        } else {
-          userIsPro = localStorage.getItem('sr_pro') === 'true'; // fallback
-        }
-        updateMenuUser();
-        updateMenuLabels();
-      });
-      supabaseClient.auth.getSession().then(({data})=>{
-        currentUser = data?.session?.user || null;
+      supabaseClient.auth.onAuthStateChange(function(event, session){
+        currentUser = session ? session.user : null;
         if(currentUser) loadProStatus();
-        else userIsPro = localStorage.getItem('sr_pro') === 'true';
+        else userIsPro = localStorage.getItem('sr_pro')==='true';
+        updateMenuUser();
+      });
+      supabaseClient.auth.getSession().then(function(r){
+        currentUser = r.data && r.data.session ? r.data.session.user : null;
+        if(currentUser) loadProStatus();
+        else userIsPro = localStorage.getItem('sr_pro')==='true';
         updateMenuUser();
       });
     } else {
-      // Supabase not configured — use localStorage fallback
-      userIsPro = localStorage.getItem('sr_pro') === 'true';
-      updateMenuUser();
+      userIsPro = localStorage.getItem('sr_pro')==='true';
     }
-  } catch(e){
-    userIsPro = localStorage.getItem('sr_pro') === 'true';
-    updateMenuUser();
-  }
-}
-
-async function loadProStatus(){
-  if(!supabaseClient||!currentUser)return;
-  try{
-    const {data} = await supabaseClient
-      .from('profiles')
-      .select('is_pro')
-      .eq('id', currentUser.id)
-      .single();
-    userIsPro = data?.is_pro || false;
-    if(userIsPro) localStorage.setItem('sr_pro','true');
   }catch(e){ userIsPro = localStorage.getItem('sr_pro')==='true'; }
 }
 
+function loadProStatus(){
+  if(!supabaseClient||!currentUser)return;
+  supabaseClient.from('profiles').select('is_pro').eq('id',currentUser.id).single().then(function(r){
+    userIsPro = r.data ? r.data.is_pro : false;
+    if(userIsPro) localStorage.setItem('sr_pro','true');
+    updateMenuUser();
+  }).catch(function(){ userIsPro = localStorage.getItem('sr_pro')==='true'; });
+}
+
 function updateMenuUser(){
-  const emailEl = document.getElementById('menu-user-email');
-  const statusEl = document.getElementById('menu-user-status');
-  const accountLabel = document.getElementById('account-label');
+  var emailEl = document.getElementById('menu-user-email');
+  var statusEl = document.getElementById('menu-user-status');
+  var al = document.getElementById('account-label');
   if(currentUser){
     emailEl.textContent = currentUser.email;
     statusEl.textContent = userIsPro ? '⭐ Pro member' : 'Free plan';
-    if(accountLabel) accountLabel.textContent = userIsPro ? 'Pro ⭐' : '';
+    if(al) al.textContent = userIsPro ? 'Pro ⭐' : '';
   } else {
     emailEl.textContent = 'Not signed in';
     statusEl.textContent = userIsPro ? '⭐ Pro (local)' : 'Free plan';
-    if(accountLabel) accountLabel.textContent = '';
+    if(al) al.textContent = '';
   }
 }
 
 function renderAuthPanel(){
-  const body = document.getElementById('auth-body');
+  var body = document.getElementById('auth-body');
   if(currentUser){
-    body.innerHTML = `
-      <div class="auth-pro-badge" style="margin-bottom:16px;">
-        <div class="pro-icon">${userIsPro?'⭐':'👤'}</div>
-        <div class="pro-text">${currentUser.email}</div>
-        <div class="pro-sub">${userIsPro?'Pro member — unlimited stories across all devices':'Free plan — 5 stories/day'}</div>
-      </div>
-      ${userIsPro ? '' : `
-        <button class="auth-btn" onclick="startCheckout('monthly')" style="margin-bottom:8px;">⭐ €3.99 / month</button>
-        <button class="auth-btn" onclick="startCheckout('annual')" style="background:#1a2240;margin-bottom:12px;">⭐ €29.99 / year <span style="font-size:11px;opacity:0.7;">save 2 months</span></button>
-      `}
-      <div class="auth-divider"></div>
-      <button class="auth-logout" onclick="signOut()">Sign out</button>`;
+    body.innerHTML = '<div class="auth-pro-badge"><div class="pro-icon">'+(userIsPro?'⭐':'👤')+'</div><div class="pro-text">'+currentUser.email+'</div><div class="pro-sub">'+(userIsPro?'Pro member — unlimited stories across all devices':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
+      +(userIsPro ? '' : '<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button><button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
+      +'<div class="auth-divider"></div><button class="auth-logout" onclick="signOut()">Sign out</button>';
   } else {
-    body.innerHTML = `
-      <div class="auth-title">Sign in for persistent Pro</div>
-      <div class="auth-sub">Sign in with your email to keep Pro status across devices and after clearing browser data. We'll send a magic link — no password needed.</div>
-      <input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com">
-      <button class="auth-btn" id="auth-send-btn" onclick="sendMagicLink()">Send magic link</button>
-      <div class="auth-msg" id="auth-msg"></div>
-      <div class="auth-divider"></div>
-      <div style="font-size:12px;color:#bbb;text-align:center;">Already paid? Sign in with the email you used at checkout to restore Pro.</div>`;
+    body.innerHTML = '<div class="auth-title">Sign in for persistent Pro</div><div class="auth-sub">Enter your email and we\'ll send a magic link — no password needed. Pro follows you across all devices.</div><input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com"><button class="auth-btn" id="auth-send-btn" onclick="sendMagicLink()">Send magic link</button><div class="auth-msg" id="auth-msg"></div><div class="auth-divider"></div><div style="font-size:12px;color:#bbb;text-align:center;">Already paid? Sign in with the email you used at checkout.</div>';
   }
 }
 
-async function sendMagicLink(){
-  const email = document.getElementById('auth-email-input')?.value?.trim();
-  const btn = document.getElementById('auth-send-btn');
-  const msg = document.getElementById('auth-msg');
+function sendMagicLink(){
+  var email = document.getElementById('auth-email-input') ? document.getElementById('auth-email-input').value.trim() : '';
+  var btn = document.getElementById('auth-send-btn');
+  var msg = document.getElementById('auth-msg');
   if(!email||!email.includes('@')){msg.style.color='#ef4444';msg.textContent='Enter a valid email';return;}
-  if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Supabase not configured yet';return;}
-  btn.disabled=true;btn.textContent='Sending…';
-  try{
-    const {error} = await supabaseClient.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin}});
-    if(error)throw error;
-    msg.style.color='#22c55e';
-    msg.textContent='✓ Magic link sent! Check your email.';
-    btn.textContent='Sent ✓';
-  }catch(e){
-    msg.style.color='#ef4444';
-    msg.textContent=e.message||'Error sending link';
-    btn.disabled=false;btn.textContent='Send magic link';
-  }
+  if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not configured';return;}
+  btn.disabled=true; btn.textContent='Sending…';
+  supabaseClient.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin}}).then(function(r){
+    if(r.error){msg.style.color='#ef4444';msg.textContent=r.error.message;btn.disabled=false;btn.textContent='Send magic link';}
+    else{msg.style.color='#22c55e';msg.textContent='✓ Magic link sent! Check your email.';btn.textContent='Sent ✓';}
+  }).catch(function(e){msg.style.color='#ef4444';msg.textContent=e.message||'Error';btn.disabled=false;btn.textContent='Send magic link';});
 }
 
-async function signOut(){
-  if(supabaseClient) await supabaseClient.auth.signOut();
-  currentUser=null;userIsPro=false;
+function signOut(){
+  if(supabaseClient) supabaseClient.auth.signOut();
+  currentUser=null; userIsPro=false;
   localStorage.removeItem('sr_pro');
-  updateMenuUser();
-  renderAuthPanel();
+  updateMenuUser(); renderAuthPanel();
   showToast('Signed out');
 }
 
 // ═══════════════════════════════════════════════════════════════
 // FEEDBACK
 // ═══════════════════════════════════════════════════════════════
-async function submitFeedback(){
-  const name  = document.getElementById('fb-name').value.trim();
-  const email = document.getElementById('fb-email').value.trim();
-  const msg   = document.getElementById('fb-msg').value.trim();
-  const btn   = document.getElementById('fb-submit');
-  const res   = document.getElementById('fb-result');
+function submitFeedback(){
+  var name  = document.getElementById('fb-name').value.trim();
+  var email = document.getElementById('fb-email').value.trim();
+  var msg   = document.getElementById('fb-msg').value.trim();
+  var res   = document.getElementById('fb-result');
+  var btn   = document.querySelector('#feedback-panel .fb-btn');
   if(!msg){res.style.color='#ef4444';res.textContent='Please write a message';return;}
-  btn.disabled=true;btn.textContent='Sending…';
-  try{
-    // Use Netlify Forms — add netlify attribute to form or use fetch to /api/feedback
-    // We call /api/feedback Netlify function which emails samir.asadov.28@gmail.com
-    const r = await fetch('/api/feedback',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name, email, message: msg, userEmail: currentUser?.email||'anonymous'})
-    });
+  btn.disabled=true; btn.textContent='Sending…';
+  fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name,email:email,message:msg,userEmail:currentUser?currentUser.email:'anonymous'})
+  }).then(function(r){
     if(!r.ok) throw new Error('HTTP '+r.status);
-    res.style.color='#22c55e';
-    res.textContent='✓ Thank you! Your feedback was sent.';
+    res.style.color='#22c55e'; res.textContent='✓ Thank you! Your feedback was sent.';
     document.getElementById('fb-name').value='';
     document.getElementById('fb-email').value='';
     document.getElementById('fb-msg').value='';
-    btn.textContent='Send feedback';
-    btn.disabled=false;
+    btn.textContent='Send feedback'; btn.disabled=false;
     track('feedback_sent');
-  }catch(e){
-    res.style.color='#ef4444';
-    res.textContent='Could not send — please try again';
-    btn.disabled=false;btn.textContent='Send feedback';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MAP
-// ═══════════════════════════════════════════════════════════════
-const map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-map.on('moveend', fetchVisibleBounds);
-map.on('click', ()=>document.getElementById('story').style.display='none');
-
-// ═══════════════════════════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', function(){
-  document.getElementById('splash-btn').addEventListener('click', function(){
-    document.getElementById('splash').style.display='none';
-    try{const u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}
-    track('app_open');
-    getGPS();
+  }).catch(function(){
+    res.style.color='#ef4444'; res.textContent='Could not send — please try again';
+    btn.disabled=false; btn.textContent='Send feedback';
   });
-  document.getElementById('splash-force').addEventListener('click', forceUpdate);
-  document.getElementById('menu-btn').addEventListener('click', openMenu);
-  document.getElementById('menu-close-btn').addEventListener('click', closeMenu);
-  document.getElementById('menu-overlay').addEventListener('click', closeAllPanels);
-  document.getElementById('refresh-mi').addEventListener('click', ()=>{refreshLandmarks();closeMenu();});
-  document.getElementById('favs-mi').addEventListener('click', ()=>{openFavPanel();closeMenu();});
-  document.getElementById('voice-mi').addEventListener('click', ()=>{openPanel('voice');closeMenu();});
-  document.getElementById('speed-mi').addEventListener('click', ()=>{openPanel('speed');closeMenu();});
-  document.getElementById('rotate-mi').addEventListener('click', ()=>{toggleRotate();closeMenu();});
-  document.getElementById('filter-mi').addEventListener('click', ()=>{openPanel('filter');closeMenu();});
-  document.getElementById('account-mi').addEventListener('click', ()=>{renderAuthPanel();openPanel('auth');closeMenu();});
-  document.getElementById('feedback-mi').addEventListener('click', ()=>{openPanel('feedback');closeMenu();});
-  document.getElementById('upgrade-mi').addEventListener('click', ()=>{startCheckout();closeMenu();});
-  document.getElementById('voice-close').addEventListener('click', ()=>closePanel('voice'));
-  document.getElementById('speed-close').addEventListener('click', ()=>closePanel('speed'));
-  document.getElementById('filter-close').addEventListener('click', ()=>closePanel('filter'));
-  document.getElementById('auth-close').addEventListener('click', ()=>closePanel('auth'));
-  document.getElementById('feedback-close').addEventListener('click', ()=>closePanel('feedback'));
-
-  // Cookie
-  const consent = localStorage.getItem('sr_cookie');
-  if(!consent) setTimeout(()=>document.getElementById('cookie-banner').classList.add('visible'),2500);
-  else if(consent==='accepted') gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
-
-  if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('✅ Pro unlocked!'),800);}
-  if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('🎉 Welcome to Pro!'),800);}
-
-  // Handle Supabase magic link on return
-  if(location.hash.includes('access_token')){
-    showToast('✅ Signed in successfully!');
-    history.replaceState({},'',location.pathname);
-  }
-
-  loadFavs();
-  loadVoices();
-  updateMenuLabels();
-  initSupabase();
-});
+}
 
 // ═══════════════════════════════════════════════════════════════
 // PANELS
@@ -802,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function(){
 function openMenu(){document.getElementById('menu-panel').classList.add('open');document.getElementById('menu-overlay').classList.add('open');}
 function closeMenu(){document.getElementById('menu-panel').classList.remove('open');document.getElementById('menu-overlay').classList.remove('open');}
 function openPanel(name){
-  ['voice','speed','filter','auth','feedback'].forEach(n=>closePanel(n));
+  ['voice','speed','filter','auth','feedback'].forEach(function(n){document.getElementById(n+'-panel').classList.remove('open');});
   if(name==='voice') renderVoicePanel();
   if(name==='speed') renderSpeedPanel();
   if(name==='filter') renderFilterPanel();
@@ -812,7 +723,7 @@ function openPanel(name){
 function closePanel(name){document.getElementById(name+'-panel').classList.remove('open');}
 function closeAllPanels(){
   closeMenu();
-  ['voice','speed','filter','auth','feedback'].forEach(n=>closePanel(n));
+  ['voice','speed','filter','auth','feedback'].forEach(function(n){closePanel(n);});
   document.getElementById('menu-overlay').classList.remove('open');
 }
 function openFavPanel(){renderFavs();document.getElementById('fav-panel').classList.add('open');}
@@ -822,13 +733,13 @@ function closeFavPanel(){document.getElementById('fav-panel').classList.remove('
 // VOICE PANEL
 // ═══════════════════════════════════════════════════════════════
 function renderVoicePanel(){
-  document.getElementById('voice-list').innerHTML = VOICES.map((v,i)=>{
-    const sel = JSON.stringify(selectedVoice)===JSON.stringify(v);
-    return `<div class="pick-item${sel?' selected':''}" onclick="pickVoice(${i})">
-      <div class="pick-icon">${v.label.split(' ')[0]}</div>
-      <div><div class="pick-name">${v.label.split(' ').slice(1).join(' ')}</div><div class="pick-desc">${v.desc}</div></div>
-      ${sel?'<div class="pick-check">✓</div>':''}
-    </div>`;
+  document.getElementById('voice-list').innerHTML = VOICES.map(function(v,i){
+    var sel = JSON.stringify(selectedVoice)===JSON.stringify(v);
+    return '<div class="pick-item'+(sel?' selected':'')+'" onclick="pickVoice('+i+')">'
+      +'<div class="pick-icon">'+v.label.split(' ')[0]+'</div>'
+      +'<div><div class="pick-name">'+v.label.split(' ').slice(1).join(' ')+'</div><div class="pick-desc">'+v.desc+'</div></div>'
+      +(sel?'<div class="pick-check">✓</div>':'')
+      +'</div>';
   }).join('');
 }
 function pickVoice(i){
@@ -841,7 +752,7 @@ function pickVoice(i){
   showToast('Voice: '+VOICES[i].label);
   if(curStory&&curStory.text&&curStory.text!=='⏳ Loading story…'){
     cancelAudio(); speaking=true;
-    tts(curStory.text,()=>{speaking=false;if(tourOn){const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}});
+    tts(curStory.text,function(){speaking=false;if(tourOn){var cn=nearest();if(cn)setTimeout(function(){playLandmark(cn);},1200);}});
   }
 }
 
@@ -849,13 +760,13 @@ function pickVoice(i){
 // SPEED PANEL
 // ═══════════════════════════════════════════════════════════════
 function renderSpeedPanel(){
-  document.getElementById('speed-list').innerHTML = SPEEDS.map((s,i)=>{
-    const sel = voiceSpeed===s.val;
-    return `<div class="pick-item${sel?' selected':''}" onclick="pickSpeed(${i})">
-      <div class="pick-icon">${s.label.split(' ')[0]}</div>
-      <div><div class="pick-name">${s.label.split(' ').slice(1).join(' ')}</div><div class="pick-desc">${s.desc}</div></div>
-      ${sel?'<div class="pick-check">✓</div>':''}
-    </div>`;
+  document.getElementById('speed-list').innerHTML = SPEEDS.map(function(s,i){
+    var sel = voiceSpeed===s.val;
+    return '<div class="pick-item'+(sel?' selected':'')+'" onclick="pickSpeed('+i+')">'
+      +'<div class="pick-icon">'+s.label.split(' ')[0]+'</div>'
+      +'<div><div class="pick-name">'+s.label.split(' ').slice(1).join(' ')+'</div><div class="pick-desc">'+s.desc+'</div></div>'
+      +(sel?'<div class="pick-check">✓</div>':'')
+      +'</div>';
   }).join('');
 }
 function pickSpeed(i){
@@ -876,47 +787,38 @@ function toggleRotate(){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// FILTER PANEL  — single source of truth is activeTypes Set
+// FILTER PANEL
 // ═══════════════════════════════════════════════════════════════
 function renderFilterPanel(){
-  document.getElementById('filter-list').innerHTML = ALL_TYPES.map(t=>`
-    <div class="filter-item">
-      <input type="checkbox" id="ft-${t}" ${activeTypes.has(t)?'checked':''}
-        onchange="toggleType('${t}',this.checked)">
-      <label for="ft-${t}">${TYPE_LABELS[t]||t}</label>
-    </div>`).join('');
+  document.getElementById('filter-list').innerHTML = ALL_TYPES.map(function(t){
+    return '<div class="filter-item">'
+      +'<input type="checkbox" id="ft-'+t+'" '+(activeTypes.has(t)?'checked':'')+' onchange="toggleType(\''+t+'\',this.checked)">'
+      +'<label for="ft-'+t+'">'+(TYPE_LABELS[t]||t)+'</label>'
+      +'</div>';
+  }).join('');
 }
 function toggleType(t,on){ on ? activeTypes.add(t) : activeTypes.delete(t); }
-function selectAllTypes(){ ALL_TYPES.forEach(t=>activeTypes.add(t)); renderFilterPanel(); }
+function selectAllTypes(){ ALL_TYPES.forEach(function(t){activeTypes.add(t);}); renderFilterPanel(); }
 function clearAllTypes(){ activeTypes.clear(); renderFilterPanel(); }
-
 function applyFilter(){
-  if(activeTypes.size===0){ showToast('Select at least one type'); return; }
-  // Persist
+  if(activeTypes.size===0){showToast('Select at least one type');return;}
   localStorage.setItem('sr_type_filter', JSON.stringify([...activeTypes]));
   updateMenuLabels();
-  // Apply to ALL existing markers immediately
   syncAllMarkerVisibility();
   closePanel('filter');
-  const vis = Object.values(markers).filter(m=>map.hasLayer(m)).length;
+  var vis = Object.values(markers).filter(function(m){return map.hasLayer(m);}).length;
   showToast(vis+' landmarks visible');
   track('filter_applied',{count:activeTypes.size});
 }
-
-// The one function that decides visibility for every marker
-function isTypeVisible(markerType){
-  // Neighbourhood markers have type 'area'
-  if(markerType === 'area') return activeTypes.has('area') || activeTypes.has('neighbourhood');
-  return activeTypes.has(markerType);
+function isTypeVisible(t){
+  if(t==='area') return activeTypes.has('area')||activeTypes.has('neighbourhood');
+  return activeTypes.has(t);
 }
-
-// Walk all markers and sync map visibility to current activeTypes
 function syncAllMarkerVisibility(){
-  Object.values(markers).forEach(m=>{
-    const t = m.options._type || 'other';
-    const visible = isTypeVisible(t);
-    if(visible){ if(!map.hasLayer(m)) m.addTo(map); }
-    else        { if(map.hasLayer(m))  map.removeLayer(m); }
+  Object.values(markers).forEach(function(m){
+    var t = m.options._type||'other';
+    if(isTypeVisible(t)){ if(!map.hasLayer(m)) m.addTo(map); }
+    else { if(map.hasLayer(m)) map.removeLayer(m); }
   });
 }
 
@@ -924,15 +826,15 @@ function syncAllMarkerVisibility(){
 // MENU LABELS
 // ═══════════════════════════════════════════════════════════════
 function updateMenuLabels(){
-  const vl = document.getElementById('voice-label');
+  var vl=document.getElementById('voice-label');
   if(vl) vl.textContent = rotateVoices ? '🔄 Rotating' : selectedVoice.label;
-  const sp = SPEEDS.find(s=>s.val===voiceSpeed) || SPEEDS[2];
-  const sl = document.getElementById('speed-label');
+  var sp=SPEEDS.find(function(s){return s.val===voiceSpeed;})||SPEEDS[2];
+  var sl=document.getElementById('speed-label');
   if(sl) sl.textContent = sp.label.split(' ')[0]+' '+sp.val+'×';
-  const rl = document.getElementById('rotate-label');
-  if(rl) rl.textContent = rotateVoices ? 'On' : 'Off';
-  const fl = document.getElementById('filter-label');
-  if(fl) fl.textContent = activeTypes.size===ALL_TYPES.length ? 'All' : activeTypes.size+' types';
+  var rl=document.getElementById('rotate-label');
+  if(rl) rl.textContent = rotateVoices?'On':'Off';
+  var fl=document.getElementById('filter-label');
+  if(fl) fl.textContent = activeTypes.size===ALL_TYPES.length?'All':activeTypes.size+' types';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -945,36 +847,70 @@ function isPro(){ return userIsPro || localStorage.getItem('sr_pro')==='true'; }
 function todayKey(){ return new Date().toDateString(); }
 function getCount(){ if(localStorage.getItem('sr_day')!==todayKey()){localStorage.setItem('sr_day',todayKey());localStorage.setItem('sr_n','0');} return parseInt(localStorage.getItem('sr_n')||'0'); }
 function bumpCount(){ localStorage.setItem('sr_n',String(getCount()+1)); }
-function canPlay(){ return isPro() || getCount()<FREE_LIMIT; }
+function canPlay(){ return isPro()||getCount()<FREE_LIMIT; }
 function showPaywall(){ track('paywall_shown'); document.getElementById('paywall').classList.add('visible'); }
 function closePaywall(){ document.getElementById('paywall').classList.remove('visible'); }
-async function startCheckout(plan='monthly'){ track('upgrade_click',{plan}); try{ const r=await fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan, email:currentUser?.email||''})}); const d=await r.json(); if(d.url)window.location.href=d.url; else showToast('Checkout error'); }catch(e){showToast('Checkout error');} }
-function showToast(msg,dur=3000){ const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a2240;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:99999;white-space:nowrap;pointer-events:none;'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),dur); }
+function startCheckout(plan){
+  plan = plan||'monthly';
+  track('upgrade_click',{plan:plan});
+  fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({plan:plan,email:currentUser?currentUser.email:''})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.url) window.location.href=d.url; else showToast('Checkout error');
+  }).catch(function(){showToast('Checkout error');});
+}
+function showToast(msg,dur){
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a2240;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:99999;white-space:nowrap;pointer-events:none;';
+  t.textContent=msg; document.body.appendChild(t);
+  setTimeout(function(){t.remove();},dur||3000);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // GPS
 // ═══════════════════════════════════════════════════════════════
-function getGPS(){ setStatus('Getting location…'); if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1]);return;} navigator.geolocation.getCurrentPosition(p=>startAt(p.coords.latitude,p.coords.longitude),()=>startAt(DUBLIN[0],DUBLIN[1]),{enableHighAccuracy:true,timeout:15000,maximumAge:0}); }
+function getGPS(){
+  setStatus('Getting location…');
+  if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1]);return;}
+  navigator.geolocation.getCurrentPosition(
+    function(p){startAt(p.coords.latitude,p.coords.longitude);},
+    function(){startAt(DUBLIN[0],DUBLIN[1]);},
+    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+  );
+}
 function startAt(lat,lng){
-  userPos={lat,lng}; map.setView([lat,lng],15);
-  const icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
-  const um=L.marker([lat,lng],{icon}).addTo(map);
-  if(navigator.geolocation) navigator.geolocation.watchPosition(p=>{userPos={lat:p.coords.latitude,lng:p.coords.longitude};um.setLatLng([userPos.lat,userPos.lng]);updateProgress();checkProxAlert();},null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-  setStatus('Loading landmarks…'); setTimeout(fetchVisibleBounds,600);
+  userPos={lat:lat,lng:lng}; map.setView([lat,lng],15);
+  var icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
+  var um=L.marker([lat,lng],{icon:icon}).addTo(map);
+  if(navigator.geolocation) navigator.geolocation.watchPosition(function(p){
+    userPos={lat:p.coords.latitude,lng:p.coords.longitude};
+    um.setLatLng([userPos.lat,userPos.lng]);
+    updateProgress(); checkProxAlert();
+  },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+  setStatus('Loading landmarks…');
+  setTimeout(fetchVisibleBounds,600);
 }
 
 // ═══════════════════════════════════════════════════════════════
 // BROWSER TTS VOICES
 // ═══════════════════════════════════════════════════════════════
-function loadVoices(){ const all=speechSynthesis.getVoices(); if(!all.length)return; const pref=['Moira','Daniel','Karen','Samantha','Google UK English Female','Google UK English Male']; voicePool=[]; pref.forEach(n=>{const v=all.find(x=>x.name===n);if(v)voicePool.push(v);}); if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en')&&v.localService); if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en')); if(!voicePool.length&&all.length)voicePool=[all[0]]; }
+function loadVoices(){
+  var all=speechSynthesis.getVoices(); if(!all.length)return;
+  var pref=['Moira','Daniel','Karen','Samantha','Google UK English Female','Google UK English Male'];
+  voicePool=[];
+  pref.forEach(function(n){var v=all.find(function(x){return x.name===n;});if(v)voicePool.push(v);});
+  if(!voicePool.length) voicePool=all.filter(function(v){return v.lang.startsWith('en')&&v.localService;});
+  if(!voicePool.length) voicePool=all.filter(function(v){return v.lang.startsWith('en');});
+  if(!voicePool.length&&all.length) voicePool=[all[0]];
+}
 if(typeof speechSynthesis!=='undefined'&&speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=loadVoices;
-function currentVoice(){ return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null; }
+function currentVoice(){return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null;}
 
 // ═══════════════════════════════════════════════════════════════
-// TTS — VoiceRSS + playbackRate speed + device fallback
+// TTS
 // ═══════════════════════════════════════════════════════════════
 function setBadge(label){
-  const el=document.getElementById('voice-badge');
+  var el=document.getElementById('voice-badge');
   if(!el)return;
   if(!label){el.style.display='none';return;}
   el.style.display='inline-block';
@@ -985,117 +921,112 @@ function cancelAudio(){
   try{speechSynthesis.cancel();}catch(e){}
   if(currentAudio){currentAudio.pause();currentAudio=null;}
 }
-
-async function tts(text, onDone, _rate){
-  const speed = voiceSpeed; // always use the global — ignore _rate param
+function tts(text,onDone){
+  var speed=voiceSpeed;
   cancelAudio();
-
-  // Decide which voice
-  let voice;
+  var voice;
   if(rotateVoices){
-    const vrs = VOICES.filter(v=>v.hl!=='device');
-    voice = vrs[landmarkCount % vrs.length];
+    var vrs=VOICES.filter(function(v){return v.hl!=='device';});
+    voice=vrs[landmarkCount%vrs.length];
   } else {
-    voice = selectedVoice;
+    voice=selectedVoice;
   }
   setBadge(voice.label);
-
-  // Device TTS path
   if(voice.hl==='device'){
     try{
       speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(text);
-      u.rate=speed; u.volume=1; u.pitch=1;
-      const v=currentVoice(); if(v)u.voice=v;
-      u.onend=onDone; u.onerror=()=>onDone();
+      var u=new SpeechSynthesisUtterance(text);
+      u.rate=speed;u.volume=1;u.pitch=1;
+      var v=currentVoice();if(v)u.voice=v;
+      u.onend=onDone;u.onerror=function(){onDone();};
       speechSynthesis.speak(u);
     }catch(e){onDone();}
     return;
   }
-
-  // VoiceRSS — always r=0, speed via playbackRate only
   setBadge('⏳');
-  try{
-    const params = new URLSearchParams({
-      key: VOICERSS_KEY, src: text,
-      hl: voice.hl, r: '0', c: 'mp3',
-      f: '44khz_128kbitrate_stereo',
-      ssml: 'false', b64: 'false'
+  var params=new URLSearchParams({key:VOICERSS_KEY,src:text,hl:voice.hl,r:'0',c:'mp3',f:'44khz_128kbitrate_stereo',ssml:'false',b64:'false'});
+  if(voice.v) params.set('v',voice.v);
+  fetch('https://api.voicerss.org/?'+params.toString())
+    .then(function(resp){
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      return resp.blob();
+    })
+    .then(function(blob){
+      if(blob.size<1000) return blob.text().then(function(txt){if(txt.trim().startsWith('ERROR'))throw new Error(txt.trim());return blob;});
+      return blob;
+    })
+    .then(function(blob){
+      if(blob.size<500) throw new Error('Empty audio');
+      var url=URL.createObjectURL(blob);
+      currentAudio=new Audio(url);
+      currentAudio.playbackRate=speed;
+      currentAudio.onended=function(){URL.revokeObjectURL(url);currentAudio=null;setBadge(voice.label);onDone();};
+      currentAudio.onerror=function(){URL.revokeObjectURL(url);currentAudio=null;deviceTTSFallback(text,onDone,speed);};
+      currentAudio.play().catch(function(){deviceTTSFallback(text,onDone,speed);});
+      setBadge(voice.label);
+    })
+    .catch(function(e){
+      console.warn('VoiceRSS:',e.message);
+      deviceTTSFallback(text,onDone,speed);
     });
-    if(voice.v) params.set('v', voice.v);
-
-    const resp = await fetch('https://api.voicerss.org/?'+params.toString());
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const blob = await resp.blob();
-
-    if(blob.size < 1000){
-      const txt = await blob.text();
-      if(txt.trim().startsWith('ERROR')) throw new Error(txt.trim());
-    }
-    if(blob.size < 500) throw new Error('Empty audio');
-
-    const url = URL.createObjectURL(blob);
-    currentAudio = new Audio(url);
-    currentAudio.playbackRate = speed; // ← THE ONLY speed control
-    currentAudio.onended = ()=>{ URL.revokeObjectURL(url); currentAudio=null; setBadge(voice.label); onDone(); };
-    currentAudio.onerror = ()=>{ URL.revokeObjectURL(url); currentAudio=null; deviceTTSFallback(text,onDone,speed); };
-    await currentAudio.play();
-    setBadge(voice.label);
-    return;
-  }catch(e){
-    console.warn('VoiceRSS error:', e.message);
-    showToast('⚠️ '+e.message.slice(0,60));
-  }
-  deviceTTSFallback(text, onDone, speed);
 }
-
-function deviceTTSFallback(text, onDone, speed){
+function deviceTTSFallback(text,onDone,speed){
   setBadge('📱');
   try{
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.rate=speed; u.volume=1; u.pitch=1;
-    const v=currentVoice(); if(v)u.voice=v;
-    u.onend=onDone; u.onerror=()=>onDone();
+    var u=new SpeechSynthesisUtterance(text);
+    u.rate=speed||1.1;u.volume=1;u.pitch=1;
+    var v=currentVoice();if(v)u.voice=v;
+    u.onend=onDone;u.onerror=function(){onDone();};
     speechSynthesis.speak(u);
   }catch(e){onDone();}
 }
-
-function replayStory(){ if(curStory) tts(curStory.text,()=>{speaking=false;if(tourOn)setTimeout(playNearest,1500);}); }
-function shareStory(){ if(!curStory)return; if(navigator.share){navigator.share({title:curStory.title,text:curStory.text,url:location.href}).catch(()=>{});}else{navigator.clipboard&&navigator.clipboard.writeText(curStory.title+'\n\n'+curStory.text+'\n\nStoryRoute: '+location.href).then(()=>showToast('Copied!'));} track('story_share',{title:curStory.title}); }
+function replayStory(){if(curStory)tts(curStory.text,function(){speaking=false;if(tourOn)setTimeout(playNearest,1500);});}
+function shareStory(){if(!curStory)return;if(navigator.share){navigator.share({title:curStory.title,text:curStory.text,url:location.href}).catch(function(){});}else if(navigator.clipboard){navigator.clipboard.writeText(curStory.title+'\n\n'+curStory.text+'\n\nStoryRoute: '+location.href).then(function(){showToast('Copied!');});}track('story_share',{title:curStory.title});}
 
 // ═══════════════════════════════════════════════════════════════
 // PHOTOS
 // ═══════════════════════════════════════════════════════════════
-async function fetchPhoto(title){
-  if(photoCache[title]!==undefined) return photoCache[title];
-  const queries=[title, title+', Dublin', title+', Ireland', title.replace(/^(The |St\.? |Saint )/i,'')];
-  for(const q of queries){
-    try{
-      const s=await fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q+' Ireland')+'&srlimit=1&format=json&origin=*').then(r=>r.json());
-      const pt=s?.query?.search?.[0]?.title; if(!pt)continue;
-      const d=await fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(pt)+'&prop=pageimages&pithumbsize=600&pilicense=any&format=json&origin=*').then(r=>r.json());
-      const pg=Object.values(d?.query?.pages||{})[0];
-      if(!pg?.thumbnail?.source)continue;
-      const r={url:pg.thumbnail.source,credit:pt}; photoCache[title]=r; return r;
-    }catch(e){continue;}
+function fetchPhoto(title){
+  if(photoCache[title]!==undefined) return Promise.resolve(photoCache[title]);
+  var queries=[title,title+', Dublin',title+', Ireland',title.replace(/^(The |St\.? |Saint )/i,'')];
+  var idx=0;
+  function tryNext(){
+    if(idx>=queries.length){photoCache[title]=null;return Promise.resolve(null);}
+    var q=queries[idx++];
+    return fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q+' Ireland')+'&srlimit=1&format=json&origin=*')
+      .then(function(r){return r.json();})
+      .then(function(s){
+        var pt=s&&s.query&&s.query.search&&s.query.search[0]?s.query.search[0].title:null;
+        if(!pt) return tryNext();
+        return fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(pt)+'&prop=pageimages&pithumbsize=600&pilicense=any&format=json&origin=*')
+          .then(function(r){return r.json();})
+          .then(function(d){
+            var pages=d&&d.query&&d.query.pages?d.query.pages:{};
+            var pg=Object.values(pages)[0];
+            if(!pg||!pg.thumbnail||!pg.thumbnail.source) return tryNext();
+            var res={url:pg.thumbnail.source,credit:pt};
+            photoCache[title]=res; return res;
+          });
+      }).catch(function(){return tryNext();});
   }
-  photoCache[title]=null; return null;
+  return tryNext();
 }
-async function loadStoryPhoto(title){
-  const row=document.getElementById('story-photo-row');
-  const img=document.getElementById('story-photo-thumb');
-  const cred=document.getElementById('story-photo-credit');
-  row.classList.remove('loaded'); img.src=''; cred.textContent='';
-  const p=await fetchPhoto(title);
-  if(p){ img.onload=()=>row.classList.add('loaded'); img.onerror=()=>row.classList.remove('loaded'); img.src=p.url; cred.textContent='📷 '+p.credit; }
+function loadStoryPhoto(title){
+  var row=document.getElementById('story-photo-row');
+  var img=document.getElementById('story-photo-thumb');
+  var cred=document.getElementById('story-photo-credit');
+  row.classList.remove('loaded');img.src='';cred.textContent='';
+  fetchPhoto(title).then(function(p){
+    if(p){img.onload=function(){row.classList.add('loaded');};img.onerror=function(){row.classList.remove('loaded');};img.src=p.url;cred.textContent='📷 '+p.credit;}
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
 // CACHE
 // ═══════════════════════════════════════════════════════════════
-function saveLM(la,ln,a,pfx='sr_lm_'){try{localStorage.setItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2),JSON.stringify(a));}catch(e){}}
-function loadLM(la,ln,pfx='sr_lm_'){try{const d=localStorage.getItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2));const a=d?JSON.parse(d):null;return(a&&a.length)?a:null;}catch(e){return null;}}
+function saveLM(la,ln,a,pfx){pfx=pfx||'sr_lm_';try{localStorage.setItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2),JSON.stringify(a));}catch(e){}}
+function loadLM(la,ln,pfx){pfx=pfx||'sr_lm_';try{var d=localStorage.getItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2));var a=d?JSON.parse(d):null;return(a&&a.length)?a:null;}catch(e){return null;}}
 function saveStory(id,t){try{localStorage.setItem('sr_s_'+id,t);}catch(e){}}
 function loadStory(id){try{return localStorage.getItem('sr_s_'+id)||null;}catch(e){return null;}}
 function saveLongStory(k,t){try{localStorage.setItem('sr_ls_'+k,t);}catch(e){}}
@@ -1106,239 +1037,363 @@ function loadLongStory(k){try{return localStorage.getItem('sr_ls_'+k)||null;}cat
 // ═══════════════════════════════════════════════════════════════
 function loadFavs(){try{favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');}catch(e){favourites=[];}}
 function saveFavs(){try{localStorage.setItem('sr_favs',JSON.stringify(favourites));}catch(e){}}
-function isFaved(id){return favourites.some(f=>f.id===id);}
-function toggleFavourite(){if(!curStory)return;const btn=document.getElementById('fav-btn');if(isFaved(curStory.id)){favourites=favourites.filter(f=>f.id!==curStory.id);btn.textContent='🤍';}else{favourites.push({id:curStory.id,title:curStory.title,text:curStory.text});btn.textContent='❤️';track('story_fav',{title:curStory.title});}saveFavs();}
-function renderFavs(){const el=document.getElementById('fav-list');if(!favourites.length){el.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:40px 20px;">No favourites yet.<br>Tap ❤️ on a story to save it.</div>';return;}el.innerHTML=favourites.map((f,i)=>`<div class="fav-item"><div class="fav-title">${f.title}</div><div class="fav-text">${f.text}</div><div class="fav-actions"><button class="fav-play" onclick="playFav(${i})">▶ Play</button><button class="fav-del" onclick="delFav(${i})">🗑</button></div></div>`).join('');}
-function playFav(i){tts(favourites[i].text,()=>{});closeFavPanel();}
+function isFaved(id){return favourites.some(function(f){return f.id===id;});}
+function toggleFavourite(){
+  if(!curStory)return;
+  var btn=document.getElementById('fav-btn');
+  if(isFaved(curStory.id)){favourites=favourites.filter(function(f){return f.id!==curStory.id;});btn.textContent='🤍';}
+  else{favourites.push({id:curStory.id,title:curStory.title,text:curStory.text});btn.textContent='❤️';track('story_fav',{title:curStory.title});}
+  saveFavs();
+}
+function renderFavs(){
+  var el=document.getElementById('fav-list');
+  if(!favourites.length){el.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:40px 20px;">No favourites yet.<br>Tap ❤️ on a story to save it.</div>';return;}
+  el.innerHTML=favourites.map(function(f,i){return '<div class="fav-item"><div class="fav-title">'+f.title+'</div><div class="fav-text">'+f.text+'</div><div class="fav-actions"><button class="fav-play" onclick="playFav('+i+')">▶ Play</button><button class="fav-del" onclick="delFav('+i+')">🗑</button></div></div>';}).join('');
+}
+function playFav(i){tts(favourites[i].text,function(){});closeFavPanel();}
 function delFav(i){favourites.splice(i,1);saveFavs();renderFavs();}
 
 // ═══════════════════════════════════════════════════════════════
 // AI
 // ═══════════════════════════════════════════════════════════════
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-async function callAI(prompt){ const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})}); if(!r.ok)throw new Error('HTTP '+r.status); const d=await r.json(); if(d.error)throw new Error(d.error); const t=d?.content?.[0]?.text||''; if(!t)throw new Error('Empty'); return t; }
-async function geocode(q){ try{const d=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json());return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null;}catch{return null;} }
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function callAI(prompt){
+  return fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(d){if(d.error)throw new Error(d.error);var t=d&&d.content&&d.content[0]?d.content[0].text:'';if(!t)throw new Error('Empty');return t;});
+}
+function geocode(q){
+  return fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
+    .then(function(r){return r.json();})
+    .then(function(d){return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null;})
+    .catch(function(){return null;});
+}
 
 // ═══════════════════════════════════════════════════════════════
 // FETCH LANDMARKS
 // ═══════════════════════════════════════════════════════════════
 function fetchVisibleBounds(){
-  const b=map.getBounds(), z=map.getZoom(), s=z>=15?1:z>=13?2:3, pts=[];
-  for(let i=0;i<=s;i++) for(let j=0;j<=s;j++) pts.push({lat:b.getSouth()+(b.getNorth()-b.getSouth())*(i/s),lng:b.getWest()+(b.getEast()-b.getWest())*(j/s)});
-  pts.reduce((ch,pt)=>ch.then(()=>fetchArea(pt.lat,pt.lng).then(()=>fetchNeighbourhoods(pt.lat,pt.lng))),Promise.resolve());
+  if(!map)return;
+  var b=map.getBounds(),z=map.getZoom(),s=z>=15?1:z>=13?2:3,pts=[];
+  for(var i=0;i<=s;i++) for(var j=0;j<=s;j++) pts.push({lat:b.getSouth()+(b.getNorth()-b.getSouth())*(i/s),lng:b.getWest()+(b.getEast()-b.getWest())*(j/s)});
+  pts.reduce(function(ch,pt){return ch.then(function(){return fetchArea(pt.lat,pt.lng).then(function(){return fetchNeighbourhoods(pt.lat,pt.lng);});});},Promise.resolve());
 }
-
-async function fetchArea(lat,lng){
-  const key=lat.toFixed(2)+'_'+lng.toFixed(2);
-  if(fetched.has(key))return; fetched.add(key);
-  const cached=loadLM(lat,lng);
-  if(cached){ await addLMs(cached,lat,lng); afterFetch(); return; }
+function fetchArea(lat,lng){
+  var key=lat.toFixed(2)+'_'+lng.toFixed(2);
+  if(fetched.has(key))return Promise.resolve(); fetched.add(key);
+  var cached=loadLM(lat,lng);
+  if(cached) return addLMs(cached,lat,lng).then(function(){afterFetch();});
   setStatus('Searching…');
-  try{
-    const raw=await callAI(
-      'List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in Ireland.\n'+
-      'Include churches, pubs, monuments, bridges, schools, parks, harbours, towers, abbeys, markets, halls, cinemas, railway stations, canals, wells, hills, gates, and notable buildings.\n'+
-      'Return ONLY a JSON array: [{"title":"Name","type":"monument"}]\n'+
-      'Valid types: monument,church,castle,street,building,bridge,park,museum,person,nature,pub,beach,estate,school,sport,abbey,harbour,tower,market,gate,hall,cinema,railway,canal,well,hill,island,history,legend,other\n'+
-      'Only real places you are certain exist.');
-    const si=raw.indexOf('['),ei=raw.lastIndexOf(']');
-    if(si===-1||ei===-1){fetched.delete(key);setStatus('Retry — tap Refresh');return;}
-    const arr=JSON.parse(raw.slice(si,ei+1));
-    if(!arr.length){fetched.delete(key);return;}
-    saveLM(lat,lng,arr);
-    await addLMs(arr,lat,lng);
-    afterFetch();
-  }catch(err){ fetched.delete(key); setStatus('Error — tap Refresh'); console.error(err); }
+  return callAI('List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in Ireland.\nReturn ONLY a JSON array: [{"title":"Name","type":"monument"}]\nValid types: monument,church,castle,street,building,bridge,park,museum,person,nature,pub,beach,estate,school,sport,abbey,harbour,tower,market,gate,hall,cinema,railway,canal,well,hill,island,history,legend,other\nOnly real places you are certain exist.')
+    .then(function(raw){
+      var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
+      if(si===-1||ei===-1){fetched.delete(key);setStatus('Retry — tap Refresh');return;}
+      var arr=JSON.parse(raw.slice(si,ei+1));
+      if(!arr.length){fetched.delete(key);return;}
+      saveLM(lat,lng,arr);
+      return addLMs(arr,lat,lng).then(function(){afterFetch();});
+    })
+    .catch(function(err){fetched.delete(key);setStatus('Error — tap Refresh');console.error(err);});
 }
-
-async function fetchNeighbourhoods(lat,lng){
-  const key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
-  if(fetchedNb.has(key))return; fetchedNb.add(key);
-  const cached=loadLM(lat,lng,'sr_nb_');
-  if(cached){ await addNeighbourhoods(cached); return; }
-  try{
-    const raw=await callAI(
-      'List 8 distinct neighbourhoods, villages or districts within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in Ireland.\n'+
-      'For coastal areas include headlands, bays and coastal villages.\n'+
-      'Return ONLY a JSON array: [{"title":"Raheny","county":"Dublin"}]\n'+
-      'Only real named areas.');
-    const si=raw.indexOf('['),ei=raw.lastIndexOf(']');
-    if(si===-1||ei===-1)return;
-    const arr=JSON.parse(raw.slice(si,ei+1));
-    if(!arr.length)return;
-    saveLM(lat,lng,arr,'sr_nb_');
-    await addNeighbourhoods(arr);
-  }catch(err){ fetchedNb.delete(key); console.error('NB:',err); }
+function fetchNeighbourhoods(lat,lng){
+  var key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
+  if(fetchedNb.has(key))return Promise.resolve(); fetchedNb.add(key);
+  var cached=loadLM(lat,lng,'sr_nb_');
+  if(cached) return addNeighbourhoods(cached);
+  return callAI('List 8 distinct neighbourhoods or districts within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in Ireland.\nReturn ONLY a JSON array: [{"title":"Raheny","county":"Dublin"}]\nOnly real named areas.')
+    .then(function(raw){
+      var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
+      if(si===-1||ei===-1)return;
+      var arr=JSON.parse(raw.slice(si,ei+1));
+      if(!arr.length)return;
+      saveLM(lat,lng,arr,'sr_nb_');
+      return addNeighbourhoods(arr);
+    })
+    .catch(function(err){fetchedNb.delete(key);console.error('NB:',err);});
 }
-
-async function addNeighbourhoods(arr){
-  for(const p of arr){
-    if(!p.title) continue;
-    const id='nb_'+p.title.replace(/\W+/g,'_');
+function addNeighbourhoods(arr){
+  var p=Promise.resolve();
+  arr.forEach(function(item){
+    if(!item.title)return;
+    var id='nb_'+item.title.replace(/\W+/g,'_');
     if(markers[id]){
-      // Marker exists — sync visibility to current filter
-      if(isTypeVisible('area')){ if(!map.hasLayer(markers[id])) markers[id].addTo(map); }
-      else{ if(map.hasLayer(markers[id])) map.removeLayer(markers[id]); }
-      continue;
+      if(isTypeVisible('area')){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
+      else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}
+      return;
     }
-    // Only create if currently visible
-    if(!isTypeVisible('area')) continue;
-    await sleep(400);
-    const coords=await geocode(p.title+', Ireland');
-    if(!coords) continue;
-    const html='<div style="text-align:center"><div class="nb-dot" id="lm-'+id+'">🏙</div><div class="nb-label">'+p.title+'</div></div>';
-    const icon=L.divIcon({html,iconSize:[60,42],iconAnchor:[30,14],className:''});
-    const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:'area'}).addTo(map).bindTooltip(p.title+' — tap for story',{direction:'top'});
-    const lm={id,title:p.title,type:'area',lat:coords.lat,lng:coords.lng,isNb:true};
-    m.on('click',()=>{ track('marker_tap',{title:p.title,type:'area'}); onTapMarker(lm); });
-    markers[id]=m;
-  }
+    if(!isTypeVisible('area'))return;
+    p=p.then(function(){return sleep(400);}).then(function(){return geocode(item.title+', Ireland');}).then(function(coords){
+      if(!coords)return;
+      var id2='nb_'+item.title.replace(/\W+/g,'_');
+      var html='<div style="text-align:center"><div class="nb-dot" id="lm-'+id2+'">🏙</div><div class="nb-label">'+item.title+'</div></div>';
+      var icon=L.divIcon({html:html,iconSize:[60,42],iconAnchor:[30,14],className:''});
+      var m=L.marker([coords.lat,coords.lng],{icon:icon,_title:item.title,_type:'area'}).addTo(map).bindTooltip(item.title+' — tap for story',{direction:'top'});
+      var lm={id:id2,title:item.title,type:'area',lat:coords.lat,lng:coords.lng,isNb:true};
+      m.on('click',function(){track('marker_tap',{title:item.title,type:'area'});onTapMarker(lm);});
+      markers[id2]=m;
+    });
+  });
+  return p;
 }
-
-async function addLMs(arr,lat,lng){
-  let city='Ireland';
-  try{ const r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json()); city=r?.address?.city||r?.address?.town||r?.address?.village||r?.address?.county||'Ireland'; currentCityName=city; }catch(e){}
-  for(const p of arr){
-    if(!p.title) continue;
-    const id=p.title.replace(/\W+/g,'_');
-    const ptype=ALL_TYPES.includes(p.type)?p.type:'other';
+function addLMs(arr,lat,lng){
+  var city='Ireland';
+  var p=fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
+    .then(function(r){return r.json();})
+    .then(function(r){city=r&&r.address?(r.address.city||r.address.town||r.address.village||r.address.county||'Ireland'):'Ireland';currentCityName=city;})
+    .catch(function(){});
+  arr.forEach(function(item){
+    if(!item.title)return;
+    var id=item.title.replace(/\W+/g,'_');
+    var ptype=ALL_TYPES.includes(item.type)?item.type:'other';
     if(markers[id]){
-      // Marker exists — sync visibility to current filter
-      if(isTypeVisible(ptype)){ if(!map.hasLayer(markers[id])) markers[id].addTo(map); }
-      else{ if(map.hasLayer(markers[id])) map.removeLayer(markers[id]); }
-      continue;
+      if(isTypeVisible(ptype)){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
+      else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}
+      return;
     }
-    // Only create if currently visible
-    if(!isTypeVisible(ptype)) continue;
-    await sleep(300);
-    const coords=await geocode(p.title+', '+city+', Ireland');
-    if(!coords) continue;
-    const html='<div class="lm-dot" id="lm-'+id+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
-    const icon=L.divIcon({html,iconSize:[28,28],iconAnchor:[14,14],className:''});
-    const m=L.marker([coords.lat,coords.lng],{icon,_title:p.title,_type:ptype}).addTo(map).bindTooltip(p.title,{direction:'top'});
-    const lm={id,title:p.title,type:ptype,lat:coords.lat,lng:coords.lng};
-    m.on('click',()=>{ track('marker_tap',{title:p.title,type:ptype}); onTapMarker(lm); });
-    markers[id]=m;
-  }
+    if(!isTypeVisible(ptype))return;
+    p=p.then(function(){return sleep(300);}).then(function(){return geocode(item.title+', '+city+', Ireland');}).then(function(coords){
+      if(!coords)return;
+      var id2=item.title.replace(/\W+/g,'_');
+      var html='<div class="lm-dot" id="lm-'+id2+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
+      var icon=L.divIcon({html:html,iconSize:[28,28],iconAnchor:[14,14],className:''});
+      var m=L.marker([coords.lat,coords.lng],{icon:icon,_title:item.title,_type:ptype}).addTo(map).bindTooltip(item.title,{direction:'top'});
+      var lm={id:id2,title:item.title,type:ptype,lat:coords.lat,lng:coords.lng};
+      m.on('click',function(){track('marker_tap',{title:item.title,type:ptype});onTapMarker(lm);});
+      markers[id2]=m;
+    });
+  });
+  return p;
 }
-
 function afterFetch(){
-  const n=Object.keys(markers).length;
-  if(userPos){ let best=null,bestD=Infinity; Object.entries(markers).forEach(([id,m])=>{if(visited.has(id))return;const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<bestD){bestD=d;best=m.options._title;}}); if(best&&bestD<2000)setStatus(n+' landmarks · '+Math.round(bestD)+'m to '+best); else setStatus(n+' landmark'+(n!==1?'s':'')); }
-  else setStatus(n+' landmark'+(n!==1?'s':''));
-  if(tourOn&&!speaking) playNearest();
+  var n=Object.keys(markers).length;
+  if(userPos){
+    var best=null,bestD=Infinity;
+    Object.entries(markers).forEach(function(e){
+      if(visited.has(e[0]))return;
+      var ll=e[1].getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
+      if(d<bestD){bestD=d;best=e[1].options._title;}
+    });
+    if(best&&bestD<2000)setStatus(n+' landmarks · '+Math.round(bestD)+'m to '+best);
+    else setStatus(n+' landmark'+(n!==1?'s':''));
+  }else setStatus(n+' landmark'+(n!==1?'s':''));
+  if(tourOn&&!speaking)playNearest();
 }
-
 function refreshLandmarks(){
-  fetched.clear(); fetchedNb.clear();
-  Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_')){ try{const v=JSON.parse(localStorage.getItem(k));if(!v||!v.length)localStorage.removeItem(k);}catch(e){localStorage.removeItem(k);} } });
-  Object.values(markers).forEach(m=>map.removeLayer(m));
-  markers={}; visited.clear(); nxtStory=null; prefetchId=null;
+  fetched.clear();fetchedNb.clear();
+  Object.keys(localStorage).forEach(function(k){if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_')){try{var v=JSON.parse(localStorage.getItem(k));if(!v||!v.length)localStorage.removeItem(k);}catch(e){localStorage.removeItem(k);}}});
+  Object.values(markers).forEach(function(m){map.removeLayer(m);});
+  markers={};visited.clear();nxtStory=null;prefetchId=null;
   document.getElementById('next-info').textContent='';
   document.getElementById('skip-btn').disabled=true;
-  setStatus('Refreshing…'); fetchVisibleBounds();
+  setStatus('Refreshing…');fetchVisibleBounds();
 }
-
-function setTravelMode(m){ travelMode=m; PROXIMITY_RADIUS=TRAVEL_MODES[m].radius; document.querySelectorAll('.tm-btn').forEach(b=>b.classList.remove('active')); document.getElementById('tm-'+m).classList.add('active'); track('travel_mode',{mode:m}); }
-function checkProxAlert(){ if(!userPos)return; let best=null,bestD=Infinity; Object.entries(markers).forEach(([id,m])=>{ if(visited.has(id))return; const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng}); if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:m.options._title,dist:Math.round(d)};} }); const el=document.getElementById('prox-alert'); if(best){document.getElementById('prox-text').textContent=best.name+' is '+best.dist+'m away';el.classList.add('visible');clearTimeout(proxTimer);proxTimer=setTimeout(()=>el.classList.remove('visible'),5000);}else el.classList.remove('visible'); }
-function updateProgress(){ if(!routeCoords.length||!userPos)return; let minD=Infinity,minI=0; routeCoords.forEach(([la,ln],i)=>{const d=haversine(userPos,{lat:la,lng:ln});if(d<minD){minD=d;minI=i;}}); const pct=Math.round((minI/(routeCoords.length-1))*100); document.getElementById('progress-fill').style.width=pct+'%'; document.getElementById('progress-label').textContent=pct+'%'; }
+function setTravelMode(m){travelMode=m;PROXIMITY_RADIUS=TRAVEL_MODES[m].radius;document.querySelectorAll('.tm-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('tm-'+m).classList.add('active');track('travel_mode',{mode:m});}
+function checkProxAlert(){
+  if(!userPos)return;
+  var best=null,bestD=Infinity;
+  Object.entries(markers).forEach(function(e){
+    if(visited.has(e[0]))return;
+    var ll=e[1].getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
+    if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:e[1].options._title,dist:Math.round(d)};}
+  });
+  var el=document.getElementById('prox-alert');
+  if(best){document.getElementById('prox-text').textContent=best.name+' is '+best.dist+'m away';el.classList.add('visible');clearTimeout(proxTimer);proxTimer=setTimeout(function(){el.classList.remove('visible');},5000);}
+  else el.classList.remove('visible');
+}
+function updateProgress(){
+  if(!routeCoords.length||!userPos)return;
+  var minD=Infinity,minI=0;
+  routeCoords.forEach(function(rc,i){var d=haversine(userPos,{lat:rc[0],lng:rc[1]});if(d<minD){minD=d;minI=i;}});
+  var pct=Math.round((minI/(routeCoords.length-1))*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=pct+'%';
+}
 
 // ═══════════════════════════════════════════════════════════════
 // TOUR
 // ═══════════════════════════════════════════════════════════════
-function toggleTour(){ if(!tourOn)startTour(); else stopTour(); }
-function startTour(){ tourOn=true; document.getElementById('silent-audio').play().catch(()=>{}); const btn=document.getElementById('tour-btn'); btn.textContent='⏹ Stop Listening'; btn.classList.add('stop'); document.getElementById('prox-alert').classList.remove('visible'); document.getElementById('travel-mode').classList.add('visible'); document.getElementById('story').style.bottom='132px'; setStatus('Tour active'); track('tour_start',{mode:travelMode}); playNearest(); }
-function stopTour(){ tourOn=false;speaking=false;nxtStory=null;prefetchId=null;curStory=null; cancelAudio(); const sa=document.getElementById('silent-audio');sa.pause();sa.currentTime=0; const btn=document.getElementById('tour-btn');btn.textContent='▶ Start Listening';btn.classList.remove('stop'); document.getElementById('story').style.display='none'; document.getElementById('story').style.bottom='74px'; document.getElementById('travel-mode').classList.remove('visible'); document.getElementById('skip-btn').disabled=true; document.getElementById('next-info').textContent=''; document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing')); track('tour_stop',{stories_heard:landmarkCount}); const n=Object.keys(markers).length; setStatus(n+' landmark'+(n!==1?'s':'')); }
-function nearest(excl=[]){ if(!userPos)return null; let best=null,bestD=Infinity; for(const [id,m] of Object.entries(markers)){ if(visited.has(id)||excl.includes(id))continue; if(!map.hasLayer(m))continue; // skip hidden markers const ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng}); if(d<=PROXIMITY_RADIUS&&d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,isNb:m.options._type==='area'};} } return best; }
-function playNearest(){ if(!tourOn||speaking)return; const p=nearest(); if(p)playLandmark(p); else setStatus('No unvisited landmarks in range'); }
+function toggleTour(){if(!tourOn)startTour();else stopTour();}
+function startTour(){
+  tourOn=true;
+  document.getElementById('silent-audio').play().catch(function(){});
+  var btn=document.getElementById('tour-btn');btn.textContent='⏹ Stop Listening';btn.classList.add('stop');
+  document.getElementById('prox-alert').classList.remove('visible');
+  document.getElementById('travel-mode').classList.add('visible');
+  document.getElementById('story').style.bottom='132px';
+  setStatus('Tour active');track('tour_start',{mode:travelMode});playNearest();
+}
+function stopTour(){
+  tourOn=false;speaking=false;nxtStory=null;prefetchId=null;curStory=null;cancelAudio();
+  var sa=document.getElementById('silent-audio');sa.pause();sa.currentTime=0;
+  var btn=document.getElementById('tour-btn');btn.textContent='▶ Start Listening';btn.classList.remove('stop');
+  document.getElementById('story').style.display='none';
+  document.getElementById('story').style.bottom='74px';
+  document.getElementById('travel-mode').classList.remove('visible');
+  document.getElementById('skip-btn').disabled=true;
+  document.getElementById('next-info').textContent='';
+  document.querySelectorAll('.lm-dot,.nb-dot').forEach(function(d){d.classList.remove('playing');});
+  track('tour_stop',{stories_heard:landmarkCount});
+  setStatus(Object.keys(markers).length+' landmarks');
+}
+function nearest(excl){
+  excl=excl||[];
+  if(!userPos)return null;
+  var best=null,bestD=Infinity;
+  Object.entries(markers).forEach(function(e){
+    var id=e[0],m=e[1];
+    if(visited.has(id)||excl.includes(id))return;
+    if(!map.hasLayer(m))return;
+    var ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
+    if(d<=PROXIMITY_RADIUS&&d<bestD){bestD=d;best={id:id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,isNb:m.options._type==='area'};}
+  });
+  return best;
+}
+function playNearest(){if(!tourOn||speaking)return;var p=nearest();if(p)playLandmark(p);else setStatus('No unvisited landmarks in range');}
 
-async function playLandmark(p){
+function playLandmark(p){
   if(speaking||visited.has(p.id))return;
   if(!canPlay()){speaking=false;showPaywall();return;}
-  bumpCount(); visited.add(p.id); speaking=true; landmarkCount++;
-  dotVisited(p.id); setPulse(p.id);
+  bumpCount();visited.add(p.id);speaking=true;landmarkCount++;
+  dotVisited(p.id);setPulse(p.id);
   setStatus('📖 '+p.title);
   showStory(p.title,'⏳ Loading story…',p.type);
   document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';
   document.getElementById('skip-btn').disabled=true;
   track('story_play',{title:p.title,type:p.type});
-  const cached=loadStory(p.id);
+  var cached=loadStory(p.id);
   if(cached){finishPlay(p,cached);return;}
-  try{ const txt=await getStory(p); saveStory(p.id,txt); finishPlay(p,txt); }
-  catch(e){ speaking=false; setStatus('Story error — retrying'); if(tourOn)setTimeout(playNearest,4000); }
+  getStory(p).then(function(txt){saveStory(p.id,txt);finishPlay(p,txt);})
+    .catch(function(){speaking=false;setStatus('Story error — retrying');if(tourOn)setTimeout(playNearest,4000);});
 }
-
 function finishPlay(p,txt){
   if(!speaking)return;
-  curStory={...p,text:txt}; showStory(p.title,txt,p.type);
-  if(tourOn){ const nxt=nearest([p.id]); if(nxt)prefetchStory(nxt); }
-  tts(txt,()=>{
-    speaking=false; if(!tourOn)return;
-    if(nxtStory){ const s=nxtStory; nxtStory=null; prefetchId=null; document.getElementById('next-info').textContent=''; document.getElementById('skip-btn').disabled=true; setTimeout(()=>playLandmark(s),1200); }
-    else{ const cn=nearest(); if(cn)setTimeout(()=>playLandmark(cn),1500); else setTimeout(playNearest,2000); }
+  curStory=Object.assign({},p,{text:txt});showStory(p.title,txt,p.type);
+  if(tourOn){var nxt=nearest([p.id]);if(nxt)prefetchStory(nxt);}
+  tts(txt,function(){
+    speaking=false;if(!tourOn)return;
+    if(nxtStory){var s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(function(){playLandmark(s);},1200);}
+    else{var cn=nearest();if(cn)setTimeout(function(){playLandmark(cn);},1500);else setTimeout(playNearest,2000);}
   });
 }
-
-async function prefetchStory(p){ if(visited.has(p.id)||prefetchId===p.id||nxtStory)return; prefetchId=p.id; document.getElementById('next-info').innerHTML='⏳ Preparing: <b>'+p.title+'</b>'; const cached=loadStory(p.id); if(cached&&!visited.has(p.id)){nxtStory={...p,text:cached};document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;return;} try{const txt=await getStory(p);if(!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory={...p,text:txt};document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}}catch(e){prefetchId=null;document.getElementById('next-info').textContent='';} }
-
-async function getStory(p){
-  if(p.isNb||p.type==='area') return callAI('GPS audio tour guide in Ireland. 5 vivid sentences about the neighbourhood of "'+p.title+'". Cover its character, history, what makes it distinct. Max 120 words. Story only.');
+function prefetchStory(p){
+  if(visited.has(p.id)||prefetchId===p.id||nxtStory)return;
+  prefetchId=p.id;
+  document.getElementById('next-info').innerHTML='⏳ Preparing: <b>'+p.title+'</b>';
+  var cached=loadStory(p.id);
+  if(cached&&!visited.has(p.id)){nxtStory=Object.assign({},p,{text:cached});document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;return;}
+  getStory(p).then(function(txt){
+    if(!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory=Object.assign({},p,{text:txt});document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}
+  }).catch(function(){prefetchId=null;document.getElementById('next-info').textContent='';});
+}
+function getStory(p){
+  if(p.isNb||p.type==='area') return callAI('GPS audio tour guide in Ireland. 5 vivid sentences about "'+p.title+'". Cover its character, history, what makes it distinct. Max 120 words. Story only.');
   if(p.type==='legend') return callAI('Irish storyteller. 3-4 vivid sentences retelling the legend of "'+p.title+'" in Ireland. Atmospheric tone. Max 80 words. Story only.');
   if(p.type==='history') return callAI('Irish historian. 3-4 vivid sentences about the historical significance of "'+p.title+'" in Ireland. Max 80 words. Story only.');
   return callAI('GPS audio tour guide. 3 vivid sentences about "'+p.title+'" ('+p.type+') in Ireland. Varied opener. Max 65 words. Story only.');
 }
-
-function stopCurrentStory(){ cancelAudio();speaking=false;nxtStory=null;prefetchId=null;document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));if(tourOn)setTimeout(playNearest,1500);else{const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':''));} }
-function hideStoryBody(){ document.getElementById('story-body').style.display='none'; document.getElementById('unhide-btn').style.display='inline-block'; }
-function showStoryBody(){ document.getElementById('story-body').style.display='block'; document.getElementById('unhide-btn').style.display='none'; }
-function skipStory(){ if(!nxtStory)return; cancelAudio();speaking=false;const s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(()=>playLandmark(s),300); }
-
-function onTapMarker(p){ if(!speaking&&!tourOn){try{const u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}} if(speaking){setStatus('Queuing: '+p.title);nxtStory=null;prefetchId=null;prefetchStory(p);return;} playLandmarkOnDemand(p); }
-
-async function playLandmarkOnDemand(p){
-  if(speaking)return; if(!canPlay()){showPaywall();return;}
-  const wasVis=visited.has(p.id);
-  if(!wasVis){visited.add(p.id);landmarkCount++;bumpCount();dotVisited(p.id);}
-  setPulse(p.id); speaking=true; setStatus('📖 '+p.title);
+function stopCurrentStory(){
+  cancelAudio();speaking=false;nxtStory=null;prefetchId=null;
+  document.getElementById('skip-btn').disabled=true;
+  document.getElementById('next-info').textContent='';
+  document.querySelectorAll('.lm-dot,.nb-dot').forEach(function(d){d.classList.remove('playing');});
+  if(tourOn)setTimeout(playNearest,1500);
+  else setStatus(Object.keys(markers).length+' landmarks');
+}
+function hideStoryBody(){document.getElementById('story-body').style.display='none';document.getElementById('unhide-btn').style.display='inline-block';}
+function showStoryBody(){document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';}
+function skipStory(){if(!nxtStory)return;cancelAudio();speaking=false;var s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(function(){playLandmark(s);},300);}
+function onTapMarker(p){
+  if(!speaking&&!tourOn){try{var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}}
+  if(speaking){setStatus('Queuing: '+p.title);nxtStory=null;prefetchId=null;prefetchStory(p);return;}
+  playLandmarkOnDemand(p);
+}
+function playLandmarkOnDemand(p){
+  if(speaking)return;if(!canPlay()){showPaywall();return;}
+  if(!visited.has(p.id)){visited.add(p.id);landmarkCount++;bumpCount();dotVisited(p.id);}
+  setPulse(p.id);speaking=true;setStatus('📖 '+p.title);
   showStory(p.title,'⏳ Loading story…',p.type);
   document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';
   document.getElementById('skip-btn').disabled=true;
   track('story_play',{title:p.title,type:p.type,mode:'tap'});
-  const onDone=()=>{ speaking=false; document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing')); if(tourOn){const cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}else{const n=Object.keys(markers).length;setStatus(n+' landmark'+(n!==1?'s':''));} };
-  const cached=loadStory(p.id);
-  if(cached){curStory={...p,text:cached};showStory(p.title,cached,p.type);tts(cached,onDone);return;}
-  try{ const txt=await getStory(p); saveStory(p.id,txt); curStory={...p,text:txt}; showStory(p.title,txt,p.type); tts(txt,onDone); }
-  catch(e){ speaking=false; setStatus('Story error — tap to retry'); }
+  var onDone=function(){
+    speaking=false;
+    document.querySelectorAll('.lm-dot,.nb-dot').forEach(function(d){d.classList.remove('playing');});
+    if(tourOn){var cn=nearest();if(cn)setTimeout(function(){playLandmark(cn);},1200);}
+    else setStatus(Object.keys(markers).length+' landmarks');
+  };
+  var cached=loadStory(p.id);
+  if(cached){curStory=Object.assign({},p,{text:cached});showStory(p.title,cached,p.type);tts(cached,onDone);return;}
+  getStory(p).then(function(txt){saveStory(p.id,txt);curStory=Object.assign({},p,{text:txt});showStory(p.title,txt,p.type);tts(txt,onDone);})
+    .catch(function(){speaking=false;setStatus('Story error — tap to retry');});
 }
 
 // ═══════════════════════════════════════════════════════════════
 // STORIES MODE
 // ═══════════════════════════════════════════════════════════════
-async function openStoriesMode(){
+function openStoriesMode(){
   if(!userPos){showToast('Waiting for location…');return;}
-  try{ const r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+userPos.lat+'&lon='+userPos.lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}}).then(r=>r.json()); const nb=r?.address?.suburb||r?.address?.neighbourhood||r?.address?.quarter||r?.address?.village||r?.address?.town||r?.address?.city||'this area'; const city=r?.address?.city||r?.address?.town||r?.address?.county||'Ireland'; currentAreaName=nb; currentCityName=city; document.getElementById('stories-area-name').textContent=nb+', '+city; }catch(e){document.getElementById('stories-area-name').textContent='Nearby area';}
-  const areaKey=currentAreaName.replace(/\W+/g,'_');
-  const cached=STORY_TYPES.map(st=>{const t=loadLongStory(areaKey+'_'+st.type);return t?{...st,text:t,area:currentAreaName}:null;});
+  fetch('https://nominatim.openstreetmap.org/reverse?lat='+userPos.lat+'&lon='+userPos.lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
+    .then(function(r){return r.json();})
+    .then(function(r){
+      var nb=r.address?(r.address.suburb||r.address.neighbourhood||r.address.quarter||r.address.village||r.address.town||r.address.city||'this area'):'this area';
+      var city=r.address?(r.address.city||r.address.town||r.address.county||'Ireland'):'Ireland';
+      currentAreaName=nb;currentCityName=city;
+      document.getElementById('stories-area-name').textContent=nb+', '+city;
+      loadStoriesForArea();
+    })
+    .catch(function(){document.getElementById('stories-area-name').textContent='Nearby area';loadStoriesForArea();});
+}
+function loadStoriesForArea(){
+  var areaKey=currentAreaName.replace(/\W+/g,'_');
+  var cached=STORY_TYPES.map(function(st){var t=loadLongStory(areaKey+'_'+st.type);return t?Object.assign({},st,{text:t,area:currentAreaName}):null;});
   if(cached.filter(Boolean).length===STORY_TYPES.length){longStories=cached;renderStoriesPanel();document.getElementById('gen-story-btn').disabled=false;return;}
   document.getElementById('stories-list').innerHTML='<div class="story-generating"><span class="spin">🌀</span>Generating stories for '+currentAreaName+'…</div>';
-  document.getElementById('gen-story-btn').disabled=true; longStories=[];
-  for(let i=0;i<STORY_TYPES.length;i++){ const st=STORY_TYPES[i]; if(cached[i]){longStories.push(cached[i]);renderStoriesPanel();continue;} try{const txt=await callAI(st.prompt(currentAreaName,currentCityName));saveLongStory(areaKey+'_'+st.type,txt);longStories.push({...st,text:txt,area:currentAreaName});renderStoriesPanel();}catch(e){console.error('Story gen:',e);} }
-  document.getElementById('gen-story-btn').disabled=false;
-  track('stories_mode_open',{area:currentAreaName});
+  document.getElementById('gen-story-btn').disabled=true;
+  longStories=[];
+  var idx=0;
+  function nextStory(){
+    if(idx>=STORY_TYPES.length){document.getElementById('gen-story-btn').disabled=false;track('stories_mode_open',{area:currentAreaName});return;}
+    var st=STORY_TYPES[idx++];
+    var c=cached[idx-1];
+    if(c){longStories.push(c);renderStoriesPanel();nextStory();return;}
+    callAI(st.prompt(currentAreaName,currentCityName)).then(function(txt){
+      saveLongStory(areaKey+'_'+st.type,txt);
+      longStories.push(Object.assign({},st,{text:txt,area:currentAreaName}));
+      renderStoriesPanel();nextStory();
+    }).catch(function(){console.error('Story gen failed');nextStory();});
+  }
+  nextStory();
 }
-async function generateMoreStories(){ const btn=document.getElementById('gen-story-btn');btn.disabled=true;btn.textContent='…';const st=STORY_TYPES[Math.floor(Math.random()*STORY_TYPES.length)];try{const txt=await callAI(st.prompt(currentAreaName,currentCityName));longStories.push({...st,text:txt,area:currentAreaName});renderStoriesPanel();}catch(e){showToast('Could not generate story');}btn.disabled=false;btn.textContent='+ More'; }
+function generateMoreStories(){
+  var btn=document.getElementById('gen-story-btn');btn.disabled=true;btn.textContent='…';
+  var st=STORY_TYPES[Math.floor(Math.random()*STORY_TYPES.length)];
+  callAI(st.prompt(currentAreaName,currentCityName)).then(function(txt){
+    longStories.push(Object.assign({},st,{text:txt,area:currentAreaName}));renderStoriesPanel();
+  }).catch(function(){showToast('Could not generate story');});
+  btn.disabled=false;btn.textContent='+ More';
+}
 function renderStoriesPanel(){
   if(!longStories.length)return;
-  document.getElementById('stories-list').innerHTML=longStories.map((s,i)=>{
-    const words=s.text?s.text.split(' ').length:0,mins=Math.max(1,Math.round(words/130));
-    const preview=s.text?(s.text.slice(0,140)+(s.text.length>140?'…':'')):' Loading…';
-    const isPlaying=currentLongStoryIdx===i&&longSpeaking;
+  document.getElementById('stories-list').innerHTML=longStories.map(function(s,i){
+    var words=s.text?s.text.split(' ').length:0,mins=Math.max(1,Math.round(words/130));
+    var preview=s.text?(s.text.slice(0,140)+(s.text.length>140?'…':'')):'Loading…';
+    var isPlaying=currentLongStoryIdx===i&&longSpeaking;
     return '<div class="story-card"><div class="story-card-header"><div class="story-card-icon">'+s.icon+'</div><div class="story-card-meta"><div class="story-card-title">'+(s.area||currentAreaName)+'</div><div class="story-card-type"><span class="story-type-pill '+s.pill+'">'+s.label+'</span></div></div><div class="story-card-duration">~'+mins+' min</div></div><div class="story-card-preview" id="scp-'+i+'">'+preview+'</div><div class="story-card-btns"><button class="sc-play'+(isPlaying?' playing':'')+'" onclick="toggleLongStory('+i+')">'+(isPlaying?'⏹ Stop':'▶ Listen')+'</button><button class="sc-expand" onclick="expandStoryCard('+i+')">Read</button><button class="sc-fav" onclick="favLongStory('+i+')">🤍</button></div></div>';
   }).join('');
 }
-function expandStoryCard(i){const el=document.getElementById('scp-'+i);if(!el||!longStories[i])return;el.textContent=longStories[i].text;el.classList.add('expanded');}
-function toggleLongStory(i){if(longSpeaking&&currentLongStoryIdx===i){cancelAudio();longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();return;}if(!canPlay()){showPaywall();return;}bumpCount();cancelAudio();longSpeaking=true;currentLongStoryIdx=i;renderStoriesPanel();const s=longStories[i];track('long_story_play',{type:s.type,area:s.area});tts(s.text,()=>{longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();});}
-function favLongStory(i){if(!longStories[i])return;const s=longStories[i],id='ls_'+s.area.replace(/\W+/g,'_')+'_'+s.type;if(!isFaved(id)){favourites.push({id,title:s.area+' — '+s.label,text:s.text});saveFavs();showToast('Added to favourites ❤️');}}
+function expandStoryCard(i){var el=document.getElementById('scp-'+i);if(!el||!longStories[i])return;el.textContent=longStories[i].text;el.classList.add('expanded');}
+function toggleLongStory(i){
+  if(longSpeaking&&currentLongStoryIdx===i){cancelAudio();longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();return;}
+  if(!canPlay()){showPaywall();return;}
+  bumpCount();cancelAudio();longSpeaking=true;currentLongStoryIdx=i;renderStoriesPanel();
+  var s=longStories[i];track('long_story_play',{type:s.type,area:s.area});
+  tts(s.text,function(){longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();});
+}
+function favLongStory(i){
+  if(!longStories[i])return;
+  var s=longStories[i],id='ls_'+s.area.replace(/\W+/g,'_')+'_'+s.type;
+  if(!isFaved(id)){favourites.push({id:id,title:s.area+' — '+s.label,text:s.text});saveFavs();showToast('Added to favourites ❤️');}
+}
 
 // ═══════════════════════════════════════════════════════════════
 // UI HELPERS
@@ -1353,55 +1408,73 @@ function showStory(name,text,type){
   if(text!=='⏳ Loading story…') loadStoryPhoto(name);
 }
 function setMode(m){
-  ['explore','route','stories'].forEach(x=>{ document.getElementById('btn-'+x).classList.toggle('active',x===m); });
+  ['explore','route','stories'].forEach(function(x){document.getElementById('btn-'+x).classList.toggle('active',x===m);});
   document.getElementById('route-panel').classList.toggle('visible',m==='route');
   document.getElementById('stories-panel').classList.toggle('visible',m==='stories');
   if(m==='stories') openStoriesMode();
 }
-function setPulse(id){ document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing')); const el=document.getElementById('lm-'+id); if(el)el.classList.add('playing'); }
-function dotVisited(id){ const el=document.getElementById('lm-'+id); if(el)el.classList.add('visited'); }
-function setStatus(t){ document.getElementById('status').textContent=t; }
-function toggleFromLoc(){ useCurrentLocFrom=!useCurrentLocFrom; const i=document.getElementById('from-inp'),b=document.getElementById('from-loc-btn'); if(useCurrentLocFrom){i.value='📍 My current location';i.disabled=true;b.classList.add('active');}else{i.value='';i.disabled=false;b.classList.remove('active');} }
+function setPulse(id){document.querySelectorAll('.lm-dot,.nb-dot').forEach(function(d){d.classList.remove('playing');});var el=document.getElementById('lm-'+id);if(el)el.classList.add('playing');}
+function dotVisited(id){var el=document.getElementById('lm-'+id);if(el)el.classList.add('visited');}
+function setStatus(t){document.getElementById('status').textContent=t;}
+function toggleFromLoc(){
+  useCurrentLocFrom=!useCurrentLocFrom;
+  var inp=document.getElementById('from-inp'),btn=document.getElementById('from-loc-btn');
+  if(useCurrentLocFrom){inp.value='📍 My current location';inp.disabled=true;btn.classList.add('active');}
+  else{inp.value='';inp.disabled=false;btn.classList.remove('active');}
+}
 
 // ═══════════════════════════════════════════════════════════════
 // ROUTE
 // ═══════════════════════════════════════════════════════════════
-async function planRoute(){
-  const to=document.getElementById('to-inp').value.trim(); if(!to)return;
-  const btn=document.getElementById('route-btn'); btn.disabled=true; setStatus('Planning…');
-  try{
-    let A;
-    if(useCurrentLocFrom&&userPos){A={lat:userPos.lat,lng:userPos.lng};}
-    else{const fv=document.getElementById('from-inp').value.trim();if(!fv){btn.disabled=false;alert('Enter a starting location.');return;}A=await geocode(fv);}
-    const B=await geocode(to);
+function planRoute(){
+  var to=document.getElementById('to-inp').value.trim();if(!to)return;
+  var btn=document.querySelector('.r-btn');btn.disabled=true;setStatus('Planning…');
+  var getA;
+  if(useCurrentLocFrom&&userPos){getA=Promise.resolve({lat:userPos.lat,lng:userPos.lng});}
+  else{var fv=document.getElementById('from-inp').value.trim();if(!fv){btn.disabled=false;alert('Enter a starting location.');return;}getA=geocode(fv);}
+  Promise.all([getA,geocode(to)]).then(function(res){
+    var A=res[0],B=res[1];
     if(!A||!B){btn.disabled=false;alert('Could not find locations.');return;}
-    const rd=await fetch('https://router.project-osrm.org/route/v1/driving/'+A.lng+','+A.lat+';'+B.lng+','+B.lat+'?overview=full&geometries=geojson').then(r=>r.json());
-    const coords=rd?.routes?.[0]?.geometry?.coordinates;
-    if(!coords){btn.disabled=false;alert('No route found.');return;}
-    if(map.routeLine) map.removeLayer(map.routeLine);
-    routeCoords=coords.map(c=>[c[1],c[0]]);
-    map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
-    map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
-    document.getElementById('progress-wrap').classList.add('visible');
-    document.getElementById('mode-toggle').style.display='flex';
-    updateProgress(); setStatus('Finding landmarks…'); track('route_planned');
-    const pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);
-    for(const pt of pts){ await fetchArea(pt[1],pt[0]); await fetchNeighbourhoods(pt[1],pt[0]); }
-    btn.disabled=false; setMode('explore');
-  }catch(e){ btn.disabled=false; setStatus('Route error'); }
+    return fetch('https://router.project-osrm.org/route/v1/driving/'+A.lng+','+A.lat+';'+B.lng+','+B.lat+'?overview=full&geometries=geojson')
+      .then(function(r){return r.json();})
+      .then(function(rd){
+        var coords=rd&&rd.routes&&rd.routes[0]?rd.routes[0].geometry.coordinates:null;
+        if(!coords){btn.disabled=false;alert('No route found.');return;}
+        if(map.routeLine)map.removeLayer(map.routeLine);
+        routeCoords=coords.map(function(c){return[c[1],c[0]];});
+        map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
+        map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
+        document.getElementById('progress-wrap').classList.add('visible');
+        updateProgress();setStatus('Finding landmarks…');track('route_planned');
+        var pts=Array.from({length:8},function(_,i){return coords[Math.floor(i*(coords.length-1)/7)];});
+        return pts.reduce(function(ch,pt){return ch.then(function(){return fetchArea(pt[1],pt[0]).then(function(){return fetchNeighbourhoods(pt[1],pt[0]);});});},Promise.resolve());
+      });
+  }).then(function(){btn.disabled=false;setMode('explore');}).catch(function(){btn.disabled=false;setStatus('Route error');});
 }
 
 // ═══════════════════════════════════════════════════════════════
 // SW
 // ═══════════════════════════════════════════════════════════════
-function forceUpdate(){ if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).finally(()=>location.reload(true)); }
-function applyUpdate(){ if(newWorker)newWorker.postMessage('SKIP_WAITING'); }
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').then(reg=>{ reg.update(); reg.addEventListener('updatefound',()=>{ newWorker=reg.installing; newWorker.addEventListener('statechange',()=>{ if(newWorker.state==='installed'&&navigator.serviceWorker.controller) document.getElementById('update-bar').classList.add('visible'); }); }); }); navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload()); }
+function forceUpdate(){if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).finally(function(){location.reload(true);});}
+function applyUpdate(){if(newWorker)newWorker.postMessage('SKIP_WAITING');}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(function(reg){
+    reg.update();
+    reg.addEventListener('updatefound',function(){
+      newWorker=reg.installing;
+      newWorker.addEventListener('statechange',function(){
+        if(newWorker.state==='installed'&&navigator.serviceWorker.controller)
+          document.getElementById('update-bar').classList.add('visible');
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange',function(){location.reload();});
+}
 
 // ═══════════════════════════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════════════════════════
-function haversine(a,b){ const R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
+function haversine(a,b){var R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.pow(Math.sin(dLat/2),2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.pow(Math.sin(dLng/2),2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 </script>
 </body>
 </html>
