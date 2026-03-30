@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.7.4</div>
+  <div id="splash-version">v1.7.5</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -886,9 +886,14 @@ function startAt(lat,lng){
   if(!fetched.has(dublinKey)){
     ['sr_lm_53.34_-6.25','sr_nb_53.34_-6.25'].forEach(k=>localStorage.removeItem(k));
   }
+  // Flag — programmatic moves (GPS centre, fitBounds) should NOT trigger landmark fetch
+  var moveDebounce=null;
   map.setView([lat,lng],15);
-  // Attach moveend NOW — after real position — so panning triggers fetches from actual location
-  map.on('moveend', fetchVisibleBounds);
+  // Attach debounced moveend — only fires 1.5s after user stops moving the map
+  map.on('moveend',function(){
+    clearTimeout(moveDebounce);
+    moveDebounce=setTimeout(function(){fetchVisibleBounds();},1500);
+  });
   var icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
   var um=L.marker([lat,lng],{icon:icon}).addTo(map);
   if(navigator.geolocation) navigator.geolocation.watchPosition(function(p){
@@ -897,7 +902,8 @@ function startAt(lat,lng){
     updateProgress(); checkProxAlert();
   },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
   setStatus('Loading landmarks…');
-  setTimeout(fetchVisibleBounds,600);
+  // Single initial fetch for current location — no duplicate
+  fetchVisibleBounds();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1080,13 +1086,16 @@ function geocode(q){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// FETCH LANDMARKS
+// FETCH LANDMARKS — only fetches the centre of the current view
+// More tiles are fetched only when the user pans to a new area
 // ═══════════════════════════════════════════════════════════════
 function fetchVisibleBounds(){
   if(!map)return;
-  var b=map.getBounds(),z=map.getZoom(),s=z>=15?1:z>=13?2:3,pts=[];
-  for(var i=0;i<=s;i++) for(var j=0;j<=s;j++) pts.push({lat:b.getSouth()+(b.getNorth()-b.getSouth())*(i/s),lng:b.getWest()+(b.getEast()-b.getWest())*(j/s)});
-  pts.reduce(function(ch,pt){return ch.then(function(){return fetchArea(pt.lat,pt.lng).then(function(){return fetchNeighbourhoods(pt.lat,pt.lng);});});},Promise.resolve());
+  // Only fetch the centre of what the user is actually looking at
+  var c=map.getCenter();
+  fetchArea(c.lat,c.lng).then(function(){
+    return fetchNeighbourhoods(c.lat,c.lng);
+  });
 }
 function fetchArea(lat,lng){
   var key=lat.toFixed(2)+'_'+lng.toFixed(2);
