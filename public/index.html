@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.7.2</div>
+  <div id="splash-version">v1.7.4</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -535,11 +535,11 @@ const SPEEDS = [
 
 const STORY_TYPES = [
   {type:'area',icon:'🏙',label:'Character',pill:'pill-area',
-   prompt:(a,c)=>`You are a captivating Irish storyteller. Write a vivid story of around 200 words about the character and soul of ${a} in ${c}, Ireland. Warm spoken style. Story only.`},
+   prompt:(a,c)=>`You are a captivating local storyteller. Write a vivid story of around 200 words about the character and soul of ${a} in ${c}. Warm spoken style. Story only.`},
   {type:'legend',icon:'🐉',label:'Local legend',pill:'pill-legend',
-   prompt:(a,c)=>`You are a captivating Irish storyteller. Tell a local legend or ghost story from ${a}, ${c}, Ireland. Around 200 words. Story only.`},
+   prompt:(a,c)=>`You are a captivating local storyteller. Tell a local legend or ghost story from ${a}, ${c}. Around 200 words. Story only.`},
   {type:'history',icon:'📜',label:'History',pill:'pill-history',
-   prompt:(a,c)=>`You are an Irish historian and storyteller. Narrate a significant historical moment connected to ${a}, ${c}, Ireland. Around 200 words. Story only.`}
+   prompt:(a,c)=>`You are a historian and storyteller. Narrate a significant historical moment connected to ${a}, ${c}. Around 200 words. Story only.`}
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -553,7 +553,7 @@ var landmarkCount = 0, favourites = [], proxTimer = null;
 var travelMode = 'walking', PROXIMITY_RADIUS = 200;
 var voicePool = [], newWorker = null, currentAudio = null;
 var longStories = [], currentLongStoryIdx = -1, longSpeaking = false;
-var currentAreaName = 'this area', currentCityName = 'Ireland';
+var currentAreaName = 'this area', currentCityName = '', currentCountry = '';
 var photoCache = {};
 var supabaseClient = null, currentUser = null, userIsPro = false;
 var map; // initialised in openMap()
@@ -580,7 +580,7 @@ function openMap(){
   if(!map){
     map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-    map.on('moveend', fetchVisibleBounds);
+    // moveend listener added in startAt() AFTER real GPS position is set
     map.on('click', function(){document.getElementById('story').style.display='none';});
   }
   track('app_open');
@@ -879,7 +879,16 @@ function getGPS(){
   );
 }
 function startAt(lat,lng){
-  userPos={lat:lat,lng:lng}; map.setView([lat,lng],15);
+  userPos={lat:lat,lng:lng};
+  // Clear any landmarks cached from the Dublin default position (53.34_-6.25)
+  // so they don't appear when user is elsewhere
+  const dublinKey='53.34_-6.25';
+  if(!fetched.has(dublinKey)){
+    ['sr_lm_53.34_-6.25','sr_nb_53.34_-6.25'].forEach(k=>localStorage.removeItem(k));
+  }
+  map.setView([lat,lng],15);
+  // Attach moveend NOW — after real position — so panning triggers fetches from actual location
+  map.on('moveend', fetchVisibleBounds);
   var icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
   var um=L.marker([lat,lng],{icon:icon}).addTo(map);
   if(navigator.geolocation) navigator.geolocation.watchPosition(function(p){
@@ -989,12 +998,13 @@ function shareStory(){if(!curStory)return;if(navigator.share){navigator.share({t
 // ═══════════════════════════════════════════════════════════════
 function fetchPhoto(title){
   if(photoCache[title]!==undefined) return Promise.resolve(photoCache[title]);
-  var queries=[title,title+', Dublin',title+', Ireland',title.replace(/^(The |St\.? |Saint )/i,'')];
+  var loc=currentCityName||currentCountry||'';
+  var queries=[title, loc?title+', '+loc:'', title.replace(/^(The |St\.? |Saint )/i,'')].filter(Boolean);
   var idx=0;
   function tryNext(){
     if(idx>=queries.length){photoCache[title]=null;return Promise.resolve(null);}
     var q=queries[idx++];
-    return fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q+' Ireland')+'&srlimit=1&format=json&origin=*')
+    return fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q)+'&srlimit=1&format=json&origin=*')
       .then(function(r){return r.json();})
       .then(function(s){
         var pt=s&&s.query&&s.query.search&&s.query.search[0]?s.query.search[0].title:null;
@@ -1084,7 +1094,7 @@ function fetchArea(lat,lng){
   var cached=loadLM(lat,lng);
   if(cached) return addLMs(cached,lat,lng).then(function(){afterFetch();});
   setStatus('Searching…');
-  return callAI('List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in Ireland.\nReturn ONLY a JSON array: [{"title":"Name","type":"monument"}]\nValid types: monument,church,castle,street,building,bridge,park,museum,person,nature,pub,beach,estate,school,sport,abbey,harbour,tower,market,gate,hall,cinema,railway,canal,well,hill,island,history,legend,other\nOnly real places you are certain exist.')
+  return callAI('List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+'.\nInclude churches, pubs, monuments, bridges, schools, parks, harbours, towers, abbeys, markets, halls, cinemas, railway stations, canals, wells, hills, gates, and notable buildings.\nReturn ONLY a JSON array: [{"title":"Name","type":"monument"}]\nValid types: monument,church,castle,street,building,bridge,park,museum,person,nature,pub,beach,estate,school,sport,abbey,harbour,tower,market,gate,hall,cinema,railway,canal,well,hill,island,history,legend,other\nOnly real places you are certain exist.')
     .then(function(raw){
       var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
       if(si===-1||ei===-1){fetched.delete(key);setStatus('Retry — tap Refresh');return;}
@@ -1100,7 +1110,7 @@ function fetchNeighbourhoods(lat,lng){
   if(fetchedNb.has(key))return Promise.resolve(); fetchedNb.add(key);
   var cached=loadLM(lat,lng,'sr_nb_');
   if(cached) return addNeighbourhoods(cached);
-  return callAI('List 8 distinct neighbourhoods or districts within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in Ireland.\nReturn ONLY a JSON array: [{"title":"Raheny","county":"Dublin"}]\nOnly real named areas.')
+  return callAI('List 8 distinct neighbourhoods, villages or districts within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+'.\nReturn ONLY a JSON array: [{"title":"Name","county":"Region"}]\nOnly real named areas that actually exist at these coordinates.')
     .then(function(raw){
       var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
       if(si===-1||ei===-1)return;
@@ -1122,7 +1132,11 @@ function addNeighbourhoods(arr){
       return;
     }
     if(!isTypeVisible('area'))return;
-    p=p.then(function(){return sleep(400);}).then(function(){return geocode(item.title+', Ireland');}).then(function(coords){
+    p=p.then(function(){return sleep(400);}).then(function(){
+      // geocode without country hardcoding — use lat/lng context from Nominatim
+      var q=currentCityName?item.title+', '+currentCityName:item.title;
+      return geocode(q);
+    }).then(function(coords){
       if(!coords)return;
       var id2='nb_'+item.title.replace(/\W+/g,'_');
       var html='<div style="text-align:center"><div class="nb-dot" id="lm-'+id2+'">🏙</div><div class="nb-label">'+item.title+'</div></div>';
@@ -1136,10 +1150,16 @@ function addNeighbourhoods(arr){
   return p;
 }
 function addLMs(arr,lat,lng){
-  var city='Ireland';
+  var city='';
   var p=fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
     .then(function(r){return r.json();})
-    .then(function(r){city=r&&r.address?(r.address.city||r.address.town||r.address.village||r.address.county||'Ireland'):'Ireland';currentCityName=city;})
+    .then(function(r){
+      if(r&&r.address){
+        city=r.address.city||r.address.town||r.address.village||r.address.county||'';
+        currentCityName=city;
+        currentCountry=r.address.country||r.address.country_code||'';
+      }
+    })
     .catch(function(){});
   arr.forEach(function(item){
     if(!item.title)return;
@@ -1151,7 +1171,11 @@ function addLMs(arr,lat,lng){
       return;
     }
     if(!isTypeVisible(ptype))return;
-    p=p.then(function(){return sleep(300);}).then(function(){return geocode(item.title+', '+city+', Ireland');}).then(function(coords){
+    p=p.then(function(){return sleep(300);}).then(function(){
+      // Geocode with city if known, otherwise just the title — no country hardcoded
+      var q=city?item.title+', '+city:item.title;
+      return geocode(q);
+    }).then(function(coords){
       if(!coords)return;
       var id2=item.title.replace(/\W+/g,'_');
       var html='<div class="lm-dot" id="lm-'+id2+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
@@ -1286,10 +1310,11 @@ function prefetchStory(p){
   }).catch(function(){prefetchId=null;document.getElementById('next-info').textContent='';});
 }
 function getStory(p){
-  if(p.isNb||p.type==='area') return callAI('GPS audio tour guide in Ireland. 5 vivid sentences about "'+p.title+'". Cover its character, history, what makes it distinct. Max 120 words. Story only.');
-  if(p.type==='legend') return callAI('Irish storyteller. 3-4 vivid sentences retelling the legend of "'+p.title+'" in Ireland. Atmospheric tone. Max 80 words. Story only.');
-  if(p.type==='history') return callAI('Irish historian. 3-4 vivid sentences about the historical significance of "'+p.title+'" in Ireland. Max 80 words. Story only.');
-  return callAI('GPS audio tour guide. 3 vivid sentences about "'+p.title+'" ('+p.type+') in Ireland. Varied opener. Max 65 words. Story only.');
+  var place=currentCityName&&currentCountry?currentCityName+', '+currentCountry:currentCityName||currentCountry||'this location';
+  if(p.isNb||p.type==='area') return callAI('GPS audio tour guide. 5 vivid sentences about the neighbourhood of "'+p.title+'" near '+place+'. Cover its character, history, what makes it distinct. Max 120 words. Story only.');
+  if(p.type==='legend') return callAI('Local storyteller. 3-4 vivid sentences retelling the legend or folklore of "'+p.title+'" near '+place+'. Atmospheric tone. Max 80 words. Story only.');
+  if(p.type==='history') return callAI('History guide. 3-4 vivid sentences about the historical significance of "'+p.title+'" near '+place+'. Max 80 words. Story only.');
+  return callAI('GPS audio tour guide. 3 vivid sentences about "'+p.title+'" ('+p.type+') near '+place+'. Varied opener. Max 65 words. Story only.');
 }
 function stopCurrentStory(){
   cancelAudio();speaking=false;nxtStory=null;prefetchId=null;
@@ -1336,9 +1361,11 @@ function openStoriesMode(){
     .then(function(r){return r.json();})
     .then(function(r){
       var nb=r.address?(r.address.suburb||r.address.neighbourhood||r.address.quarter||r.address.village||r.address.town||r.address.city||'this area'):'this area';
-      var city=r.address?(r.address.city||r.address.town||r.address.county||'Ireland'):'Ireland';
-      currentAreaName=nb;currentCityName=city;
-      document.getElementById('stories-area-name').textContent=nb+', '+city;
+      var city=r.address?(r.address.city||r.address.town||r.address.county||''):'';
+      var country=r.address?(r.address.country||r.address.country_code||''):'';
+      currentAreaName=nb; currentCityName=city; currentCountry=country;
+      var display=city&&country?city+', '+country:city||country||'nearby area';
+      document.getElementById('stories-area-name').textContent=nb+', '+display;
       loadStoriesForArea();
     })
     .catch(function(){document.getElementById('stories-area-name').textContent='Nearby area';loadStoriesForArea();});
