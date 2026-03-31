@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.7.7</div>
+  <div id="splash-version">v1.7.8</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -1119,23 +1119,27 @@ function geocode(q){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LOCATION CONTEXT — reverse geocode once per unique tile
-// Shared by fetchArea and fetchNeighbourhoods so AI prompts have
-// city + country context before generating landmark lists.
+// LOCATION CONTEXT — always reverse geocodes the tile centre so
+// AI prompts and landmark geocoding use the correct city even
+// when the user pans across cities (e.g. Dublin → London).
+// Returns {city, country} for the tile and updates globals.
 // ═══════════════════════════════════════════════════════════════
-function ensureLocationContext(lat,lng){
-  // If we already have a city name, no need to call Nominatim again
-  if(currentCityName) return Promise.resolve();
+function getLocationContext(lat,lng){
   return fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',
     {headers:{'User-Agent':'StoryRouteApp/1.0'}})
     .then(function(r){return r.json();})
     .then(function(r){
+      var city='', country='';
       if(r&&r.address){
-        currentCityName = r.address.city||r.address.town||r.address.village||r.address.county||'';
-        currentCountry  = r.address.country||r.address.country_code||'';
+        city    = r.address.city||r.address.town||r.address.village||r.address.county||'';
+        country = r.address.country||r.address.country_code||'';
       }
+      // Update globals so getStory / Stories mode always reflects the current area
+      currentCityName = city;
+      currentCountry  = country;
+      return {city:city, country:country};
     })
-    .catch(function(){});
+    .catch(function(){ return {city:currentCityName, country:currentCountry}; });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1160,27 +1164,28 @@ function fetchArea(lat,lng){
   if(cached) return addLMs(cached,lat,lng).then(function(){afterFetch();});
   setStatus('Searching…');
 
-  // Step 1: ensure we have city/country before asking AI
-  return ensureLocationContext(lat,lng).then(function(){
-    var locCtx = currentCityName&&currentCountry
-      ? ' in '+currentCityName+', '+currentCountry
-      : currentCityName ? ' in '+currentCityName : '';
-    // Step 2: ask AI with full geographic context
+  // Step 1: reverse geocode tile centre so AI prompt has correct city for THIS tile
+  return getLocationContext(lat,lng).then(function(loc){
+    var locCtx = loc.city&&loc.country
+      ? ' in '+loc.city+', '+loc.country
+      : loc.city ? ' in '+loc.city : '';
+    // Step 2: ask AI with correct geographic context for this tile
     return callAI(
       'List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+locCtx+'.\n'+
       'Include churches, pubs, monuments, bridges, schools, parks, harbours, towers, abbeys, markets, halls, cinemas, railway stations, canals, wells, hills, gates, and notable buildings.\n'+
       'Return ONLY a JSON array: [{"title":"Name","type":"monument"}]\n'+
       'Valid types: monument,church,castle,street,building,bridge,park,museum,person,nature,pub,beach,estate,school,sport,abbey,harbour,tower,market,gate,hall,cinema,railway,canal,well,hill,island,history,legend,other\n'+
       'Only real places you are certain exist at these coordinates.'
-    );
+    ).then(function(raw){ return {raw:raw, loc:loc}; });
   })
-  .then(function(raw){
+  .then(function(res){
+    var raw=res.raw, loc=res.loc;
     var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
     if(si===-1||ei===-1){fetched.delete(key);setStatus('Searching…');setTimeout(function(){fetchArea(lat,lng);},3000);return;}
     var arr=JSON.parse(raw.slice(si,ei+1));
     if(!arr.length){fetched.delete(key);return;}
     saveLM(lat,lng,arr);
-    return addLMs(arr,lat,lng).then(function(){afterFetch();});
+    return addLMs(arr,lat,lng,loc).then(function(){afterFetch();});
   })
   .catch(function(err){fetched.delete(key);setStatus('Searching…');console.error(err);setTimeout(function(){fetchArea(lat,lng);},4000);});
 }
@@ -1190,9 +1195,10 @@ function fetchNeighbourhoods(lat,lng){
   if(fetchedNb.has(key))return Promise.resolve(); fetchedNb.add(key);
   var cached=loadLM(lat,lng,'sr_nb_');
   if(cached) return addNeighbourhoods(cached);
-  // ensureLocationContext already ran in fetchArea so currentCityName is set
-  var locCtx = currentCityName&&currentCountry
-    ? ' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in '+currentCityName+', '+currentCountry
+  // getLocationContext returns city for THIS tile — not the global which may be stale
+  return getLocationContext(lat,lng).then(function(loc){
+  var locCtx = loc.city&&loc.country
+    ? ' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in '+loc.city+', '+loc.country
     : ' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4);
   return callAI(
     'List 8 distinct neighbourhoods, villages or districts'+locCtx+'.\n'+
@@ -1208,6 +1214,7 @@ function fetchNeighbourhoods(lat,lng){
     return addNeighbourhoods(arr);
   })
   .catch(function(err){fetchedNb.delete(key);console.error('NB:',err);});
+  }); // close getLocationContext
 }
 
 function addNeighbourhoods(arr){
@@ -1238,9 +1245,9 @@ function addNeighbourhoods(arr){
   return p;
 }
 
-// FIX 6: addLMs no longer does its own Nominatim reverse geocode — ensureLocationContext()
+// FIX 6: addLMs uses tile-local loc.city from getLocationContext — not the stale global
 // in fetchArea guarantees currentCityName/currentCountry are set before addLMs is called.
-function addLMs(arr,lat,lng){
+function addLMs(arr,lat,lng,loc){
   var p=Promise.resolve();
   arr.forEach(function(item){
     if(!item.title)return;
@@ -1253,8 +1260,9 @@ function addLMs(arr,lat,lng){
     }
     if(!isTypeVisible(ptype))return;
     p=p.then(function(){return sleep(300);}).then(function(){
-      // Use currentCityName (set by ensureLocationContext) — no country hardcoded
-      var q=currentCityName?item.title+', '+currentCityName:item.title;
+      // Use tile-local city name (loc.city) — not the global which may have changed
+      var tileCity = (loc&&loc.city) ? loc.city : currentCityName;
+      var q=tileCity?item.title+', '+tileCity:item.title;
       return geocode(q);
     }).then(function(coords){
       if(!coords)return;
