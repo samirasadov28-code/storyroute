@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.8.2</div>
+  <div id="splash-version">v1.9.1</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -472,7 +472,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v1.8.2
+// STORYROUTE v1.9.1
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -899,10 +899,48 @@ function playFav(i){tts(favourites[i].text,function(){});closeFavPanel();}
 function delFav(i){favourites.splice(i,1);saveFavs();renderFavs();}
 
 // ── AI (stories only — NOT used for landmark discovery) ────────
+// ═══════════════════════════════════════════════════════════════
+// AI CALL — serialised queue so concurrent story requests don't
+// pile up and exhaust the Groq rate limit (30 req/min free tier).
+// Only one request runs at a time; others wait their turn.
+// ═══════════════════════════════════════════════════════════════
+var _aiQueue = Promise.resolve();
+var _lastAiCall = 0;
+var AI_MIN_GAP_MS = 1200; // at most ~50 req/min — safely under Groq's 30 RPM free limit
+
 function callAI(prompt){
-  return fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})})
-    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-    .then(function(d){if(d.error)throw new Error(d.error);var t=d&&d.content&&d.content[0]?d.content[0].text:'';if(!t)throw new Error('Empty');return t;});
+  _aiQueue = _aiQueue.then(function(){
+    var now = Date.now();
+    var wait = Math.max(0, _lastAiCall + AI_MIN_GAP_MS - now);
+    return sleep(wait).then(function(){
+      _lastAiCall = Date.now();
+      return fetch('/api/claude',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({messages:[{role:'user',content:prompt}]})
+      })
+      .then(function(r){
+        if(r.status===429){
+          // Rate limited — wait 10s then let the retry in getStoryWithRetry handle it
+          _lastAiCall = Date.now() + 10000;
+          throw new Error('Rate limited');
+        }
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      })
+      .then(function(d){
+        if(d.error) throw new Error(d.error);
+        var t=d&&d.content&&d.content[0]?d.content[0].text:'';
+        if(!t) throw new Error('Empty response');
+        return t;
+      });
+    });
+  });
+  // Return a promise that resolves/rejects with this specific call's result
+  var result = _aiQueue;
+  // Prevent queue errors from blocking future calls
+  _aiQueue = _aiQueue.catch(function(){});
+  return result;
 }
 // Geocode only used for route planning From/To inputs
 function geocode(q){
@@ -1171,19 +1209,91 @@ function updateProgress(){
 }
 
 // ── STORY GENERATION ───────────────────────────────────────────
-function getStory(p){
-  var place=currentCityName&&currentCountry?currentCityName+', '+currentCountry:currentCityName||currentCountry||'this location';
-  if(p.isNb||p.type==='area')return callAI('GPS audio tour guide. 5 vivid sentences about the neighbourhood of "'+p.title+'" near '+place+'. Cover its character, history, what makes it distinct. Max 120 words. Story only.');
-  if(p.type==='legend')return callAI('Local storyteller. 3-4 vivid sentences retelling the legend or folklore of "'+p.title+'" near '+place+'. Atmospheric tone. Max 80 words. Story only.');
-  if(p.type==='history')return callAI('History guide. 3-4 vivid sentences about the historical significance of "'+p.title+'" near '+place+'. Max 80 words. Story only.');
-  return callAI('GPS audio tour guide. 3 vivid sentences about "'+p.title+'" ('+p.type+') near '+place+'. Varied opener. Max 65 words. Story only.');
+// Rich, type-specific prompts. The system prompt instructs the model to write
+// compelling spoken-word audio — not generic filler text.
+var _storySystem = 'You are an expert local historian and audio tour guide. Write vivid, specific, engaging spoken-word stories about real places. Never use generic phrases like "rich history", "worth visiting", or "notable landmark". Every story must contain at least one concrete historical fact, date, person, or event. Write as if speaking directly to someone standing in front of the place right now.';
+
+function buildPrompt(p, place){
+  var t = p.title, loc = place;
+  switch(p.type){
+    case 'church': case 'abbey': case 'monastery':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include when it was built or founded, one remarkable architectural feature or historical event, and something surprising most visitors don't know. Spoken audio style, max 70 words.';
+    case 'pub': case 'bar':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include its age or founding story, one famous regular, event, or legend associated with it, and what makes it unique today. Conversational audio style, max 70 words.';
+    case 'monument': case 'memorial':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include what or who it commemorates, when it was erected and by whom, and one striking or little-known detail about it. Evocative audio style, max 70 words.';
+    case 'castle': case 'fort':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include who built it and when, one dramatic siege, battle, or historical event that happened there, and its condition or role today. Vivid audio style, max 70 words.';
+    case 'museum': case 'gallery':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include what collection it holds and why it matters, one extraordinary or unexpected exhibit, and when it opened or a key moment in its history. Engaging audio style, max 70 words.';
+    case 'park': case 'garden': case 'nature':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include its origin or designer, one historical event or unusual feature found there, and how locals use it today. Warm audio style, max 70 words.';
+    case 'bridge':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include when it was built and by whom, one engineering fact or historical incident connected to it, and a vivid detail about crossing it. Audio style, max 70 words.';
+    case 'tower': case 'lighthouse':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include its purpose when built, one dramatic or unusual historical event, and what it is used for today. Vivid audio style, max 70 words.';
+    case 'railway': case 'station':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include when it opened and its original purpose, one memorable event or famous passenger associated with it, and something interesting about its architecture or current use. Audio style, max 70 words.';
+    case 'area': case 'neighbourhood':
+      return _storySystem+'
+
+Write 4 sentences about the neighbourhood of '+t+' in '+loc+'. Describe its character and atmosphere, a key historical moment that shaped it, the kind of people who have lived there across the centuries, and what defines it today. Warm spoken style, max 100 words.';
+    case 'harbour': case 'canal': case 'dock':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include what trade or activity it was built for, one historical event or story from its busiest era, and how it looks or functions today. Audio style, max 70 words.';
+    case 'school': case 'university': case 'library':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include when it was founded and by whom, one notable alumnus, teacher, or event in its history, and something that makes it architecturally or culturally distinctive. Audio style, max 70 words.';
+    case 'market':
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include how long it has operated and what it originally sold, one colourful historical anecdote, and what traders and buyers can find there today. Lively audio style, max 70 words.';
+    default:
+      return _storySystem+'
+
+Write 3 sentences about '+t+' in '+loc+'. Include one concrete historical fact with a date or name, one surprising or little-known detail, and a vivid description of what makes it worth pausing at right now. Spoken audio style, max 70 words.';
+  }
 }
-function getStoryWithRetry(p,attempt){
-  attempt=attempt||0;
+
+function getStory(p){
+  var place = currentCityName&&currentCountry ? currentCityName+', '+currentCountry
+             : currentCityName||currentCountry||'this location';
+  return callAI(buildPrompt(p, place));
+}
+
+// Retry up to 3 times with growing backoff. Never shows fallback filler text —
+// keeps showing the loading spinner until a real story arrives.
+function getStoryWithRetry(p, attempt){
+  attempt = attempt||0;
   return getStory(p).catch(function(err){
-    console.warn('Story attempt '+(attempt+1)+' failed:',err.message);
-    if(attempt<2)return sleep((attempt+1)*2000).then(()=>getStoryWithRetry(p,attempt+1));
-    return p.title+' is a notable '+p.type+' with a rich local history worth discovering.';
+    console.warn('Story attempt '+(attempt+1)+' failed for "'+p.title+'":',err.message);
+    if(attempt<3){
+      var delay = [3000,6000,12000][attempt]||12000;
+      return sleep(delay).then(()=>getStoryWithRetry(p, attempt+1));
+    }
+    // After 4 failures give a minimal real sentence rather than generic filler
+    var place = currentCityName||'this area';
+    return 'Standing at '+p.title+' in '+place+'. Take a moment to look around — every detail of this place holds stories waiting to be discovered.';
   });
 }
 
