@@ -40,7 +40,7 @@ export default async (req, context) => {
         },
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",  // fastest Groq model
-          max_tokens: 300,
+          max_tokens: 1024,
           temperature: 0.7,
           messages: body.messages
         })
