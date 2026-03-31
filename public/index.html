@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.9.3</div>
+  <div id="splash-version">v1.9.4</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -472,7 +472,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v1.9.3
+// STORYROUTE v1.9.4
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -929,9 +929,11 @@ function callAI(prompt){
       })
       .then(function(r){
         if(r.status===429){
-          // Rate limited — wait 10s then let the retry in getStoryWithRetry handle it
-          _lastAiCall = Date.now() + 10000;
-          throw new Error('Rate limited');
+          _lastAiCall = Date.now() + 8000; // back off 8s on rate limit
+          throw new Error('rate_limited');
+        }
+        if(r.status===401||r.status===403){
+          throw new Error('api_banned'); // auth failure — no point retrying
         }
         if(!r.ok) throw new Error('HTTP '+r.status);
         return r.json();
@@ -1015,16 +1017,13 @@ function fetchArea(lat,lng){
   if(fetched.has(key))return;
   fetched.add(key);
 
-  // Cache hit — only accept entries that already went through Wikipedia filter
-  // (they have a wikiOk flag set by us, or are neighbourhoods)
   var cached=loadLM(lat,lng);
-  if(cached && cached.length && cached[0].lat && cached[0].wikiOk){
-    addLMs(cached);
-    afterFetch();
-    reverseGeocode(lat,lng);
+  if(cached&&cached.length&&cached[0].lat){
+    addLMs(cached);afterFetch();reverseGeocode(lat,lng);
+    // Re-run wiki filter in background on cached results missing wikiExtract
+    if(!cached[0].wikiOk) wikiFilterAndClean(cached,currentCityName);
     return;
   }
-  // Wipe any old non-wiki-filtered cache
   localStorage.removeItem('sr_lm_'+lat.toFixed(2)+'_'+lng.toFixed(2));
 
   setStatus('Loading landmarks…');
@@ -1053,7 +1052,7 @@ function fetchArea(lat,lng){
     .then(function(data){
       var elements=data.elements||[];
       var seen=new Set();
-      var raw=[];
+      var arr=[];
       elements.forEach(function(el){
         if(!el.tags||!el.tags.name)return;
         var name=el.tags.name.trim();
@@ -1061,61 +1060,52 @@ function fetchArea(lat,lng){
         var elat=el.lat||(el.center&&el.center.lat);
         var elng=el.lon||(el.center&&el.center.lon);
         if(!elat||!elng)return;
-        raw.push({title:name,type:osmToType(el.tags),lat:elat,lng:elng});
+        arr.push({title:name,type:osmToType(el.tags),lat:elat,lng:elng});
       });
-      if(!raw.length){
-        fetched.delete(key);
-        setStatus('No landmarks found here');
-        return;
-      }
-      setStatus('Checking '+raw.length+' places…');
-      // Wikipedia-filter in parallel batches — only keep places with real articles
-      return wikiFilterLandmarks(raw, currentCityName);
-    })
-    .then(function(filtered){
-      if(!filtered||!filtered.length){
-        fetched.delete(key);
-        setStatus('No documented landmarks found');
-        return;
-      }
-      // Tag each entry so cache knows it passed the wiki check
-      filtered.forEach(function(lm){lm.wikiOk=true;});
-      saveLM(lat,lng,filtered);
-      addLMs(filtered);
+      if(!arr.length){fetched.delete(key);setStatus('No landmarks found here');return;}
+      // Show ALL landmarks immediately — no waiting for Wikipedia
+      saveLM(lat,lng,arr);
+      addLMs(arr);
       afterFetch();
+      // Wikipedia filter runs silently in background
+      // Landmarks with no article get removed from map without user noticing
+      wikiFilterAndClean(arr, currentCityName);
     })
     .catch(function(err){
       fetched.delete(key);
       setStatus('Loading landmarks…');
-      console.error('fetchArea:',err);
+      console.error('Overpass:',err);
       setTimeout(function(){fetchArea(lat,lng);},5000);
     });
 }
 
-// Check Wikipedia for all landmarks in parallel (max 8 concurrent).
-// Returns only those with a real Wikipedia article (>300 chars intro).
-// Stores the extract on the object so getStory needs no second fetch.
-function wikiFilterLandmarks(landmarks, city){
-  var passed=[];
-  var CONCURRENT=8;
+// Background wiki filter — checks each landmark, removes those with no article,
+// stores wikiExtract on the ones that pass so story gen is instant later.
+function wikiFilterAndClean(arr, city){
+  var CONCURRENT=5;
   var idx=0;
-
   function runNext(){
-    if(idx>=landmarks.length) return Promise.resolve();
-    var lm=landmarks[idx++];
+    if(idx>=arr.length)return Promise.resolve();
+    var lm=arr[idx++];
+    if(lm.wikiOk)return runNext(); // already checked
     return fetchWikiExtract(lm.title, city).then(function(wiki){
       if(wiki){
-        lm.wikiExtract = wiki.extract;
-        passed.push(lm);
+        lm.wikiOk=true;
+        lm.wikiExtract=wiki.extract;
+      } else {
+        // No Wikipedia article — silently remove from map
+        hideLandmark(lm.title.replace(/\W+/g,'_'));
       }
     }).catch(function(){})
     .then(runNext);
   }
-
-  // Kick off CONCURRENT workers
   var workers=[];
-  for(var i=0;i<Math.min(CONCURRENT,landmarks.length);i++) workers.push(runNext());
-  return Promise.all(workers).then(function(){ return passed; });
+  for(var i=0;i<Math.min(CONCURRENT,arr.length);i++) workers.push(runNext());
+  // After all done, save enriched list back to cache
+  return Promise.all(workers).then(function(){
+    var kept=arr.filter(function(lm){return lm.wikiOk;});
+    if(kept.length) saveLM(parseFloat(arr[0].lat).toFixed ? kept[0].lat : 0, kept[0] ? kept[0].lng : 0, kept);
+  });
 }
 
 
@@ -1393,13 +1383,18 @@ function getStoryWithRetry(p, attempt) {
     if (!txt || txt.trim().length < 20) throw new Error('Too short');
     return txt;
   }).catch(function(err) {
-    if (err && err.message === 'no_wiki') return null;
-    console.warn('Story attempt ' + (attempt+1) + ' failed for "' + p.title + '":', err && err.message);
-    if (attempt < 3) {
-      var delay = [4000, 8000, 15000][attempt] || 15000;
+    var msg = err && err.message;
+    if(msg === 'api_banned'){
+      // API key banned or invalid — no point retrying, hide landmark
+      console.error('Groq API key issue — check your GROQ_API_KEY env var');
+      return null;
+    }
+    console.warn('Story attempt '+(attempt+1)+' failed for "'+p.title+'":', msg);
+    if(attempt < 2){
+      // Short backoff: 3s, 6s — don't punish the user with 15+ second waits
+      var delay = attempt===0 ? 3000 : 6000;
       return sleep(delay).then(function(){ return getStoryWithRetry(p, attempt+1); });
     }
-    // All retries failed — treat same as no story found
     return null;
   });
 }
