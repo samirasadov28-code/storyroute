@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.9.4</div>
+  <div id="splash-version">v1.9.5</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -472,7 +472,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v1.9.4
+// STORYROUTE v1.9.5
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1079,35 +1079,25 @@ function fetchArea(lat,lng){
     });
 }
 
-// Background wiki filter — checks each landmark, removes those with no article,
-// stores wikiExtract on the ones that pass so story gen is instant later.
+// Background wiki filter — enriches landmarks with Wikipedia extracts.
+// Does NOT remove landmarks — AI knowledge fallback handles those without Wikipedia.
 function wikiFilterAndClean(arr, city){
   var CONCURRENT=5;
   var idx=0;
   function runNext(){
     if(idx>=arr.length)return Promise.resolve();
     var lm=arr[idx++];
-    if(lm.wikiOk)return runNext(); // already checked
+    if(lm.wikiOk||lm.wikiChecked)return runNext();
     return fetchWikiExtract(lm.title, city).then(function(wiki){
-      if(wiki){
-        lm.wikiOk=true;
-        lm.wikiExtract=wiki.extract;
-      } else {
-        // No Wikipedia article — silently remove from map
-        hideLandmark(lm.title.replace(/\W+/g,'_'));
-      }
-    }).catch(function(){})
+      lm.wikiChecked=true;
+      if(wiki){ lm.wikiOk=true; lm.wikiExtract=wiki.extract; }
+    }).catch(function(){lm.wikiChecked=true;})
     .then(runNext);
   }
   var workers=[];
   for(var i=0;i<Math.min(CONCURRENT,arr.length);i++) workers.push(runNext());
-  // After all done, save enriched list back to cache
-  return Promise.all(workers).then(function(){
-    var kept=arr.filter(function(lm){return lm.wikiOk;});
-    if(kept.length) saveLM(parseFloat(arr[0].lat).toFixed ? kept[0].lat : 0, kept[0] ? kept[0].lng : 0, kept);
-  });
+  return Promise.all(workers);
 }
-
 
 function fetchNeighbourhoods(lat,lng){
   var key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
@@ -1326,52 +1316,58 @@ function getStory(p) {
     ? currentCityName + ', ' + currentCountry
     : currentCityName || currentCountry || 'this location';
 
-  // Neighbourhoods: AI-only — no Wikipedia article for a whole suburb
   if (p.isNb || p.type === 'area') {
-    var nbPrompt = 'You are an expert audio tour guide. ' +
-      'Write a vivid 5-sentence spoken story about the neighbourhood of ' + p.title + ' in ' + place + '. ' +
-      'Cover its historical origins, what shaped it, one notable event or resident, its street character, and what makes it distinct today. ' +
-      'Include real dates and names. About 120 words. Story only.';
-    return callAI(nbPrompt);
+    return callAI(
+      'You are an expert audio tour guide. Write a vivid 5-sentence spoken story about the neighbourhood of ' + p.title + ' in ' + place + '. ' +
+      'Cover its historical origins, what shaped it over the centuries, one notable event or resident, its street character, and what makes it distinct today. ' +
+      'Include real dates and names. About 120 words. Story only.'
+    );
   }
 
-  // Use the Wikipedia extract already fetched at landmark-discovery time.
-  // If somehow missing (e.g. old cache entry slipped through), fetch it now.
   var extractPromise = p.wikiExtract
     ? Promise.resolve(p.wikiExtract)
     : fetchWikiExtract(p.title, currentCityName).then(function(w){ return w ? w.extract : null; });
 
   return extractPromise.then(function(extract) {
-    if (!extract) return null; // no Wikipedia article — landmark should be hidden
-
     var typeHint = '';
     switch(p.type){
-      case 'church': case 'abbey':       typeHint='Focus on the founding date, one architectural highlight, and one dramatic historical event.'; break;
-      case 'pub':    case 'bar':         typeHint='Focus on its age, one famous patron or event, and why it became a local institution.'; break;
-      case 'castle': case 'fort':        typeHint='Focus on who built it, one key battle or siege, and its state today.'; break;
-      case 'museum': case 'gallery':     typeHint='Focus on its founding story, its most remarkable exhibit, and why it matters.'; break;
-      case 'bridge':                     typeHint='Focus on when and why it was built, one engineering or historical highlight.'; break;
-      case 'monument': case 'memorial':  typeHint='Focus on what it commemorates, who made it, and one striking detail about it.'; break;
-      case 'park':   case 'garden':      typeHint='Focus on its origins, one memorable event that happened here, its atmosphere.'; break;
-      case 'railway':                    typeHint='Focus on its opening, one memorable moment in its history, its architecture.'; break;
-      case 'harbour': case 'canal':      typeHint='Focus on what it was built for, its busiest era, one vivid historical scene.'; break;
-      case 'tower':  case 'lighthouse':  typeHint='Focus on its original purpose, one dramatic historical event, what it symbolises now.'; break;
-      default:                           typeHint='Focus on the most surprising fact, one specific date or person, and a vivid sensory detail.'; break;
+      case 'church': case 'abbey':       typeHint='Focus on founding date, one architectural highlight, and one dramatic event.'; break;
+      case 'pub':    case 'bar':         typeHint='Focus on its age or origin, one famous patron or story, and what makes it a local landmark.'; break;
+      case 'castle': case 'fort':        typeHint='Focus on who built it, one key battle or siege, and its condition today.'; break;
+      case 'museum': case 'gallery':     typeHint='Focus on its founding, its most remarkable exhibit, and why it matters.'; break;
+      case 'bridge':                     typeHint='Focus on when and why it was built and one engineering or historical detail.'; break;
+      case 'monument': case 'memorial':  typeHint='Focus on what it commemorates, who created it, and one striking detail.'; break;
+      case 'park':   case 'garden':      typeHint='Focus on its origins, one memorable event here, and its character today.'; break;
+      case 'railway':                    typeHint='Focus on when it opened, one memorable moment in its history, its architecture.'; break;
+      case 'harbour': case 'canal':      typeHint='Focus on what trade it served, its busiest era, and how it looks today.'; break;
+      case 'tower':  case 'lighthouse':  typeHint='Focus on its original purpose, one dramatic event, and what it symbolises.'; break;
+      default:                           typeHint='Focus on the most surprising historical fact and one vivid sensory detail.'; break;
     }
 
-    var prompt =
-      'You are an expert audio tour guide narrating a walk. ' +
-      'Using ONLY the verified facts in the Wikipedia source below, write a spoken-word story about ' + p.title + ' in ' + place + '. ' +
-      typeHint + ' ' +
-      'Rules: use only facts from the source; include at least two specific dates, names, or numbers; ' +
-      'no cliches like "rich history" or "worth a visit"; ' +
-      'write in second-person present tense as if the listener is standing there right now; ' +
-      '4-5 flowing sentences, about 100 words. Story only, no title or heading. WIKIPEDIA SOURCE: ' + extract;
+    if(extract){
+      return callAI(
+        'You are an expert audio tour guide. Using ONLY the facts in the Wikipedia source below, ' +
+        'write a spoken-word story about ' + p.title + ' in ' + place + ' for someone standing in front of it. ' +
+        typeHint + ' Include at least two specific dates, names, or numbers. ' +
+        'No cliches. Second-person present tense. 4-5 sentences, about 100 words. Story only. ' +
+        'WIKIPEDIA SOURCE: ' + extract
+      );
+    }
 
-    return callAI(prompt);
+    // No Wikipedia — use AI knowledge from training data (travel guides, local history, news, books)
+    return callAI(
+      'You are an expert audio tour guide with extensive knowledge from travel guides, local history books, and encyclopaedias. ' +
+      'Do you have specific factual knowledge about ' + p.title + ' in ' + place + '? ' +
+      'If yes: write a vivid spoken-word story about it for someone standing there now. ' +
+      typeHint + ' Include at least one specific date, name, or number. ' +
+      'No cliches. Second-person present tense. 4-5 sentences, about 100 words. Story only. ' +
+      'If you have NO specific knowledge of this exact place, respond with only the single word: UNKNOWN'
+    ).then(function(txt){
+      if(!txt||txt.trim().toUpperCase().startsWith('UNKNOWN')||txt.trim().length<30) return null;
+      return txt;
+    });
   });
 }
-
 
 // Retry with backoff. A null return means no Wikipedia article — remove the
 // landmark from the map rather than showing a fabricated or filler story.
