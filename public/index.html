@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.9.2</div>
+  <div id="splash-version">v1.9.3</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -472,7 +472,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v1.9.2
+// STORYROUTE v1.9.3
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -587,6 +587,14 @@ function openMap(){
   if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('✅ Pro unlocked!');},800);}
   if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('🎉 Welcome to Pro!');},800);}
   if(location.hash.includes('access_token')){showToast('✅ Signed in!');history.replaceState({},'',location.pathname);}
+  // One-time wipe of story cache from pre-Wikipedia era
+  if(!localStorage.getItem('sr_wiki_era')){
+    Object.keys(localStorage).forEach(function(k){
+      if(k.startsWith('sr_s_')||k.startsWith('sr_lm_')||k.startsWith('sr_nb_'))
+        localStorage.removeItem(k);
+    });
+    localStorage.setItem('sr_wiki_era','1');
+  }
   getGPS();
 }
 
@@ -1007,69 +1015,109 @@ function fetchArea(lat,lng){
   if(fetched.has(key))return;
   fetched.add(key);
 
-  // Load from cache if available (only accept cache with valid coords)
+  // Cache hit — only accept entries that already went through Wikipedia filter
+  // (they have a wikiOk flag set by us, or are neighbourhoods)
   var cached=loadLM(lat,lng);
-  if(cached&&cached.length&&cached[0].lat&&cached[0].lng){
-    addLMs(cached);afterFetch();
-    // Also kick off location context for story generation
+  if(cached && cached.length && cached[0].lat && cached[0].wikiOk){
+    addLMs(cached);
+    afterFetch();
     reverseGeocode(lat,lng);
     return;
   }
+  // Wipe any old non-wiki-filtered cache
+  localStorage.removeItem('sr_lm_'+lat.toFixed(2)+'_'+lng.toFixed(2));
 
   setStatus('Loading landmarks…');
-  reverseGeocode(lat,lng); // run in parallel — needed for story prompts
+  reverseGeocode(lat,lng);
 
-  // Overpass QL — nodes + ways for historic, tourism, amenity, leisure, natural
-  var r=1500; // metres radius
+  var r=1500;
   var q='[out:json][timeout:20];('
-    +'node["historic"](around:'+r+','+lat+','+lng+');'
-    +'node["tourism"~"attraction|museum|gallery|artwork|viewpoint|memorial|ruins|castle"](around:'+r+','+lat+','+lng+');'
-    +'node["amenity"~"pub|bar|place_of_worship|cinema|theatre|arts_centre|library|university|school|marketplace|harbour|ferry_terminal"](around:'+r+','+lat+','+lng+');'
-    +'node["leisure"~"park|garden|nature_reserve|stadium|beach_resort"](around:'+r+','+lat+','+lng+');'
-    +'node["natural"~"peak|hill|beach|bay|spring|waterfall"](around:'+r+','+lat+','+lng+');'
-    +'node["man_made"~"lighthouse|tower|windmill|watermill|bridge"](around:'+r+','+lat+','+lng+');'
-    +'node["waterway"~"canal|lock_gate"](around:'+r+','+lat+','+lng+');'
-    +'node["railway"~"station|halt"](around:'+r+','+lat+','+lng+');'
-    +'way["historic"](around:'+r+','+lat+','+lng+');'
-    +'way["tourism"~"attraction|museum|gallery|memorial|ruins|castle"](around:'+r+','+lat+','+lng+');'
-    +'way["amenity"~"pub|place_of_worship|cinema|theatre|library|marketplace"](around:'+r+','+lat+','+lng+');'
-    +'way["leisure"~"park|garden|stadium"](around:'+r+','+lat+','+lng+');'
-    +'way["man_made"~"lighthouse|tower|bridge"](around:'+r+','+lat+','+lng+');'
-    +'way["waterway"="canal"](around:'+r+','+lat+','+lng+');'
+    +'node["name"]["historic"](around:'+r+','+lat+','+lng+');'
+    +'node["name"]["tourism"~"attraction|museum|gallery|artwork|viewpoint|memorial|ruins|castle"](around:'+r+','+lat+','+lng+');'
+    +'node["name"]["amenity"~"pub|bar|place_of_worship|cinema|theatre|arts_centre|library|marketplace"](around:'+r+','+lat+','+lng+');'
+    +'node["name"]["leisure"~"park|garden|nature_reserve|stadium"](around:'+r+','+lat+','+lng+');'
+    +'node["name"]["natural"~"peak|hill|beach|bay|spring|waterfall"](around:'+r+','+lat+','+lng+');'
+    +'node["name"]["man_made"~"lighthouse|tower|windmill|watermill"](around:'+r+','+lat+','+lng+');'
+    +'node["name"]["waterway"~"canal|lock_gate"](around:'+r+','+lat+','+lng+');'
+    +'node["name"]["railway"~"station|halt"](around:'+r+','+lat+','+lng+');'
+    +'way["name"]["historic"](around:'+r+','+lat+','+lng+');'
+    +'way["name"]["tourism"~"attraction|museum|gallery|memorial|ruins|castle"](around:'+r+','+lat+','+lng+');'
+    +'way["name"]["amenity"~"pub|place_of_worship|cinema|theatre|library|marketplace"](around:'+r+','+lat+','+lng+');'
+    +'way["name"]["leisure"~"park|garden|stadium"](around:'+r+','+lat+','+lng+');'
+    +'way["name"]["man_made"~"lighthouse|tower|bridge"](around:'+r+','+lat+','+lng+');'
+    +'way["name"]["waterway"="canal"](around:'+r+','+lat+','+lng+');'
     +');out center 40;';
 
   fetch(OVERPASS,{method:'POST',body:'data='+encodeURIComponent(q)})
-    .then(r=>r.json())
+    .then(function(res){return res.json();})
     .then(function(data){
       var elements=data.elements||[];
       var seen=new Set();
-      var arr=[];
+      var raw=[];
       elements.forEach(function(el){
         if(!el.tags||!el.tags.name)return;
         var name=el.tags.name.trim();
-        if(seen.has(name))return;seen.add(name);
+        if(seen.has(name))return; seen.add(name);
         var elat=el.lat||(el.center&&el.center.lat);
         var elng=el.lon||(el.center&&el.center.lon);
         if(!elat||!elng)return;
-        arr.push({title:name,type:osmToType(el.tags),lat:elat,lng:elng});
+        raw.push({title:name,type:osmToType(el.tags),lat:elat,lng:elng});
       });
-      if(!arr.length){
-        // No OSM results for this area — fall back gracefully with status
+      if(!raw.length){
         fetched.delete(key);
         setStatus('No landmarks found here');
         return;
       }
-      saveLM(lat,lng,arr);
-      addLMs(arr);
+      setStatus('Checking '+raw.length+' places…');
+      // Wikipedia-filter in parallel batches — only keep places with real articles
+      return wikiFilterLandmarks(raw, currentCityName);
+    })
+    .then(function(filtered){
+      if(!filtered||!filtered.length){
+        fetched.delete(key);
+        setStatus('No documented landmarks found');
+        return;
+      }
+      // Tag each entry so cache knows it passed the wiki check
+      filtered.forEach(function(lm){lm.wikiOk=true;});
+      saveLM(lat,lng,filtered);
+      addLMs(filtered);
       afterFetch();
     })
     .catch(function(err){
       fetched.delete(key);
       setStatus('Loading landmarks…');
-      console.error('Overpass:',err);
+      console.error('fetchArea:',err);
       setTimeout(function(){fetchArea(lat,lng);},5000);
     });
 }
+
+// Check Wikipedia for all landmarks in parallel (max 8 concurrent).
+// Returns only those with a real Wikipedia article (>300 chars intro).
+// Stores the extract on the object so getStory needs no second fetch.
+function wikiFilterLandmarks(landmarks, city){
+  var passed=[];
+  var CONCURRENT=8;
+  var idx=0;
+
+  function runNext(){
+    if(idx>=landmarks.length) return Promise.resolve();
+    var lm=landmarks[idx++];
+    return fetchWikiExtract(lm.title, city).then(function(wiki){
+      if(wiki){
+        lm.wikiExtract = wiki.extract;
+        passed.push(lm);
+      }
+    }).catch(function(){})
+    .then(runNext);
+  }
+
+  // Kick off CONCURRENT workers
+  var workers=[];
+  for(var i=0;i<Math.min(CONCURRENT,landmarks.length);i++) workers.push(runNext());
+  return Promise.all(workers).then(function(){ return passed; });
+}
+
 
 function fetchNeighbourhoods(lat,lng){
   var key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
@@ -1288,49 +1336,52 @@ function getStory(p) {
     ? currentCityName + ', ' + currentCountry
     : currentCityName || currentCountry || 'this location';
 
-  // Neighbourhoods: no Wikipedia filter — use AI directly with city context
+  // Neighbourhoods: AI-only — no Wikipedia article for a whole suburb
   if (p.isNb || p.type === 'area') {
-    var nbPrompt = 'You are an expert audio tour guide with deep local knowledge. ' +
-      'Write a vivid, engaging 5-sentence spoken story about the neighbourhood of ' + p.title + ' in ' + place + '. ' +
-      'Cover: its historical origins, what shaped its character over the centuries, notable residents or events, ' +
-      'its architectural style or street life, and what makes it distinct from neighbouring areas today. ' +
-      'Include real dates and names. Spoken audio style, around 120 words. Story only, no headings.';
+    var nbPrompt = 'You are an expert audio tour guide. ' +
+      'Write a vivid 5-sentence spoken story about the neighbourhood of ' + p.title + ' in ' + place + '. ' +
+      'Cover its historical origins, what shaped it, one notable event or resident, its street character, and what makes it distinct today. ' +
+      'Include real dates and names. About 120 words. Story only.';
     return callAI(nbPrompt);
   }
 
-  return fetchWikiExtract(p.title, currentCityName)
-    .then(function(wiki) {
+  // Use the Wikipedia extract already fetched at landmark-discovery time.
+  // If somehow missing (e.g. old cache entry slipped through), fetch it now.
+  var extractPromise = p.wikiExtract
+    ? Promise.resolve(p.wikiExtract)
+    : fetchWikiExtract(p.title, currentCityName).then(function(w){ return w ? w.extract : null; });
 
-      // No Wikipedia article — signal that this landmark should be removed from map
-      if (!wiki) return null;
+  return extractPromise.then(function(extract) {
+    if (!extract) return null; // no Wikipedia article — landmark should be hidden
 
-      // Build a prompt that is entirely grounded in the Wikipedia source
-      var typeHint = '';
-      switch(p.type) {
-        case 'church': case 'abbey':  typeHint = 'Focus on the founding date, architectural highlights, and one dramatic historical event.'; break;
-        case 'pub': case 'bar':       typeHint = 'Focus on its age, famous patrons or events, and what makes it a local institution.'; break;
-        case 'castle': case 'fort':   typeHint = 'Focus on who built it, key battles or sieges, and its current state.'; break;
-        case 'museum': case 'gallery':typeHint = 'Focus on its founding, most remarkable collection or exhibit, and why it matters.'; break;
-        case 'bridge':                typeHint = 'Focus on when and why it was built, an engineering or historical highlight, and what crossing it feels like.'; break;
-        case 'monument': case 'memorial': typeHint = 'Focus on what it commemorates, who created it, and one striking detail.'; break;
-        case 'park': case 'garden':   typeHint = 'Focus on its origins, a key historical event that happened here, and its atmosphere today.'; break;
-        case 'railway':               typeHint = 'Focus on its opening, a memorable moment in its history, and its architectural character.'; break;
-        case 'harbour': case 'canal': typeHint = 'Focus on the trade it carried, its busiest era, and how it looks today.'; break;
-        case 'tower': case 'lighthouse': typeHint = 'Focus on its original purpose, a dramatic event in its history, and what it symbolises.'; break;
-        default:                      typeHint = 'Focus on the most surprising fact, a specific date or person, and a vivid sensory detail.'; break;
-      }
+    var typeHint = '';
+    switch(p.type){
+      case 'church': case 'abbey':       typeHint='Focus on the founding date, one architectural highlight, and one dramatic historical event.'; break;
+      case 'pub':    case 'bar':         typeHint='Focus on its age, one famous patron or event, and why it became a local institution.'; break;
+      case 'castle': case 'fort':        typeHint='Focus on who built it, one key battle or siege, and its state today.'; break;
+      case 'museum': case 'gallery':     typeHint='Focus on its founding story, its most remarkable exhibit, and why it matters.'; break;
+      case 'bridge':                     typeHint='Focus on when and why it was built, one engineering or historical highlight.'; break;
+      case 'monument': case 'memorial':  typeHint='Focus on what it commemorates, who made it, and one striking detail about it.'; break;
+      case 'park':   case 'garden':      typeHint='Focus on its origins, one memorable event that happened here, its atmosphere.'; break;
+      case 'railway':                    typeHint='Focus on its opening, one memorable moment in its history, its architecture.'; break;
+      case 'harbour': case 'canal':      typeHint='Focus on what it was built for, its busiest era, one vivid historical scene.'; break;
+      case 'tower':  case 'lighthouse':  typeHint='Focus on its original purpose, one dramatic historical event, what it symbolises now.'; break;
+      default:                           typeHint='Focus on the most surprising fact, one specific date or person, and a vivid sensory detail.'; break;
+    }
 
-      var prompt = 'You are an expert audio tour guide. Using ONLY the verified facts in the Wikipedia source below, ' +
-        'write a rich, engaging spoken-word audio story about ' + p.title + ' for someone standing in front of it right now. ' +
-        typeHint + ' ' +
-        'RULES: Only use facts from the source. Include at least two specific dates, names, or numbers. ' +
-        'Never say "rich history", "stood the test of time", "worth a visit", or similar cliches. ' +
-        'Write 4-5 flowing sentences in second-person present tense. Around 100 words. Story only.\n\n' +
-        'WIKIPEDIA SOURCE:\n' + wiki.extract;
+    var prompt =
+      'You are an expert audio tour guide narrating a walk. ' +
+      'Using ONLY the verified facts in the Wikipedia source below, write a spoken-word story about ' + p.title + ' in ' + place + '. ' +
+      typeHint + ' ' +
+      'Rules: use only facts from the source; include at least two specific dates, names, or numbers; ' +
+      'no cliches like "rich history" or "worth a visit"; ' +
+      'write in second-person present tense as if the listener is standing there right now; ' +
+      '4-5 flowing sentences, about 100 words. Story only, no title or heading. WIKIPEDIA SOURCE: ' + extract;
 
-      return callAI(prompt);
-    });
+    return callAI(prompt);
+  });
 }
+
 
 // Retry with backoff. A null return means no Wikipedia article — remove the
 // landmark from the map rather than showing a fabricated or filler story.
