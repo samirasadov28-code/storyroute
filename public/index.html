@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.7.6</div>
+  <div id="splash-version">v1.7.7</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -923,16 +923,12 @@ function startAt(lat,lng,isFallback){
       var centre=map.getCenter();
       var distFromCentre=haversine({lat:newLat,lng:newLng},{lat:centre.lat,lng:centre.lng});
       if(distFromCentre>500){
-        // Dublin fallback was used and user is actually elsewhere — re-centre and re-fetch
-        // Clear Dublin-cached data so it doesn't pollute the correct location
-        fetched.clear(); fetchedNb.clear();
-        Object.values(markers).forEach(function(m){map.removeLayer(m);});
-        markers={}; visited.clear(); nxtStory=null; prefetchId=null;
-        currentCityName=''; currentCountry='';
+        // Dublin fallback was used and user is actually elsewhere — auto-refresh for real location
+        showToast('📍 Location found — refreshing…', 3000);
+        refreshLandmarks();
         suppressMoveEnd=true;
         map.setView([newLat,newLng],15);
-        setTimeout(function(){ suppressMoveEnd=false; fetchVisibleBounds(); },100);
-        setStatus('Location found — loading landmarks…');
+        setTimeout(function(){ suppressMoveEnd=false; }, 100);
         return;
       }
     }
@@ -1180,13 +1176,13 @@ function fetchArea(lat,lng){
   })
   .then(function(raw){
     var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
-    if(si===-1||ei===-1){fetched.delete(key);setStatus('Retry — tap Refresh');return;}
+    if(si===-1||ei===-1){fetched.delete(key);setStatus('Searching…');setTimeout(function(){fetchArea(lat,lng);},3000);return;}
     var arr=JSON.parse(raw.slice(si,ei+1));
     if(!arr.length){fetched.delete(key);return;}
     saveLM(lat,lng,arr);
     return addLMs(arr,lat,lng).then(function(){afterFetch();});
   })
-  .catch(function(err){fetched.delete(key);setStatus('Error — tap Refresh');console.error(err);});
+  .catch(function(err){fetched.delete(key);setStatus('Searching…');console.error(err);setTimeout(function(){fetchArea(lat,lng);},4000);});
 }
 
 function fetchNeighbourhoods(lat,lng){
