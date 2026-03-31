@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.7.8</div>
+  <div id="splash-version">v1.8.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -557,15 +557,12 @@ var longStories = [], currentLongStoryIdx = -1, longSpeaking = false;
 var currentAreaName = 'this area', currentCityName = '', currentCountry = '';
 var photoCache = {};
 var supabaseClient = null, currentUser = null, userIsPro = false;
-var map; // initialised in openMap()
+var map;
 
-// FIX 1: Track whether we've received a real GPS fix yet.
-// On first real watchPosition result, re-centre map if Dublin fallback was used.
+// GPS state: track whether we have a real fix yet
 var hasRealGPS = false;
-
-// FIX 4: Flag to suppress moveend-triggered fetches during programmatic map moves
-// (fitBounds in planRoute, setView in startAt/GPS re-centre).
-var suppressMoveEnd = false;
+// Block moveend during programmatic map moves (setView / fitBounds)
+var progMove = false;
 
 // Settings
 var selectedVoice = JSON.parse(localStorage.getItem('sr_voice_cfg') || 'null') || VOICES[0];
@@ -574,37 +571,32 @@ var rotateVoices = localStorage.getItem('sr_rotate') !== 'false';
 
 // Filter state
 var _sf = JSON.parse(localStorage.getItem('sr_type_filter') || 'null');
-var activeTypes = new Set(_sf ? ALL_TYPES.filter(function(t){return _sf.includes(t);}) : ALL_TYPES);
+var activeTypes = new Set(_sf ? ALL_TYPES.filter(t => _sf.includes(t)) : ALL_TYPES);
 
 function track(n,p){try{gtag('event',n,p||{});}catch(e){}}
 
 // ═══════════════════════════════════════════════════════════════
-// OPEN MAP — called by splash button, initialises everything
+// OPEN MAP
 // ═══════════════════════════════════════════════════════════════
 function openMap(){
-  document.getElementById('splash').style.display = 'none';
-  // Unlock audio on iOS
+  document.getElementById('splash').style.display='none';
   try{var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}
   if(!map){
-    map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
+    map=L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-    map.on('click', function(){document.getElementById('story').style.display='none';});
-    // moveend listener added once here — suppressed during programmatic moves
-    map.on('moveend', function(){
-      if(suppressMoveEnd) return;
-      clearTimeout(map._moveDebounce);
-      map._moveDebounce = setTimeout(function(){fetchVisibleBounds();}, 1500);
+    map.on('click',function(){document.getElementById('story').style.display='none';});
+    // Single moveend listener — blocked during programmatic moves
+    map.on('moveend',function(){
+      if(progMove)return;
+      clearTimeout(map._mvDebounce);
+      map._mvDebounce=setTimeout(fetchVisibleBounds,1500);
     });
   }
   track('app_open');
-  loadFavs();
-  loadVoices();
-  updateMenuLabels();
-  updateMenuUser();
-  initSupabase();
-  var consent = localStorage.getItem('sr_cookie');
-  if(!consent) setTimeout(function(){document.getElementById('cookie-banner').classList.add('visible');},2500);
-  else if(consent==='accepted') gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
+  loadFavs(); loadVoices(); updateMenuLabels(); updateMenuUser(); initSupabase();
+  var consent=localStorage.getItem('sr_cookie');
+  if(!consent)setTimeout(function(){document.getElementById('cookie-banner').classList.add('visible');},2500);
+  else if(consent==='accepted')gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
   if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('✅ Pro unlocked!');},800);}
   if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('🎉 Welcome to Pro!');},800);}
   if(location.hash.includes('access_token')){showToast('✅ Signed in!');history.replaceState({},'',location.pathname);}
@@ -612,113 +604,93 @@ function openMap(){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SUPABASE AUTH
-// FIX 5: initSupabase retries if the async CDN script isn't loaded yet
+// SUPABASE — async CDN, retry until loaded
 // ═══════════════════════════════════════════════════════════════
 function initSupabase(){
-  if(typeof supabase === 'undefined'){
-    // Script still loading — retry in 500ms
-    setTimeout(initSupabase, 500);
-    return;
-  }
+  if(typeof supabase==='undefined'){setTimeout(initSupabase,500);return;}
   try{
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    supabaseClient.auth.onAuthStateChange(function(event, session){
-      currentUser = session ? session.user : null;
-      if(currentUser) loadProStatus();
-      else userIsPro = localStorage.getItem('sr_pro')==='true';
+    supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    supabaseClient.auth.onAuthStateChange(function(event,session){
+      currentUser=session?session.user:null;
+      if(currentUser)loadProStatus(); else userIsPro=localStorage.getItem('sr_pro')==='true';
       updateMenuUser();
     });
     supabaseClient.auth.getSession().then(function(r){
-      currentUser = r.data && r.data.session ? r.data.session.user : null;
-      if(currentUser) loadProStatus();
-      else userIsPro = localStorage.getItem('sr_pro')==='true';
+      currentUser=r.data&&r.data.session?r.data.session.user:null;
+      if(currentUser)loadProStatus(); else userIsPro=localStorage.getItem('sr_pro')==='true';
       updateMenuUser();
     });
-  }catch(e){ userIsPro = localStorage.getItem('sr_pro')==='true'; }
+  }catch(e){userIsPro=localStorage.getItem('sr_pro')==='true';}
 }
-
 function loadProStatus(){
   if(!supabaseClient||!currentUser)return;
-  supabaseClient.from('profiles').select('is_pro').eq('id',currentUser.id).single().then(function(r){
-    userIsPro = r.data ? r.data.is_pro : false;
-    if(userIsPro) localStorage.setItem('sr_pro','true');
-    updateMenuUser();
-  }).catch(function(){ userIsPro = localStorage.getItem('sr_pro')==='true'; });
+  supabaseClient.from('profiles').select('is_pro').eq('id',currentUser.id).single()
+    .then(function(r){userIsPro=r.data?r.data.is_pro:false;if(userIsPro)localStorage.setItem('sr_pro','true');updateMenuUser();})
+    .catch(function(){userIsPro=localStorage.getItem('sr_pro')==='true';});
 }
-
 function updateMenuUser(){
-  var emailEl = document.getElementById('menu-user-email');
-  var statusEl = document.getElementById('menu-user-status');
-  var al = document.getElementById('account-label');
+  var emailEl=document.getElementById('menu-user-email');
+  var statusEl=document.getElementById('menu-user-status');
+  var al=document.getElementById('account-label');
   if(currentUser){
-    emailEl.textContent = currentUser.email;
-    statusEl.textContent = userIsPro ? '⭐ Pro member' : 'Free plan';
-    if(al) al.textContent = userIsPro ? 'Pro ⭐' : '';
-  } else {
-    emailEl.textContent = 'Not signed in';
-    statusEl.textContent = userIsPro ? '⭐ Pro (local)' : 'Free plan';
-    if(al) al.textContent = '';
+    emailEl.textContent=currentUser.email;
+    statusEl.textContent=userIsPro?'⭐ Pro member':'Free plan';
+    if(al)al.textContent=userIsPro?'Pro ⭐':'';
+  }else{
+    emailEl.textContent='Not signed in';
+    statusEl.textContent=userIsPro?'⭐ Pro (local)':'Free plan';
+    if(al)al.textContent='';
   }
 }
-
 function renderAuthPanel(){
-  var body = document.getElementById('auth-body');
+  var body=document.getElementById('auth-body');
   if(currentUser){
-    body.innerHTML = '<div class="auth-pro-badge"><div class="pro-icon">'+(userIsPro?'⭐':'👤')+'</div><div class="pro-text">'+currentUser.email+'</div><div class="pro-sub">'+(userIsPro?'Pro member — unlimited stories across all devices':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
-      +(userIsPro ? '' : '<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button><button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
+    body.innerHTML='<div class="auth-pro-badge"><div class="pro-icon">'+(userIsPro?'⭐':'👤')+'</div><div class="pro-text">'+currentUser.email+'</div><div class="pro-sub">'+(userIsPro?'Pro member — unlimited stories across all devices':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
+      +(userIsPro?'':'<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button><button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
       +'<div class="auth-divider"></div><button class="auth-logout" onclick="signOut()">Sign out</button>';
-  } else {
-    body.innerHTML = '<div class="auth-title">Sign in for persistent Pro</div><div class="auth-sub">Enter your email and we\'ll send a magic link — no password needed. Pro follows you across all devices.</div><input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com"><button class="auth-btn" id="auth-send-btn" onclick="sendMagicLink()">Send magic link</button><div class="auth-msg" id="auth-msg"></div><div class="auth-divider"></div><div style="font-size:12px;color:#bbb;text-align:center;">Already paid? Sign in with the email you used at checkout.</div>';
+  }else{
+    body.innerHTML='<div class="auth-title">Sign in for persistent Pro</div><div class="auth-sub">Enter your email and we\'ll send a magic link — no password needed.</div><input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com"><button class="auth-btn" id="auth-send-btn" onclick="sendMagicLink()">Send magic link</button><div class="auth-msg" id="auth-msg"></div><div class="auth-divider"></div><div style="font-size:12px;color:#bbb;text-align:center;">Already paid? Sign in with the email you used at checkout.</div>';
   }
 }
-
 function sendMagicLink(){
-  var email = document.getElementById('auth-email-input') ? document.getElementById('auth-email-input').value.trim() : '';
-  var btn = document.getElementById('auth-send-btn');
-  var msg = document.getElementById('auth-msg');
+  var email=document.getElementById('auth-email-input')?document.getElementById('auth-email-input').value.trim():'';
+  var btn=document.getElementById('auth-send-btn');
+  var msg=document.getElementById('auth-msg');
   if(!email||!email.includes('@')){msg.style.color='#ef4444';msg.textContent='Enter a valid email';return;}
   if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not configured';return;}
-  btn.disabled=true; btn.textContent='Sending…';
+  btn.disabled=true;btn.textContent='Sending…';
   supabaseClient.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin}}).then(function(r){
     if(r.error){msg.style.color='#ef4444';msg.textContent=r.error.message;btn.disabled=false;btn.textContent='Send magic link';}
     else{msg.style.color='#22c55e';msg.textContent='✓ Magic link sent! Check your email.';btn.textContent='Sent ✓';}
   }).catch(function(e){msg.style.color='#ef4444';msg.textContent=e.message||'Error';btn.disabled=false;btn.textContent='Send magic link';});
 }
-
 function signOut(){
-  if(supabaseClient) supabaseClient.auth.signOut();
-  currentUser=null; userIsPro=false;
-  localStorage.removeItem('sr_pro');
-  updateMenuUser(); renderAuthPanel();
-  showToast('Signed out');
+  if(supabaseClient)supabaseClient.auth.signOut();
+  currentUser=null;userIsPro=false;localStorage.removeItem('sr_pro');
+  updateMenuUser();renderAuthPanel();showToast('Signed out');
 }
 
 // ═══════════════════════════════════════════════════════════════
 // FEEDBACK
 // ═══════════════════════════════════════════════════════════════
 function submitFeedback(){
-  var name  = document.getElementById('fb-name').value.trim();
-  var email = document.getElementById('fb-email').value.trim();
-  var msg   = document.getElementById('fb-msg').value.trim();
-  var res   = document.getElementById('fb-result');
-  var btn   = document.querySelector('#feedback-panel .fb-btn');
+  var name=document.getElementById('fb-name').value.trim();
+  var email=document.getElementById('fb-email').value.trim();
+  var msg=document.getElementById('fb-msg').value.trim();
+  var res=document.getElementById('fb-result');
+  var btn=document.querySelector('#feedback-panel .fb-btn');
   if(!msg){res.style.color='#ef4444';res.textContent='Please write a message';return;}
-  btn.disabled=true; btn.textContent='Sending…';
+  btn.disabled=true;btn.textContent='Sending…';
   fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({name:name,email:email,message:msg,userEmail:currentUser?currentUser.email:'anonymous'})
   }).then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    res.style.color='#22c55e'; res.textContent='✓ Thank you! Your feedback was sent.';
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    res.style.color='#22c55e';res.textContent='✓ Thank you! Your feedback was sent.';
     document.getElementById('fb-name').value='';
     document.getElementById('fb-email').value='';
     document.getElementById('fb-msg').value='';
-    btn.textContent='Send feedback'; btn.disabled=false;
-    track('feedback_sent');
-  }).catch(function(){
-    res.style.color='#ef4444'; res.textContent='Could not send — please try again';
-    btn.disabled=false; btn.textContent='Send feedback';
-  });
+    btn.textContent='Send feedback';btn.disabled=false;track('feedback_sent');
+  }).catch(function(){res.style.color='#ef4444';res.textContent='Could not send — please try again';btn.disabled=false;btn.textContent='Send feedback';});
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -727,17 +699,17 @@ function submitFeedback(){
 function openMenu(){document.getElementById('menu-panel').classList.add('open');document.getElementById('menu-overlay').classList.add('open');}
 function closeMenu(){document.getElementById('menu-panel').classList.remove('open');document.getElementById('menu-overlay').classList.remove('open');}
 function openPanel(name){
-  ['voice','speed','filter','auth','feedback'].forEach(function(n){document.getElementById(n+'-panel').classList.remove('open');});
-  if(name==='voice') renderVoicePanel();
-  if(name==='speed') renderSpeedPanel();
-  if(name==='filter') renderFilterPanel();
+  ['voice','speed','filter','auth','feedback'].forEach(n=>document.getElementById(n+'-panel').classList.remove('open'));
+  if(name==='voice')renderVoicePanel();
+  if(name==='speed')renderSpeedPanel();
+  if(name==='filter')renderFilterPanel();
   document.getElementById(name+'-panel').classList.add('open');
   document.getElementById('menu-overlay').classList.add('open');
 }
 function closePanel(name){document.getElementById(name+'-panel').classList.remove('open');}
 function closeAllPanels(){
   closeMenu();
-  ['voice','speed','filter','auth','feedback'].forEach(function(n){closePanel(n);});
+  ['voice','speed','filter','auth','feedback'].forEach(n=>closePanel(n));
   document.getElementById('menu-overlay').classList.remove('open');
 }
 function openFavPanel(){renderFavs();document.getElementById('fav-panel').classList.add('open');}
@@ -747,25 +719,20 @@ function closeFavPanel(){document.getElementById('fav-panel').classList.remove('
 // VOICE PANEL
 // ═══════════════════════════════════════════════════════════════
 function renderVoicePanel(){
-  document.getElementById('voice-list').innerHTML = VOICES.map(function(v,i){
-    var sel = JSON.stringify(selectedVoice)===JSON.stringify(v);
+  document.getElementById('voice-list').innerHTML=VOICES.map((v,i)=>{
+    var sel=JSON.stringify(selectedVoice)===JSON.stringify(v);
     return '<div class="pick-item'+(sel?' selected':'')+'" onclick="pickVoice('+i+')">'
       +'<div class="pick-icon">'+v.label.split(' ')[0]+'</div>'
       +'<div><div class="pick-name">'+v.label.split(' ').slice(1).join(' ')+'</div><div class="pick-desc">'+v.desc+'</div></div>'
-      +(sel?'<div class="pick-check">✓</div>':'')
-      +'</div>';
+      +(sel?'<div class="pick-check">✓</div>':'')+'</div>';
   }).join('');
 }
 function pickVoice(i){
-  selectedVoice = VOICES[i];
-  localStorage.setItem('sr_voice_cfg', JSON.stringify(VOICES[i]));
-  rotateVoices = false;
-  localStorage.setItem('sr_rotate','false');
-  updateMenuLabels();
-  closePanel('voice');
-  showToast('Voice: '+VOICES[i].label);
+  selectedVoice=VOICES[i];localStorage.setItem('sr_voice_cfg',JSON.stringify(VOICES[i]));
+  rotateVoices=false;localStorage.setItem('sr_rotate','false');
+  updateMenuLabels();closePanel('voice');showToast('Voice: '+VOICES[i].label);
   if(curStory&&curStory.text&&curStory.text!=='⏳ Loading story…'){
-    cancelAudio(); speaking=true;
+    cancelAudio();speaking=true;
     tts(curStory.text,function(){speaking=false;if(tourOn){var cn=nearest();if(cn)setTimeout(function(){playLandmark(cn);},1200);}});
   }
 }
@@ -774,237 +741,180 @@ function pickVoice(i){
 // SPEED PANEL
 // ═══════════════════════════════════════════════════════════════
 function renderSpeedPanel(){
-  document.getElementById('speed-list').innerHTML = SPEEDS.map(function(s,i){
-    var sel = voiceSpeed===s.val;
+  document.getElementById('speed-list').innerHTML=SPEEDS.map((s,i)=>{
+    var sel=voiceSpeed===s.val;
     return '<div class="pick-item'+(sel?' selected':'')+'" onclick="pickSpeed('+i+')">'
       +'<div class="pick-icon">'+s.label.split(' ')[0]+'</div>'
       +'<div><div class="pick-name">'+s.label.split(' ').slice(1).join(' ')+'</div><div class="pick-desc">'+s.desc+'</div></div>'
-      +(sel?'<div class="pick-check">✓</div>':'')
-      +'</div>';
+      +(sel?'<div class="pick-check">✓</div>':'')+'</div>';
   }).join('');
 }
-function pickSpeed(i){
-  voiceSpeed = SPEEDS[i].val;
-  updateMenuLabels();
-  closePanel('speed');
-  showToast('Speed: '+SPEEDS[i].label);
-}
+function pickSpeed(i){voiceSpeed=SPEEDS[i].val;updateMenuLabels();closePanel('speed');showToast('Speed: '+SPEEDS[i].label);}
 
 // ═══════════════════════════════════════════════════════════════
-// ROTATION
+// ROTATION / FILTER
 // ═══════════════════════════════════════════════════════════════
-function toggleRotate(){
-  rotateVoices = !rotateVoices;
-  localStorage.setItem('sr_rotate', String(rotateVoices));
-  updateMenuLabels();
-  showToast(rotateVoices ? '🔄 Rotate voices ON' : '🔄 Rotate voices OFF');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// FILTER PANEL
-// ═══════════════════════════════════════════════════════════════
+function toggleRotate(){rotateVoices=!rotateVoices;localStorage.setItem('sr_rotate',String(rotateVoices));updateMenuLabels();showToast(rotateVoices?'🔄 Rotate voices ON':'🔄 Rotate voices OFF');}
 function renderFilterPanel(){
-  document.getElementById('filter-list').innerHTML = ALL_TYPES.map(function(t){
-    return '<div class="filter-item">'
-      +'<input type="checkbox" id="ft-'+t+'" '+(activeTypes.has(t)?'checked':'')+' onchange="toggleType(\''+t+'\',this.checked)">'
-      +'<label for="ft-'+t+'">'+(TYPE_LABELS[t]||t)+'</label>'
-      +'</div>';
-  }).join('');
+  document.getElementById('filter-list').innerHTML=ALL_TYPES.map(t=>
+    '<div class="filter-item"><input type="checkbox" id="ft-'+t+'" '+(activeTypes.has(t)?'checked':'')+' onchange="toggleType(\''+t+'\',this.checked)"><label for="ft-'+t+'">'+(TYPE_LABELS[t]||t)+'</label></div>'
+  ).join('');
 }
-function toggleType(t,on){ on ? activeTypes.add(t) : activeTypes.delete(t); }
-function selectAllTypes(){ ALL_TYPES.forEach(function(t){activeTypes.add(t);}); renderFilterPanel(); }
-function clearAllTypes(){ activeTypes.clear(); renderFilterPanel(); }
+function toggleType(t,on){on?activeTypes.add(t):activeTypes.delete(t);}
+function selectAllTypes(){ALL_TYPES.forEach(t=>activeTypes.add(t));renderFilterPanel();}
+function clearAllTypes(){activeTypes.clear();renderFilterPanel();}
 function applyFilter(){
   if(activeTypes.size===0){showToast('Select at least one type');return;}
-  localStorage.setItem('sr_type_filter', JSON.stringify([...activeTypes]));
-  updateMenuLabels();
-  syncAllMarkerVisibility();
-  closePanel('filter');
-  var vis = Object.values(markers).filter(function(m){return map.hasLayer(m);}).length;
-  showToast(vis+' landmarks visible');
-  track('filter_applied',{count:activeTypes.size});
+  localStorage.setItem('sr_type_filter',JSON.stringify([...activeTypes]));
+  updateMenuLabels();syncAllMarkerVisibility();closePanel('filter');
+  var vis=Object.values(markers).filter(m=>map.hasLayer(m)).length;
+  showToast(vis+' landmarks visible');track('filter_applied',{count:activeTypes.size});
 }
 function isTypeVisible(t){
-  if(t==='area') return activeTypes.has('area')||activeTypes.has('neighbourhood');
+  if(t==='area')return activeTypes.has('area')||activeTypes.has('neighbourhood');
   return activeTypes.has(t);
 }
 function syncAllMarkerVisibility(){
   Object.values(markers).forEach(function(m){
-    var t = m.options._type||'other';
-    if(isTypeVisible(t)){ if(!map.hasLayer(m)) m.addTo(map); }
-    else { if(map.hasLayer(m)) map.removeLayer(m); }
+    var t=m.options._type||'other';
+    if(isTypeVisible(t)){if(!map.hasLayer(m))m.addTo(map);}
+    else{if(map.hasLayer(m))map.removeLayer(m);}
   });
 }
-
-// ═══════════════════════════════════════════════════════════════
-// MENU LABELS
-// ═══════════════════════════════════════════════════════════════
 function updateMenuLabels(){
   var vl=document.getElementById('voice-label');
-  if(vl) vl.textContent = rotateVoices ? '🔄 Rotating' : selectedVoice.label;
-  var sp=SPEEDS.find(function(s){return s.val===voiceSpeed;})||SPEEDS[2];
+  if(vl)vl.textContent=rotateVoices?'🔄 Rotating':selectedVoice.label;
+  var sp=SPEEDS.find(s=>s.val===voiceSpeed)||SPEEDS[2];
   var sl=document.getElementById('speed-label');
-  if(sl) sl.textContent = sp.label.split(' ')[0]+' '+sp.val+'×';
-  var rl=document.getElementById('rotate-label');
-  if(rl) rl.textContent = rotateVoices?'On':'Off';
-  var fl=document.getElementById('filter-label');
-  if(fl) fl.textContent = activeTypes.size===ALL_TYPES.length?'All':activeTypes.size+' types';
+  if(sl)sl.textContent=sp.label.split(' ')[0]+' '+sp.val+'×';
+  var rl=document.getElementById('rotate-label');if(rl)rl.textContent=rotateVoices?'On':'Off';
+  var fl=document.getElementById('filter-label');if(fl)fl.textContent=activeTypes.size===ALL_TYPES.length?'All':activeTypes.size+' types';
 }
 
 // ═══════════════════════════════════════════════════════════════
-// COOKIE / MONETISATION
+// COOKIE / PAYWALL / UTILS
 // ═══════════════════════════════════════════════════════════════
 function acceptCookies(){localStorage.setItem('sr_cookie','accepted');document.getElementById('cookie-banner').classList.remove('visible');gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});}
 function declineCookies(){localStorage.setItem('sr_cookie','declined');document.getElementById('cookie-banner').classList.remove('visible');}
 function showCookieInfo(){alert('StoryRoute uses Google Analytics to count visits. No personal data is collected.');}
-function isPro(){ return userIsPro || localStorage.getItem('sr_pro')==='true'; }
-function todayKey(){ return new Date().toDateString(); }
-function getCount(){ if(localStorage.getItem('sr_day')!==todayKey()){localStorage.setItem('sr_day',todayKey());localStorage.setItem('sr_n','0');} return parseInt(localStorage.getItem('sr_n')||'0'); }
-function bumpCount(){ localStorage.setItem('sr_n',String(getCount()+1)); }
-function canPlay(){ return isPro()||getCount()<FREE_LIMIT; }
-function showPaywall(){ track('paywall_shown'); document.getElementById('paywall').classList.add('visible'); }
-function closePaywall(){ document.getElementById('paywall').classList.remove('visible'); }
+function isPro(){return userIsPro||localStorage.getItem('sr_pro')==='true';}
+function todayKey(){return new Date().toDateString();}
+function getCount(){if(localStorage.getItem('sr_day')!==todayKey()){localStorage.setItem('sr_day',todayKey());localStorage.setItem('sr_n','0');}return parseInt(localStorage.getItem('sr_n')||'0');}
+function bumpCount(){localStorage.setItem('sr_n',String(getCount()+1));}
+function canPlay(){return isPro()||getCount()<FREE_LIMIT;}
+function showPaywall(){track('paywall_shown');document.getElementById('paywall').classList.add('visible');}
+function closePaywall(){document.getElementById('paywall').classList.remove('visible');}
 function startCheckout(plan){
-  plan = plan||'monthly';
-  track('upgrade_click',{plan:plan});
-  fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({plan:plan,email:currentUser?currentUser.email:''})
-  }).then(function(r){return r.json();}).then(function(d){
-    if(d.url) window.location.href=d.url; else showToast('Checkout error');
-  }).catch(function(){showToast('Checkout error');});
+  plan=plan||'monthly';track('upgrade_click',{plan:plan});
+  fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:plan,email:currentUser?currentUser.email:''})})
+    .then(r=>r.json()).then(d=>{if(d.url)window.location.href=d.url;else showToast('Checkout error');})
+    .catch(function(){showToast('Checkout error');});
 }
 function showToast(msg,dur){
   var t=document.createElement('div');
   t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a2240;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:99999;white-space:nowrap;pointer-events:none;';
-  t.textContent=msg; document.body.appendChild(t);
+  t.textContent=msg;document.body.appendChild(t);
   setTimeout(function(){t.remove();},dur||3000);
 }
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 // ═══════════════════════════════════════════════════════════════
-// GPS
+// GPS — get location, start with Dublin fallback if needed
 // ═══════════════════════════════════════════════════════════════
 function getGPS(){
   setStatus('Getting location…');
   if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1],true);return;}
   navigator.geolocation.getCurrentPosition(
-    function(p){startAt(p.coords.latitude,p.coords.longitude,false);},
-    function(){
-      // GPS failed — show Dublin as placeholder but flag it as fallback
-      startAt(DUBLIN[0],DUBLIN[1],true);
-    },
+    p=>startAt(p.coords.latitude,p.coords.longitude,false),
+    ()=>startAt(DUBLIN[0],DUBLIN[1],true),
     {enableHighAccuracy:true,timeout:15000,maximumAge:0}
   );
 }
 
-// FIX 1: startAt now accepts isFallback flag.
-// The moveend listener is attached here once and reuses suppressMoveEnd to
-// avoid double-fetching during programmatic setView calls.
 function startAt(lat,lng,isFallback){
   userPos={lat:lat,lng:lng};
-  hasRealGPS = !isFallback;
-
-  suppressMoveEnd = true;
+  hasRealGPS=!isFallback;
+  progMove=true;
   map.setView([lat,lng],15);
-  // Allow a tick for Leaflet to finish the move before re-enabling
-  setTimeout(function(){ suppressMoveEnd = false; }, 100);
-
-  // Place user dot
-  var icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
-  var um=L.marker([lat,lng],{icon:icon}).addTo(map);
-
-  // FIX 1: watchPosition — re-centre on first real GPS fix if map is showing wrong location
-  if(navigator.geolocation) navigator.geolocation.watchPosition(function(p){
-    var newLat=p.coords.latitude, newLng=p.coords.longitude;
-    userPos={lat:newLat,lng:newLng};
-    um.setLatLng([newLat,newLng]);
-
-    if(!hasRealGPS){
-      hasRealGPS=true;
-      var centre=map.getCenter();
-      var distFromCentre=haversine({lat:newLat,lng:newLng},{lat:centre.lat,lng:centre.lng});
-      if(distFromCentre>500){
-        // Dublin fallback was used and user is actually elsewhere — auto-refresh for real location
-        showToast('📍 Location found — refreshing…', 3000);
-        refreshLandmarks();
-        suppressMoveEnd=true;
-        map.setView([newLat,newLng],15);
-        setTimeout(function(){ suppressMoveEnd=false; }, 100);
-        return;
+  setTimeout(function(){progMove=false;},150);
+  // User dot
+  var dotHtml='<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>';
+  var dotIcon=L.divIcon({html:dotHtml,iconSize:[14,14],iconAnchor:[7,7],className:''});
+  var um=L.marker([lat,lng],{icon:dotIcon}).addTo(map);
+  // Watch for real GPS position
+  if(navigator.geolocation){
+    navigator.geolocation.watchPosition(function(p){
+      var newLat=p.coords.latitude,newLng=p.coords.longitude;
+      userPos={lat:newLat,lng:newLng};
+      um.setLatLng([newLat,newLng]);
+      if(!hasRealGPS){
+        hasRealGPS=true;
+        var centre=map.getCenter();
+        if(haversine({lat:newLat,lng:newLng},{lat:centre.lat,lng:centre.lng})>500){
+          showToast('📍 Location found — refreshing…',3000);
+          refreshLandmarks();
+          progMove=true;
+          map.setView([newLat,newLng],15);
+          setTimeout(function(){progMove=false;},150);
+          return;
+        }
       }
-    }
-    updateProgress(); checkProxAlert();
-  },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-
-  setStatus(isFallback ? 'Finding your location…' : 'Loading landmarks…');
+      updateProgress();checkProxAlert();
+    },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+  }
+  setStatus(isFallback?'Finding your location…':'Loading landmarks…');
   fetchVisibleBounds();
 }
 
 // ═══════════════════════════════════════════════════════════════
-// BROWSER TTS VOICES
-// ═══════════════════════════════════════════════════════════════
-function loadVoices(){
-  var all=speechSynthesis.getVoices(); if(!all.length)return;
-  var pref=['Moira','Daniel','Karen','Samantha','Google UK English Female','Google UK English Male'];
-  voicePool=[];
-  pref.forEach(function(n){var v=all.find(function(x){return x.name===n;});if(v)voicePool.push(v);});
-  if(!voicePool.length) voicePool=all.filter(function(v){return v.lang.startsWith('en')&&v.localService;});
-  if(!voicePool.length) voicePool=all.filter(function(v){return v.lang.startsWith('en');});
-  if(!voicePool.length&&all.length) voicePool=[all[0]];
-}
-if(typeof speechSynthesis!=='undefined'&&speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=loadVoices;
-function currentVoice(){return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null;}
-
-// ═══════════════════════════════════════════════════════════════
 // TTS
 // ═══════════════════════════════════════════════════════════════
+function loadVoices(){
+  var all=speechSynthesis.getVoices();if(!all.length)return;
+  var pref=['Moira','Daniel','Karen','Samantha','Google UK English Female','Google UK English Male'];
+  voicePool=[];
+  pref.forEach(n=>{var v=all.find(x=>x.name===n);if(v)voicePool.push(v);});
+  if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en')&&v.localService);
+  if(!voicePool.length)voicePool=all.filter(v=>v.lang.startsWith('en'));
+  if(!voicePool.length&&all.length)voicePool=[all[0]];
+}
+if(typeof speechSynthesis!=='undefined'&&speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=loadVoices;
+function currentVoice(){return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null;}
 function setBadge(label){
-  var el=document.getElementById('voice-badge');
-  if(!el)return;
+  var el=document.getElementById('voice-badge');if(!el)return;
   if(!label){el.style.display='none';return;}
-  el.style.display='inline-block';
-  el.className=label==='⏳'?'loading':'on';
-  el.textContent=label;
+  el.style.display='inline-block';el.className=label==='⏳'?'loading':'on';el.textContent=label;
 }
 function cancelAudio(){
   try{speechSynthesis.cancel();}catch(e){}
   if(currentAudio){currentAudio.pause();currentAudio=null;}
 }
 function tts(text,onDone){
-  var speed=voiceSpeed;
-  cancelAudio();
+  var speed=voiceSpeed;cancelAudio();
   var voice;
-  if(rotateVoices){
-    var vrs=VOICES.filter(function(v){return v.hl!=='device';});
-    voice=vrs[landmarkCount%vrs.length];
-  } else {
-    voice=selectedVoice;
-  }
+  if(rotateVoices){var vrs=VOICES.filter(v=>v.hl!=='device');voice=vrs[landmarkCount%vrs.length];}
+  else voice=selectedVoice;
   setBadge(voice.label);
   if(voice.hl==='device'){
     try{
       speechSynthesis.cancel();
-      var u=new SpeechSynthesisUtterance(text);
-      u.rate=speed;u.volume=1;u.pitch=1;
+      var u=new SpeechSynthesisUtterance(text);u.rate=speed;u.volume=1;u.pitch=1;
       var v=currentVoice();if(v)u.voice=v;
-      u.onend=onDone;u.onerror=function(){onDone();};
-      speechSynthesis.speak(u);
+      u.onend=onDone;u.onerror=function(){onDone();};speechSynthesis.speak(u);
     }catch(e){onDone();}
     return;
   }
   setBadge('⏳');
   var params=new URLSearchParams({key:VOICERSS_KEY,src:text,hl:voice.hl,r:'0',c:'mp3',f:'44khz_128kbitrate_stereo',ssml:'false',b64:'false'});
-  if(voice.v) params.set('v',voice.v);
+  if(voice.v)params.set('v',voice.v);
   fetch('https://api.voicerss.org/?'+params.toString())
-    .then(function(resp){
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-      return resp.blob();
-    })
-    .then(function(blob){
-      if(blob.size<1000) return blob.text().then(function(txt){if(txt.trim().startsWith('ERROR'))throw new Error(txt.trim());return blob;});
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.blob();})
+    .then(blob=>{
+      if(blob.size<1000)return blob.text().then(t=>{if(t.trim().startsWith('ERROR'))throw new Error(t.trim());return blob;});
       return blob;
     })
-    .then(function(blob){
-      if(blob.size<500) throw new Error('Empty audio');
+    .then(blob=>{
+      if(blob.size<500)throw new Error('Empty audio');
       var url=URL.createObjectURL(blob);
       currentAudio=new Audio(url);
       currentAudio.playbackRate=speed;
@@ -1013,49 +923,48 @@ function tts(text,onDone){
       currentAudio.play().catch(function(){deviceTTSFallback(text,onDone,speed);});
       setBadge(voice.label);
     })
-    .catch(function(e){
-      console.warn('VoiceRSS:',e.message);
-      deviceTTSFallback(text,onDone,speed);
-    });
+    .catch(e=>{console.warn('VoiceRSS:',e.message);deviceTTSFallback(text,onDone,speed);});
 }
 function deviceTTSFallback(text,onDone,speed){
   setBadge('📱');
   try{
     speechSynthesis.cancel();
-    var u=new SpeechSynthesisUtterance(text);
-    u.rate=speed||1.1;u.volume=1;u.pitch=1;
+    var u=new SpeechSynthesisUtterance(text);u.rate=speed||1.1;u.volume=1;u.pitch=1;
     var v=currentVoice();if(v)u.voice=v;
-    u.onend=onDone;u.onerror=function(){onDone();};
-    speechSynthesis.speak(u);
+    u.onend=onDone;u.onerror=function(){onDone();};speechSynthesis.speak(u);
   }catch(e){onDone();}
 }
 function replayStory(){if(curStory)tts(curStory.text,function(){speaking=false;if(tourOn)setTimeout(playNearest,1500);});}
-function shareStory(){if(!curStory)return;if(navigator.share){navigator.share({title:curStory.title,text:curStory.text,url:location.href}).catch(function(){});}else if(navigator.clipboard){navigator.clipboard.writeText(curStory.title+'\n\n'+curStory.text+'\n\nStoryRoute: '+location.href).then(function(){showToast('Copied!');});}track('story_share',{title:curStory.title});}
+function shareStory(){
+  if(!curStory)return;
+  if(navigator.share){navigator.share({title:curStory.title,text:curStory.text,url:location.href}).catch(function(){});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(curStory.title+'\n\n'+curStory.text+'\n\nStoryRoute: '+location.href).then(function(){showToast('Copied!');});}
+  track('story_share',{title:curStory.title});
+}
 
 // ═══════════════════════════════════════════════════════════════
 // PHOTOS
 // ═══════════════════════════════════════════════════════════════
 function fetchPhoto(title){
-  if(photoCache[title]!==undefined) return Promise.resolve(photoCache[title]);
+  if(photoCache[title]!==undefined)return Promise.resolve(photoCache[title]);
   var loc=currentCityName||currentCountry||'';
-  var queries=[title, loc?title+', '+loc:'', title.replace(/^(The |St\.? |Saint )/i,'')].filter(Boolean);
+  var queries=[title,loc?title+', '+loc:'',title.replace(/^(The |St\.? |Saint )/i,'')].filter(Boolean);
   var idx=0;
   function tryNext(){
     if(idx>=queries.length){photoCache[title]=null;return Promise.resolve(null);}
     var q=queries[idx++];
     return fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q)+'&srlimit=1&format=json&origin=*')
-      .then(function(r){return r.json();})
+      .then(r=>r.json())
       .then(function(s){
         var pt=s&&s.query&&s.query.search&&s.query.search[0]?s.query.search[0].title:null;
-        if(!pt) return tryNext();
+        if(!pt)return tryNext();
         return fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(pt)+'&prop=pageimages&pithumbsize=600&pilicense=any&format=json&origin=*')
-          .then(function(r){return r.json();})
+          .then(r=>r.json())
           .then(function(d){
             var pages=d&&d.query&&d.query.pages?d.query.pages:{};
             var pg=Object.values(pages)[0];
-            if(!pg||!pg.thumbnail||!pg.thumbnail.source) return tryNext();
-            var res={url:pg.thumbnail.source,credit:pt};
-            photoCache[title]=res; return res;
+            if(!pg||!pg.thumbnail||!pg.thumbnail.source)return tryNext();
+            var res={url:pg.thumbnail.source,credit:pt};photoCache[title]=res;return res;
           });
       }).catch(function(){return tryNext();});
   }
@@ -1086,18 +995,18 @@ function loadLongStory(k){try{return localStorage.getItem('sr_ls_'+k)||null;}cat
 // ═══════════════════════════════════════════════════════════════
 function loadFavs(){try{favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');}catch(e){favourites=[];}}
 function saveFavs(){try{localStorage.setItem('sr_favs',JSON.stringify(favourites));}catch(e){}}
-function isFaved(id){return favourites.some(function(f){return f.id===id;});}
+function isFaved(id){return favourites.some(f=>f.id===id);}
 function toggleFavourite(){
   if(!curStory)return;
   var btn=document.getElementById('fav-btn');
-  if(isFaved(curStory.id)){favourites=favourites.filter(function(f){return f.id!==curStory.id;});btn.textContent='🤍';}
+  if(isFaved(curStory.id)){favourites=favourites.filter(f=>f.id!==curStory.id);btn.textContent='🤍';}
   else{favourites.push({id:curStory.id,title:curStory.title,text:curStory.text});btn.textContent='❤️';track('story_fav',{title:curStory.title});}
   saveFavs();
 }
 function renderFavs(){
   var el=document.getElementById('fav-list');
   if(!favourites.length){el.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:40px 20px;">No favourites yet.<br>Tap ❤️ on a story to save it.</div>';return;}
-  el.innerHTML=favourites.map(function(f,i){return '<div class="fav-item"><div class="fav-title">'+f.title+'</div><div class="fav-text">'+f.text+'</div><div class="fav-actions"><button class="fav-play" onclick="playFav('+i+')">▶ Play</button><button class="fav-del" onclick="delFav('+i+')">🗑</button></div></div>';}).join('');
+  el.innerHTML=favourites.map((f,i)=>'<div class="fav-item"><div class="fav-title">'+f.title+'</div><div class="fav-text">'+f.text+'</div><div class="fav-actions"><button class="fav-play" onclick="playFav('+i+')">▶ Play</button><button class="fav-del" onclick="delFav('+i+')">🗑</button></div></div>').join('');
 }
 function playFav(i){tts(favourites[i].text,function(){});closeFavPanel();}
 function delFav(i){favourites.splice(i,1);saveFavs();renderFavs();}
@@ -1105,122 +1014,115 @@ function delFav(i){favourites.splice(i,1);saveFavs();renderFavs();}
 // ═══════════════════════════════════════════════════════════════
 // AI
 // ═══════════════════════════════════════════════════════════════
-function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 function callAI(prompt){
   return fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})})
-    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(d){if(d.error)throw new Error(d.error);var t=d&&d.content&&d.content[0]?d.content[0].text:'';if(!t)throw new Error('Empty');return t;});
 }
+// Used only for route planning From/To inputs
 function geocode(q){
   return fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
-    .then(function(r){return r.json();})
-    .then(function(d){return d.length?{lat:+d[0].lat,lng:+d[0].lon}:null;})
+    .then(r=>r.json())
+    .then(d=>d.length?{lat:+d[0].lat,lng:+d[0].lon}:null)
     .catch(function(){return null;});
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LOCATION CONTEXT — always reverse geocodes the tile centre so
-// AI prompts and landmark geocoding use the correct city even
-// when the user pans across cities (e.g. Dublin → London).
-// Returns {city, country} for the tile and updates globals.
+// LOCATION CONTEXT — always per-tile, never uses stale globals
+// Returns {city, country} for the exact coordinates given.
+// Also updates globals so Stories mode and getStory() stay current.
 // ═══════════════════════════════════════════════════════════════
 function getLocationContext(lat,lng){
   return fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',
     {headers:{'User-Agent':'StoryRouteApp/1.0'}})
-    .then(function(r){return r.json();})
+    .then(r=>r.json())
     .then(function(r){
-      var city='', country='';
+      var city='',country='';
       if(r&&r.address){
-        city    = r.address.city||r.address.town||r.address.village||r.address.county||'';
-        country = r.address.country||r.address.country_code||'';
+        city=r.address.city||r.address.town||r.address.village||r.address.county||'';
+        country=r.address.country||r.address.country_code||'';
       }
-      // Update globals so getStory / Stories mode always reflects the current area
-      currentCityName = city;
-      currentCountry  = country;
-      return {city:city, country:country};
+      currentCityName=city;currentCountry=country;
+      return {city:city,country:country};
     })
-    .catch(function(){ return {city:currentCityName, country:currentCountry}; });
+    .catch(function(){return {city:currentCityName,country:currentCountry};});
 }
 
 // ═══════════════════════════════════════════════════════════════
 // FETCH LANDMARKS
+// KEY FIX: AI now returns lat/lng in its JSON response so we never
+// need per-landmark Nominatim geocoding. This eliminates all rate
+// limiting issues and makes landmark placement instant + reliable
+// regardless of which city the user is viewing.
 // ═══════════════════════════════════════════════════════════════
 function fetchVisibleBounds(){
   if(!map)return;
   var c=map.getCenter();
-  fetchArea(c.lat,c.lng).then(function(){
-    return fetchNeighbourhoods(c.lat,c.lng);
-  });
+  fetchArea(c.lat,c.lng).then(function(){fetchNeighbourhoods(c.lat,c.lng);});
 }
 
-// FIX 2: Reverse geocode BEFORE calling AI so the prompt includes
-// city + country, giving Llama accurate geographic context.
-// FIX 6: addLMs no longer does its own Nominatim call since context
-// is set here first.
 function fetchArea(lat,lng){
   var key=lat.toFixed(2)+'_'+lng.toFixed(2);
-  if(fetched.has(key))return Promise.resolve(); fetched.add(key);
+  if(fetched.has(key))return Promise.resolve();
+  fetched.add(key);
   var cached=loadLM(lat,lng);
-  if(cached) return addLMs(cached,lat,lng).then(function(){afterFetch();});
+  if(cached){addLMs(cached);afterFetch();return Promise.resolve();}
   setStatus('Searching…');
-
-  // Step 1: reverse geocode tile centre so AI prompt has correct city for THIS tile
+  // Step 1: get city/country for THIS tile (never uses stale global)
   return getLocationContext(lat,lng).then(function(loc){
-    var locCtx = loc.city&&loc.country
-      ? ' in '+loc.city+', '+loc.country
-      : loc.city ? ' in '+loc.city : '';
-    // Step 2: ask AI with correct geographic context for this tile
+    var where=loc.city&&loc.country?' in '+loc.city+', '+loc.country:loc.city?' in '+loc.city:'';
+    // Step 2: AI returns coordinates — no per-landmark geocoding needed
     return callAI(
-      'List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+locCtx+'.\n'+
+      'List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+where+'.\n'+
       'Include churches, pubs, monuments, bridges, schools, parks, harbours, towers, abbeys, markets, halls, cinemas, railway stations, canals, wells, hills, gates, and notable buildings.\n'+
-      'Return ONLY a JSON array: [{"title":"Name","type":"monument"}]\n'+
+      'Return ONLY valid JSON array. Each object MUST include accurate coordinates:\n'+
+      '[{"title":"Name","type":"monument","lat":'+lat.toFixed(4)+',"lng":'+lng.toFixed(4)+'}]\n'+
       'Valid types: monument,church,castle,street,building,bridge,park,museum,person,nature,pub,beach,estate,school,sport,abbey,harbour,tower,market,gate,hall,cinema,railway,canal,well,hill,island,history,legend,other\n'+
-      'Only real places you are certain exist at these coordinates.'
-    ).then(function(raw){ return {raw:raw, loc:loc}; });
+      'Only real places. Return their actual coordinates, not the centre point.'
+    );
   })
-  .then(function(res){
-    var raw=res.raw, loc=res.loc;
+  .then(function(raw){
     var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
     if(si===-1||ei===-1){fetched.delete(key);setStatus('Searching…');setTimeout(function(){fetchArea(lat,lng);},3000);return;}
-    var arr=JSON.parse(raw.slice(si,ei+1));
+    var arr;
+    try{arr=JSON.parse(raw.slice(si,ei+1));}catch(e){fetched.delete(key);setStatus('Searching…');setTimeout(function(){fetchArea(lat,lng);},3000);return;}
     if(!arr.length){fetched.delete(key);return;}
     saveLM(lat,lng,arr);
-    return addLMs(arr,lat,lng,loc).then(function(){afterFetch();});
+    addLMs(arr);afterFetch();
   })
-  .catch(function(err){fetched.delete(key);setStatus('Searching…');console.error(err);setTimeout(function(){fetchArea(lat,lng);},4000);});
+  .catch(function(err){fetched.delete(key);setStatus('Searching…');console.error('fetchArea:',err);setTimeout(function(){fetchArea(lat,lng);},4000);});
 }
 
 function fetchNeighbourhoods(lat,lng){
   var key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
-  if(fetchedNb.has(key))return Promise.resolve(); fetchedNb.add(key);
+  if(fetchedNb.has(key))return Promise.resolve();
+  fetchedNb.add(key);
   var cached=loadLM(lat,lng,'sr_nb_');
-  if(cached) return addNeighbourhoods(cached);
-  // getLocationContext returns city for THIS tile — not the global which may be stale
+  if(cached){addNeighbourhoods(cached);return Promise.resolve();}
   return getLocationContext(lat,lng).then(function(loc){
-  var locCtx = loc.city&&loc.country
-    ? ' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in '+loc.city+', '+loc.country
-    : ' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4);
-  return callAI(
-    'List 8 distinct neighbourhoods, villages or districts'+locCtx+'.\n'+
-    'Return ONLY a JSON array: [{"title":"Name","county":"Region"}]\n'+
-    'Only real named areas that actually exist at these coordinates.'
-  )
+    var where=loc.city&&loc.country?' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in '+loc.city+', '+loc.country:' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4);
+    return callAI(
+      'List 8 distinct neighbourhoods, villages or districts'+where+'.\n'+
+      'Return ONLY valid JSON array with accurate coordinates for each:\n'+
+      '[{"title":"Name","county":"Region","lat":'+lat.toFixed(4)+',"lng":'+lng.toFixed(4)+'}]\n'+
+      'Only real named areas that exist at these coordinates. Return their actual centre coordinates.'
+    );
+  })
   .then(function(raw){
     var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
     if(si===-1||ei===-1)return;
-    var arr=JSON.parse(raw.slice(si,ei+1));
+    var arr;try{arr=JSON.parse(raw.slice(si,ei+1));}catch(e){fetchedNb.delete(key);return;}
     if(!arr.length)return;
     saveLM(lat,lng,arr,'sr_nb_');
-    return addNeighbourhoods(arr);
+    addNeighbourhoods(arr);
   })
-  .catch(function(err){fetchedNb.delete(key);console.error('NB:',err);});
-  }); // close getLocationContext
+  .catch(function(err){fetchedNb.delete(key);console.error('fetchNb:',err);});
 }
 
+// Place neighbourhood markers — uses AI-provided lat/lng directly
 function addNeighbourhoods(arr){
-  var p=Promise.resolve();
   arr.forEach(function(item){
-    if(!item.title)return;
+    if(!item.title||!item.lat||!item.lng)return;
     var id='nb_'+item.title.replace(/\W+/g,'_');
     if(markers[id]){
       if(isTypeVisible('area')){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
@@ -1228,29 +1130,19 @@ function addNeighbourhoods(arr){
       return;
     }
     if(!isTypeVisible('area'))return;
-    p=p.then(function(){return sleep(400);}).then(function(){
-      var q=currentCityName?item.title+', '+currentCityName:item.title;
-      return geocode(q);
-    }).then(function(coords){
-      if(!coords)return;
-      var id2='nb_'+item.title.replace(/\W+/g,'_');
-      var html='<div style="text-align:center"><div class="nb-dot" id="lm-'+id2+'">🏙</div><div class="nb-label">'+item.title+'</div></div>';
-      var icon=L.divIcon({html:html,iconSize:[60,42],iconAnchor:[30,14],className:''});
-      var m=L.marker([coords.lat,coords.lng],{icon:icon,_title:item.title,_type:'area'}).addTo(map).bindTooltip(item.title+' — tap for story',{direction:'top'});
-      var lm={id:id2,title:item.title,type:'area',lat:coords.lat,lng:coords.lng,isNb:true};
-      m.on('click',function(){track('marker_tap',{title:item.title,type:'area'});onTapMarker(lm);});
-      markers[id2]=m;
-    });
+    var html='<div style="text-align:center"><div class="nb-dot" id="lm-'+id+'">🏙</div><div class="nb-label">'+item.title+'</div></div>';
+    var icon=L.divIcon({html:html,iconSize:[60,42],iconAnchor:[30,14],className:''});
+    var lm={id:id,title:item.title,type:'area',lat:item.lat,lng:item.lng,isNb:true};
+    var m=L.marker([item.lat,item.lng],{icon:icon,_title:item.title,_type:'area'}).addTo(map).bindTooltip(item.title+' — tap for story',{direction:'top'});
+    m.on('click',function(){track('marker_tap',{title:item.title,type:'area'});onTapMarker(lm);});
+    markers[id]=m;
   });
-  return p;
 }
 
-// FIX 6: addLMs uses tile-local loc.city from getLocationContext — not the stale global
-// in fetchArea guarantees currentCityName/currentCountry are set before addLMs is called.
-function addLMs(arr,lat,lng,loc){
-  var p=Promise.resolve();
+// Place landmark markers — uses AI-provided lat/lng directly, no geocoding
+function addLMs(arr){
   arr.forEach(function(item){
-    if(!item.title)return;
+    if(!item.title||!item.lat||!item.lng)return;
     var id=item.title.replace(/\W+/g,'_');
     var ptype=ALL_TYPES.includes(item.type)?item.type:'other';
     if(markers[id]){
@@ -1259,23 +1151,13 @@ function addLMs(arr,lat,lng,loc){
       return;
     }
     if(!isTypeVisible(ptype))return;
-    p=p.then(function(){return sleep(300);}).then(function(){
-      // Use tile-local city name (loc.city) — not the global which may have changed
-      var tileCity = (loc&&loc.city) ? loc.city : currentCityName;
-      var q=tileCity?item.title+', '+tileCity:item.title;
-      return geocode(q);
-    }).then(function(coords){
-      if(!coords)return;
-      var id2=item.title.replace(/\W+/g,'_');
-      var html='<div class="lm-dot" id="lm-'+id2+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
-      var icon=L.divIcon({html:html,iconSize:[28,28],iconAnchor:[14,14],className:''});
-      var m=L.marker([coords.lat,coords.lng],{icon:icon,_title:item.title,_type:ptype}).addTo(map).bindTooltip(item.title,{direction:'top'});
-      var lm={id:id2,title:item.title,type:ptype,lat:coords.lat,lng:coords.lng};
-      m.on('click',function(){track('marker_tap',{title:item.title,type:ptype});onTapMarker(lm);});
-      markers[id2]=m;
-    });
+    var html='<div class="lm-dot" id="lm-'+id+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
+    var icon=L.divIcon({html:html,iconSize:[28,28],iconAnchor:[14,14],className:''});
+    var lm={id:id,title:item.title,type:ptype,lat:item.lat,lng:item.lng};
+    var m=L.marker([item.lat,item.lng],{icon:icon,_title:item.title,_type:ptype}).addTo(map).bindTooltip(item.title,{direction:'top'});
+    m.on('click',function(){track('marker_tap',{title:item.title,type:ptype});onTapMarker(lm);});
+    markers[id]=m;
   });
-  return p;
 }
 
 function afterFetch(){
@@ -1292,17 +1174,22 @@ function afterFetch(){
   }else setStatus(n+' landmark'+(n!==1?'s':''));
   if(tourOn&&!speaking)playNearest();
 }
+
 function refreshLandmarks(){
-  fetched.clear();fetchedNb.clear();
-  currentCityName='';currentCountry='';
-  Object.keys(localStorage).forEach(function(k){if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_')){try{var v=JSON.parse(localStorage.getItem(k));if(!v||!v.length)localStorage.removeItem(k);}catch(e){localStorage.removeItem(k);}}});
-  Object.values(markers).forEach(function(m){map.removeLayer(m);});
+  fetched.clear();fetchedNb.clear();currentCityName='';currentCountry='';
+  Object.keys(localStorage).forEach(function(k){if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_'))localStorage.removeItem(k);});
+  Object.values(markers).forEach(m=>map.removeLayer(m));
   markers={};visited.clear();nxtStory=null;prefetchId=null;
   document.getElementById('next-info').textContent='';
   document.getElementById('skip-btn').disabled=true;
   setStatus('Refreshing…');fetchVisibleBounds();
 }
-function setTravelMode(m){travelMode=m;PROXIMITY_RADIUS=TRAVEL_MODES[m].radius;document.querySelectorAll('.tm-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('tm-'+m).classList.add('active');track('travel_mode',{mode:m});}
+function setTravelMode(m){
+  travelMode=m;PROXIMITY_RADIUS=TRAVEL_MODES[m].radius;
+  document.querySelectorAll('.tm-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tm-'+m).classList.add('active');
+  track('travel_mode',{mode:m});
+}
 function checkProxAlert(){
   if(!userPos)return;
   var best=null,bestD=Infinity;
@@ -1322,6 +1209,29 @@ function updateProgress(){
   var pct=Math.round((minI/(routeCoords.length-1))*100);
   document.getElementById('progress-fill').style.width=pct+'%';
   document.getElementById('progress-label').textContent=pct+'%';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STORY GENERATION — silent retry, graceful fallback text
+// Never shows an error to the user — retries up to 2 extra times
+// with backoff, then plays a short fallback so the tour continues.
+// ═══════════════════════════════════════════════════════════════
+function getStory(p){
+  var place=currentCityName&&currentCountry?currentCityName+', '+currentCountry:currentCityName||currentCountry||'this location';
+  if(p.isNb||p.type==='area') return callAI('GPS audio tour guide. 5 vivid sentences about the neighbourhood of "'+p.title+'" near '+place+'. Cover its character, history, what makes it distinct. Max 120 words. Story only.');
+  if(p.type==='legend') return callAI('Local storyteller. 3-4 vivid sentences retelling the legend or folklore of "'+p.title+'" near '+place+'. Atmospheric tone. Max 80 words. Story only.');
+  if(p.type==='history') return callAI('History guide. 3-4 vivid sentences about the historical significance of "'+p.title+'" near '+place+'. Max 80 words. Story only.');
+  return callAI('GPS audio tour guide. 3 vivid sentences about "'+p.title+'" ('+p.type+') near '+place+'. Varied opener. Max 65 words. Story only.');
+}
+// Wraps getStory with up to 2 retries and a graceful fallback text
+function getStoryWithRetry(p,attempt){
+  attempt=attempt||0;
+  return getStory(p).catch(function(err){
+    console.warn('Story attempt '+(attempt+1)+' failed:',err.message);
+    if(attempt<2)return sleep((attempt+1)*2000).then(function(){return getStoryWithRetry(p,attempt+1);});
+    // All retries exhausted — return a neutral fallback so tour can continue
+    return p.title+' is a notable '+p.type+' in this area with a rich local history.';
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1346,13 +1256,12 @@ function stopTour(){
   document.getElementById('travel-mode').classList.remove('visible');
   document.getElementById('skip-btn').disabled=true;
   document.getElementById('next-info').textContent='';
-  document.querySelectorAll('.lm-dot,.nb-dot').forEach(function(d){d.classList.remove('playing');});
+  document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
   track('tour_stop',{stories_heard:landmarkCount});
   setStatus(Object.keys(markers).length+' landmarks');
 }
 function nearest(excl){
-  excl=excl||[];
-  if(!userPos)return null;
+  excl=excl||[];if(!userPos)return null;
   var best=null,bestD=Infinity;
   Object.entries(markers).forEach(function(e){
     var id=e[0],m=e[1];
@@ -1377,8 +1286,9 @@ function playLandmark(p){
   track('story_play',{title:p.title,type:p.type});
   var cached=loadStory(p.id);
   if(cached){finishPlay(p,cached);return;}
-  getStory(p).then(function(txt){saveStory(p.id,txt);finishPlay(p,txt);})
-    .catch(function(){speaking=false;setStatus('Story error — retrying');if(tourOn)setTimeout(playNearest,4000);});
+  // Retry silently — no error shown
+  getStoryWithRetry(p).then(function(txt){saveStory(p.id,txt);finishPlay(p,txt);})
+    .catch(function(){speaking=false;if(tourOn)setTimeout(playNearest,3000);});
 }
 function finishPlay(p,txt){
   if(!speaking)return;
@@ -1396,28 +1306,10 @@ function prefetchStory(p){
   document.getElementById('next-info').innerHTML='⏳ Preparing: <b>'+p.title+'</b>';
   var cached=loadStory(p.id);
   if(cached&&!visited.has(p.id)){nxtStory=Object.assign({},p,{text:cached});document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;return;}
-  getStory(p).then(function(txt){
+  getStoryWithRetry(p).then(function(txt){
     if(!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory=Object.assign({},p,{text:txt});document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}
   }).catch(function(){prefetchId=null;document.getElementById('next-info').textContent='';});
 }
-function getStory(p){
-  var place=currentCityName&&currentCountry?currentCityName+', '+currentCountry:currentCityName||currentCountry||'this location';
-  if(p.isNb||p.type==='area') return callAI('GPS audio tour guide. 5 vivid sentences about the neighbourhood of "'+p.title+'" near '+place+'. Cover its character, history, what makes it distinct. Max 120 words. Story only.');
-  if(p.type==='legend') return callAI('Local storyteller. 3-4 vivid sentences retelling the legend or folklore of "'+p.title+'" near '+place+'. Atmospheric tone. Max 80 words. Story only.');
-  if(p.type==='history') return callAI('History guide. 3-4 vivid sentences about the historical significance of "'+p.title+'" near '+place+'. Max 80 words. Story only.');
-  return callAI('GPS audio tour guide. 3 vivid sentences about "'+p.title+'" ('+p.type+') near '+place+'. Varied opener. Max 65 words. Story only.');
-}
-function stopCurrentStory(){
-  cancelAudio();speaking=false;nxtStory=null;prefetchId=null;
-  document.getElementById('skip-btn').disabled=true;
-  document.getElementById('next-info').textContent='';
-  document.querySelectorAll('.lm-dot,.nb-dot').forEach(function(d){d.classList.remove('playing');});
-  if(tourOn)setTimeout(playNearest,1500);
-  else setStatus(Object.keys(markers).length+' landmarks');
-}
-function hideStoryBody(){document.getElementById('story-body').style.display='none';document.getElementById('unhide-btn').style.display='inline-block';}
-function showStoryBody(){document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';}
-function skipStory(){if(!nxtStory)return;cancelAudio();speaking=false;var s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(function(){playLandmark(s);},300);}
 function onTapMarker(p){
   if(!speaking&&!tourOn){try{var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}}
   if(speaking){setStatus('Queuing: '+p.title);nxtStory=null;prefetchId=null;prefetchStory(p);return;}
@@ -1433,14 +1325,32 @@ function playLandmarkOnDemand(p){
   track('story_play',{title:p.title,type:p.type,mode:'tap'});
   var onDone=function(){
     speaking=false;
-    document.querySelectorAll('.lm-dot,.nb-dot').forEach(function(d){d.classList.remove('playing');});
+    document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
     if(tourOn){var cn=nearest();if(cn)setTimeout(function(){playLandmark(cn);},1200);}
     else setStatus(Object.keys(markers).length+' landmarks');
   };
   var cached=loadStory(p.id);
   if(cached){curStory=Object.assign({},p,{text:cached});showStory(p.title,cached,p.type);tts(cached,onDone);return;}
-  getStory(p).then(function(txt){saveStory(p.id,txt);curStory=Object.assign({},p,{text:txt});showStory(p.title,txt,p.type);tts(txt,onDone);})
-    .catch(function(){speaking=false;setStatus('Story error — tap to retry');});
+  // Retry silently — no error shown
+  getStoryWithRetry(p)
+    .then(function(txt){saveStory(p.id,txt);curStory=Object.assign({},p,{text:txt});showStory(p.title,txt,p.type);tts(txt,onDone);})
+    .catch(function(){speaking=false;onDone();});
+}
+function stopCurrentStory(){
+  cancelAudio();speaking=false;nxtStory=null;prefetchId=null;
+  document.getElementById('skip-btn').disabled=true;
+  document.getElementById('next-info').textContent='';
+  document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
+  if(tourOn)setTimeout(playNearest,1500);
+  else setStatus(Object.keys(markers).length+' landmarks');
+}
+function hideStoryBody(){document.getElementById('story-body').style.display='none';document.getElementById('unhide-btn').style.display='inline-block';}
+function showStoryBody(){document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';}
+function skipStory(){
+  if(!nxtStory)return;cancelAudio();speaking=false;
+  var s=nxtStory;nxtStory=null;prefetchId=null;
+  document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;
+  setTimeout(function(){playLandmark(s);},300);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1449,12 +1359,12 @@ function playLandmarkOnDemand(p){
 function openStoriesMode(){
   if(!userPos){showToast('Waiting for location…');return;}
   fetch('https://nominatim.openstreetmap.org/reverse?lat='+userPos.lat+'&lon='+userPos.lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
-    .then(function(r){return r.json();})
+    .then(r=>r.json())
     .then(function(r){
       var nb=r.address?(r.address.suburb||r.address.neighbourhood||r.address.quarter||r.address.village||r.address.town||r.address.city||'this area'):'this area';
       var city=r.address?(r.address.city||r.address.town||r.address.county||''):'';
       var country=r.address?(r.address.country||r.address.country_code||''):'';
-      currentAreaName=nb; currentCityName=city; currentCountry=country;
+      currentAreaName=nb;currentCityName=city;currentCountry=country;
       var display=city&&country?city+', '+country:city||country||'nearby area';
       document.getElementById('stories-area-name').textContent=nb+', '+display;
       loadStoriesForArea();
@@ -1463,16 +1373,14 @@ function openStoriesMode(){
 }
 function loadStoriesForArea(){
   var areaKey=currentAreaName.replace(/\W+/g,'_');
-  var cached=STORY_TYPES.map(function(st){var t=loadLongStory(areaKey+'_'+st.type);return t?Object.assign({},st,{text:t,area:currentAreaName}):null;});
+  var cached=STORY_TYPES.map(st=>{var t=loadLongStory(areaKey+'_'+st.type);return t?Object.assign({},st,{text:t,area:currentAreaName}):null;});
   if(cached.filter(Boolean).length===STORY_TYPES.length){longStories=cached;renderStoriesPanel();document.getElementById('gen-story-btn').disabled=false;return;}
   document.getElementById('stories-list').innerHTML='<div class="story-generating"><span class="spin">🌀</span>Generating stories for '+currentAreaName+'…</div>';
   document.getElementById('gen-story-btn').disabled=true;
-  longStories=[];
-  var idx=0;
+  longStories=[];var idx=0;
   function nextStory(){
     if(idx>=STORY_TYPES.length){document.getElementById('gen-story-btn').disabled=false;track('stories_mode_open',{area:currentAreaName});return;}
-    var st=STORY_TYPES[idx++];
-    var c=cached[idx-1];
+    var st=STORY_TYPES[idx++];var c=cached[idx-1];
     if(c){longStories.push(c);renderStoriesPanel();nextStory();return;}
     callAI(st.prompt(currentAreaName,currentCityName)).then(function(txt){
       saveLongStory(areaKey+'_'+st.type,txt);
@@ -1492,7 +1400,7 @@ function generateMoreStories(){
 }
 function renderStoriesPanel(){
   if(!longStories.length)return;
-  document.getElementById('stories-list').innerHTML=longStories.map(function(s,i){
+  document.getElementById('stories-list').innerHTML=longStories.map((s,i)=>{
     var words=s.text?s.text.split(' ').length:0,mins=Math.max(1,Math.round(words/130));
     var preview=s.text?(s.text.slice(0,140)+(s.text.length>140?'…':'')):'Loading…';
     var isPlaying=currentLongStoryIdx===i&&longSpeaking;
@@ -1523,15 +1431,15 @@ function showStory(name,text,type){
   document.getElementById('story-body').style.display='block';
   document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
-  if(text!=='⏳ Loading story…') loadStoryPhoto(name);
+  if(text!=='⏳ Loading story…')loadStoryPhoto(name);
 }
 function setMode(m){
-  ['explore','route','stories'].forEach(function(x){document.getElementById('btn-'+x).classList.toggle('active',x===m);});
+  ['explore','route','stories'].forEach(x=>document.getElementById('btn-'+x).classList.toggle('active',x===m));
   document.getElementById('route-panel').classList.toggle('visible',m==='route');
   document.getElementById('stories-panel').classList.toggle('visible',m==='stories');
-  if(m==='stories') openStoriesMode();
+  if(m==='stories')openStoriesMode();
 }
-function setPulse(id){document.querySelectorAll('.lm-dot,.nb-dot').forEach(function(d){d.classList.remove('playing');});var el=document.getElementById('lm-'+id);if(el)el.classList.add('playing');}
+function setPulse(id){document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));var el=document.getElementById('lm-'+id);if(el)el.classList.add('playing');}
 function dotVisited(id){var el=document.getElementById('lm-'+id);if(el)el.classList.add('visited');}
 function setStatus(t){document.getElementById('status').textContent=t;}
 function toggleFromLoc(){
@@ -1542,9 +1450,7 @@ function toggleFromLoc(){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ROUTE
-// FIX 3: Use correct OSRM routing profile based on travel mode.
-// FIX 4: Suppress moveend during fitBounds so it doesn't double-fetch.
+// ROUTE — OSRM profile matches travel mode
 // ═══════════════════════════════════════════════════════════════
 function planRoute(){
   var to=document.getElementById('to-inp').value.trim();if(!to)return;
@@ -1555,32 +1461,33 @@ function planRoute(){
   Promise.all([getA,geocode(to)]).then(function(res){
     var A=res[0],B=res[1];
     if(!A||!B){btn.disabled=false;alert('Could not find locations.');return;}
-    // FIX 3: match OSRM profile to travel mode (foot for walking, driving otherwise)
-    var osrmProfile = travelMode==='walking' ? 'foot' : 'driving';
-    return fetch('https://router.project-osrm.org/route/v1/'+osrmProfile+'/'+A.lng+','+A.lat+';'+B.lng+','+B.lat+'?overview=full&geometries=geojson')
-      .then(function(r){return r.json();})
+    var profile=travelMode==='walking'?'foot':'driving';
+    return fetch('https://router.project-osrm.org/route/v1/'+profile+'/'+A.lng+','+A.lat+';'+B.lng+','+B.lat+'?overview=full&geometries=geojson')
+      .then(r=>r.json())
       .then(function(rd){
         var coords=rd&&rd.routes&&rd.routes[0]?rd.routes[0].geometry.coordinates:null;
         if(!coords){btn.disabled=false;alert('No route found.');return;}
         if(map.routeLine)map.removeLayer(map.routeLine);
-        routeCoords=coords.map(function(c){return[c[1],c[0]];});
+        routeCoords=coords.map(c=>[c[1],c[0]]);
         map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
-        // FIX 4: suppress moveend so fitBounds doesn't trigger a redundant fetchVisibleBounds
-        suppressMoveEnd=true;
+        progMove=true;
         map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
-        setTimeout(function(){suppressMoveEnd=false;},200);
+        setTimeout(function(){progMove=false;},200);
         document.getElementById('progress-wrap').classList.add('visible');
         updateProgress();setStatus('Finding landmarks…');track('route_planned');
-        var pts=Array.from({length:8},function(_,i){return coords[Math.floor(i*(coords.length-1)/7)];});
+        var pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);
         return pts.reduce(function(ch,pt){return ch.then(function(){return fetchArea(pt[1],pt[0]).then(function(){return fetchNeighbourhoods(pt[1],pt[0]);});});},Promise.resolve());
       });
   }).then(function(){btn.disabled=false;setMode('explore');}).catch(function(){btn.disabled=false;setStatus('Route error');});
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SW
+// SERVICE WORKER
 // ═══════════════════════════════════════════════════════════════
-function forceUpdate(){if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).finally(function(){location.reload(true);});}
+function forceUpdate(){
+  if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));
+  caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).finally(function(){location.reload(true);});
+}
 function applyUpdate(){if(newWorker)newWorker.postMessage('SKIP_WAITING');}
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').then(function(reg){
