@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.7.5</div>
+  <div id="splash-version">v1.7.6</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -466,9 +466,10 @@ textarea.fb-input{height:120px;resize:none;}
   <source src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVbwIwSAAS4hACCAAAgYMUPAggDBUEBAGUIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" type="audio/mpeg"/>
 </audio>
 
-<!-- ALL SCRIPTS AT BOTTOM — after DOM is ready -->
+<!-- Leaflet first (sync, needed before map init) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- FIX: Supabase async so it doesn't block JS parsing; initSupabase() retries if not ready -->
+<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -558,6 +559,14 @@ var photoCache = {};
 var supabaseClient = null, currentUser = null, userIsPro = false;
 var map; // initialised in openMap()
 
+// FIX 1: Track whether we've received a real GPS fix yet.
+// On first real watchPosition result, re-centre map if Dublin fallback was used.
+var hasRealGPS = false;
+
+// FIX 4: Flag to suppress moveend-triggered fetches during programmatic map moves
+// (fitBounds in planRoute, setView in startAt/GPS re-centre).
+var suppressMoveEnd = false;
+
 // Settings
 var selectedVoice = JSON.parse(localStorage.getItem('sr_voice_cfg') || 'null') || VOICES[0];
 var voiceSpeed = 1.1;
@@ -576,12 +585,16 @@ function openMap(){
   document.getElementById('splash').style.display = 'none';
   // Unlock audio on iOS
   try{var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}
-  // Init map now that DOM is visible
   if(!map){
     map = L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-    // moveend listener added in startAt() AFTER real GPS position is set
     map.on('click', function(){document.getElementById('story').style.display='none';});
+    // moveend listener added once here — suppressed during programmatic moves
+    map.on('moveend', function(){
+      if(suppressMoveEnd) return;
+      clearTimeout(map._moveDebounce);
+      map._moveDebounce = setTimeout(function(){fetchVisibleBounds();}, 1500);
+    });
   }
   track('app_open');
   loadFavs();
@@ -589,7 +602,6 @@ function openMap(){
   updateMenuLabels();
   updateMenuUser();
   initSupabase();
-  // Cookie
   var consent = localStorage.getItem('sr_cookie');
   if(!consent) setTimeout(function(){document.getElementById('cookie-banner').classList.add('visible');},2500);
   else if(consent==='accepted') gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
@@ -601,26 +613,28 @@ function openMap(){
 
 // ═══════════════════════════════════════════════════════════════
 // SUPABASE AUTH
+// FIX 5: initSupabase retries if the async CDN script isn't loaded yet
 // ═══════════════════════════════════════════════════════════════
 function initSupabase(){
+  if(typeof supabase === 'undefined'){
+    // Script still loading — retry in 500ms
+    setTimeout(initSupabase, 500);
+    return;
+  }
   try{
-    if(typeof supabase !== 'undefined'){
-      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      supabaseClient.auth.onAuthStateChange(function(event, session){
-        currentUser = session ? session.user : null;
-        if(currentUser) loadProStatus();
-        else userIsPro = localStorage.getItem('sr_pro')==='true';
-        updateMenuUser();
-      });
-      supabaseClient.auth.getSession().then(function(r){
-        currentUser = r.data && r.data.session ? r.data.session.user : null;
-        if(currentUser) loadProStatus();
-        else userIsPro = localStorage.getItem('sr_pro')==='true';
-        updateMenuUser();
-      });
-    } else {
-      userIsPro = localStorage.getItem('sr_pro')==='true';
-    }
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient.auth.onAuthStateChange(function(event, session){
+      currentUser = session ? session.user : null;
+      if(currentUser) loadProStatus();
+      else userIsPro = localStorage.getItem('sr_pro')==='true';
+      updateMenuUser();
+    });
+    supabaseClient.auth.getSession().then(function(r){
+      currentUser = r.data && r.data.session ? r.data.session.user : null;
+      if(currentUser) loadProStatus();
+      else userIsPro = localStorage.getItem('sr_pro')==='true';
+      updateMenuUser();
+    });
   }catch(e){ userIsPro = localStorage.getItem('sr_pro')==='true'; }
 }
 
@@ -871,38 +885,61 @@ function showToast(msg,dur){
 // ═══════════════════════════════════════════════════════════════
 function getGPS(){
   setStatus('Getting location…');
-  if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1]);return;}
+  if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1],true);return;}
   navigator.geolocation.getCurrentPosition(
-    function(p){startAt(p.coords.latitude,p.coords.longitude);},
-    function(){startAt(DUBLIN[0],DUBLIN[1]);},
+    function(p){startAt(p.coords.latitude,p.coords.longitude,false);},
+    function(){
+      // GPS failed — show Dublin as placeholder but flag it as fallback
+      startAt(DUBLIN[0],DUBLIN[1],true);
+    },
     {enableHighAccuracy:true,timeout:15000,maximumAge:0}
   );
 }
-function startAt(lat,lng){
+
+// FIX 1: startAt now accepts isFallback flag.
+// The moveend listener is attached here once and reuses suppressMoveEnd to
+// avoid double-fetching during programmatic setView calls.
+function startAt(lat,lng,isFallback){
   userPos={lat:lat,lng:lng};
-  // Clear any landmarks cached from the Dublin default position (53.34_-6.25)
-  // so they don't appear when user is elsewhere
-  const dublinKey='53.34_-6.25';
-  if(!fetched.has(dublinKey)){
-    ['sr_lm_53.34_-6.25','sr_nb_53.34_-6.25'].forEach(k=>localStorage.removeItem(k));
-  }
-  // Flag — programmatic moves (GPS centre, fitBounds) should NOT trigger landmark fetch
-  var moveDebounce=null;
+  hasRealGPS = !isFallback;
+
+  suppressMoveEnd = true;
   map.setView([lat,lng],15);
-  // Attach debounced moveend — only fires 1.5s after user stops moving the map
-  map.on('moveend',function(){
-    clearTimeout(moveDebounce);
-    moveDebounce=setTimeout(function(){fetchVisibleBounds();},1500);
-  });
+  // Allow a tick for Leaflet to finish the move before re-enabling
+  setTimeout(function(){ suppressMoveEnd = false; }, 100);
+
+  // Place user dot
   var icon=L.divIcon({html:'<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
   var um=L.marker([lat,lng],{icon:icon}).addTo(map);
+
+  // FIX 1: watchPosition — re-centre on first real GPS fix if map is showing wrong location
   if(navigator.geolocation) navigator.geolocation.watchPosition(function(p){
-    userPos={lat:p.coords.latitude,lng:p.coords.longitude};
-    um.setLatLng([userPos.lat,userPos.lng]);
+    var newLat=p.coords.latitude, newLng=p.coords.longitude;
+    userPos={lat:newLat,lng:newLng};
+    um.setLatLng([newLat,newLng]);
+
+    if(!hasRealGPS){
+      hasRealGPS=true;
+      var centre=map.getCenter();
+      var distFromCentre=haversine({lat:newLat,lng:newLng},{lat:centre.lat,lng:centre.lng});
+      if(distFromCentre>500){
+        // Dublin fallback was used and user is actually elsewhere — re-centre and re-fetch
+        // Clear Dublin-cached data so it doesn't pollute the correct location
+        fetched.clear(); fetchedNb.clear();
+        Object.values(markers).forEach(function(m){map.removeLayer(m);});
+        markers={}; visited.clear(); nxtStory=null; prefetchId=null;
+        currentCityName=''; currentCountry='';
+        suppressMoveEnd=true;
+        map.setView([newLat,newLng],15);
+        setTimeout(function(){ suppressMoveEnd=false; fetchVisibleBounds(); },100);
+        setStatus('Location found — loading landmarks…');
+        return;
+      }
+    }
     updateProgress(); checkProxAlert();
   },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-  setStatus('Loading landmarks…');
-  // Single initial fetch for current location — no duplicate
+
+  setStatus(isFallback ? 'Finding your location…' : 'Loading landmarks…');
   fetchVisibleBounds();
 }
 
@@ -1086,50 +1123,97 @@ function geocode(q){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// FETCH LANDMARKS — only fetches the centre of the current view
-// More tiles are fetched only when the user pans to a new area
+// LOCATION CONTEXT — reverse geocode once per unique tile
+// Shared by fetchArea and fetchNeighbourhoods so AI prompts have
+// city + country context before generating landmark lists.
+// ═══════════════════════════════════════════════════════════════
+function ensureLocationContext(lat,lng){
+  // If we already have a city name, no need to call Nominatim again
+  if(currentCityName) return Promise.resolve();
+  return fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',
+    {headers:{'User-Agent':'StoryRouteApp/1.0'}})
+    .then(function(r){return r.json();})
+    .then(function(r){
+      if(r&&r.address){
+        currentCityName = r.address.city||r.address.town||r.address.village||r.address.county||'';
+        currentCountry  = r.address.country||r.address.country_code||'';
+      }
+    })
+    .catch(function(){});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FETCH LANDMARKS
 // ═══════════════════════════════════════════════════════════════
 function fetchVisibleBounds(){
   if(!map)return;
-  // Only fetch the centre of what the user is actually looking at
   var c=map.getCenter();
   fetchArea(c.lat,c.lng).then(function(){
     return fetchNeighbourhoods(c.lat,c.lng);
   });
 }
+
+// FIX 2: Reverse geocode BEFORE calling AI so the prompt includes
+// city + country, giving Llama accurate geographic context.
+// FIX 6: addLMs no longer does its own Nominatim call since context
+// is set here first.
 function fetchArea(lat,lng){
   var key=lat.toFixed(2)+'_'+lng.toFixed(2);
   if(fetched.has(key))return Promise.resolve(); fetched.add(key);
   var cached=loadLM(lat,lng);
   if(cached) return addLMs(cached,lat,lng).then(function(){afterFetch();});
   setStatus('Searching…');
-  return callAI('List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+'.\nInclude churches, pubs, monuments, bridges, schools, parks, harbours, towers, abbeys, markets, halls, cinemas, railway stations, canals, wells, hills, gates, and notable buildings.\nReturn ONLY a JSON array: [{"title":"Name","type":"monument"}]\nValid types: monument,church,castle,street,building,bridge,park,museum,person,nature,pub,beach,estate,school,sport,abbey,harbour,tower,market,gate,hall,cinema,railway,canal,well,hill,island,history,legend,other\nOnly real places you are certain exist.')
-    .then(function(raw){
-      var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
-      if(si===-1||ei===-1){fetched.delete(key);setStatus('Retry — tap Refresh');return;}
-      var arr=JSON.parse(raw.slice(si,ei+1));
-      if(!arr.length){fetched.delete(key);return;}
-      saveLM(lat,lng,arr);
-      return addLMs(arr,lat,lng).then(function(){afterFetch();});
-    })
-    .catch(function(err){fetched.delete(key);setStatus('Error — tap Refresh');console.error(err);});
+
+  // Step 1: ensure we have city/country before asking AI
+  return ensureLocationContext(lat,lng).then(function(){
+    var locCtx = currentCityName&&currentCountry
+      ? ' in '+currentCityName+', '+currentCountry
+      : currentCityName ? ' in '+currentCityName : '';
+    // Step 2: ask AI with full geographic context
+    return callAI(
+      'List 14 historically interesting landmarks within 1.5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+locCtx+'.\n'+
+      'Include churches, pubs, monuments, bridges, schools, parks, harbours, towers, abbeys, markets, halls, cinemas, railway stations, canals, wells, hills, gates, and notable buildings.\n'+
+      'Return ONLY a JSON array: [{"title":"Name","type":"monument"}]\n'+
+      'Valid types: monument,church,castle,street,building,bridge,park,museum,person,nature,pub,beach,estate,school,sport,abbey,harbour,tower,market,gate,hall,cinema,railway,canal,well,hill,island,history,legend,other\n'+
+      'Only real places you are certain exist at these coordinates.'
+    );
+  })
+  .then(function(raw){
+    var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
+    if(si===-1||ei===-1){fetched.delete(key);setStatus('Retry — tap Refresh');return;}
+    var arr=JSON.parse(raw.slice(si,ei+1));
+    if(!arr.length){fetched.delete(key);return;}
+    saveLM(lat,lng,arr);
+    return addLMs(arr,lat,lng).then(function(){afterFetch();});
+  })
+  .catch(function(err){fetched.delete(key);setStatus('Error — tap Refresh');console.error(err);});
 }
+
 function fetchNeighbourhoods(lat,lng){
   var key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
   if(fetchedNb.has(key))return Promise.resolve(); fetchedNb.add(key);
   var cached=loadLM(lat,lng,'sr_nb_');
   if(cached) return addNeighbourhoods(cached);
-  return callAI('List 8 distinct neighbourhoods, villages or districts within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+'.\nReturn ONLY a JSON array: [{"title":"Name","county":"Region"}]\nOnly real named areas that actually exist at these coordinates.')
-    .then(function(raw){
-      var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
-      if(si===-1||ei===-1)return;
-      var arr=JSON.parse(raw.slice(si,ei+1));
-      if(!arr.length)return;
-      saveLM(lat,lng,arr,'sr_nb_');
-      return addNeighbourhoods(arr);
-    })
-    .catch(function(err){fetchedNb.delete(key);console.error('NB:',err);});
+  // ensureLocationContext already ran in fetchArea so currentCityName is set
+  var locCtx = currentCityName&&currentCountry
+    ? ' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4)+' in '+currentCityName+', '+currentCountry
+    : ' within 5km of lat '+lat.toFixed(4)+', lng '+lng.toFixed(4);
+  return callAI(
+    'List 8 distinct neighbourhoods, villages or districts'+locCtx+'.\n'+
+    'Return ONLY a JSON array: [{"title":"Name","county":"Region"}]\n'+
+    'Only real named areas that actually exist at these coordinates.'
+  )
+  .then(function(raw){
+    var si=raw.indexOf('['),ei=raw.lastIndexOf(']');
+    if(si===-1||ei===-1)return;
+    var arr=JSON.parse(raw.slice(si,ei+1));
+    if(!arr.length)return;
+    saveLM(lat,lng,arr,'sr_nb_');
+    return addNeighbourhoods(arr);
+  })
+  .catch(function(err){fetchedNb.delete(key);console.error('NB:',err);});
 }
+
 function addNeighbourhoods(arr){
   var p=Promise.resolve();
   arr.forEach(function(item){
@@ -1142,7 +1226,6 @@ function addNeighbourhoods(arr){
     }
     if(!isTypeVisible('area'))return;
     p=p.then(function(){return sleep(400);}).then(function(){
-      // geocode without country hardcoding — use lat/lng context from Nominatim
       var q=currentCityName?item.title+', '+currentCityName:item.title;
       return geocode(q);
     }).then(function(coords){
@@ -1158,18 +1241,11 @@ function addNeighbourhoods(arr){
   });
   return p;
 }
+
+// FIX 6: addLMs no longer does its own Nominatim reverse geocode — ensureLocationContext()
+// in fetchArea guarantees currentCityName/currentCountry are set before addLMs is called.
 function addLMs(arr,lat,lng){
-  var city='';
-  var p=fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
-    .then(function(r){return r.json();})
-    .then(function(r){
-      if(r&&r.address){
-        city=r.address.city||r.address.town||r.address.village||r.address.county||'';
-        currentCityName=city;
-        currentCountry=r.address.country||r.address.country_code||'';
-      }
-    })
-    .catch(function(){});
+  var p=Promise.resolve();
   arr.forEach(function(item){
     if(!item.title)return;
     var id=item.title.replace(/\W+/g,'_');
@@ -1181,8 +1257,8 @@ function addLMs(arr,lat,lng){
     }
     if(!isTypeVisible(ptype))return;
     p=p.then(function(){return sleep(300);}).then(function(){
-      // Geocode with city if known, otherwise just the title — no country hardcoded
-      var q=city?item.title+', '+city:item.title;
+      // Use currentCityName (set by ensureLocationContext) — no country hardcoded
+      var q=currentCityName?item.title+', '+currentCityName:item.title;
       return geocode(q);
     }).then(function(coords){
       if(!coords)return;
@@ -1197,6 +1273,7 @@ function addLMs(arr,lat,lng){
   });
   return p;
 }
+
 function afterFetch(){
   var n=Object.keys(markers).length;
   if(userPos){
@@ -1213,6 +1290,7 @@ function afterFetch(){
 }
 function refreshLandmarks(){
   fetched.clear();fetchedNb.clear();
+  currentCityName='';currentCountry='';
   Object.keys(localStorage).forEach(function(k){if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_')){try{var v=JSON.parse(localStorage.getItem(k));if(!v||!v.length)localStorage.removeItem(k);}catch(e){localStorage.removeItem(k);}}});
   Object.values(markers).forEach(function(m){map.removeLayer(m);});
   markers={};visited.clear();nxtStory=null;prefetchId=null;
@@ -1461,6 +1539,8 @@ function toggleFromLoc(){
 
 // ═══════════════════════════════════════════════════════════════
 // ROUTE
+// FIX 3: Use correct OSRM routing profile based on travel mode.
+// FIX 4: Suppress moveend during fitBounds so it doesn't double-fetch.
 // ═══════════════════════════════════════════════════════════════
 function planRoute(){
   var to=document.getElementById('to-inp').value.trim();if(!to)return;
@@ -1471,7 +1551,9 @@ function planRoute(){
   Promise.all([getA,geocode(to)]).then(function(res){
     var A=res[0],B=res[1];
     if(!A||!B){btn.disabled=false;alert('Could not find locations.');return;}
-    return fetch('https://router.project-osrm.org/route/v1/driving/'+A.lng+','+A.lat+';'+B.lng+','+B.lat+'?overview=full&geometries=geojson')
+    // FIX 3: match OSRM profile to travel mode (foot for walking, driving otherwise)
+    var osrmProfile = travelMode==='walking' ? 'foot' : 'driving';
+    return fetch('https://router.project-osrm.org/route/v1/'+osrmProfile+'/'+A.lng+','+A.lat+';'+B.lng+','+B.lat+'?overview=full&geometries=geojson')
       .then(function(r){return r.json();})
       .then(function(rd){
         var coords=rd&&rd.routes&&rd.routes[0]?rd.routes[0].geometry.coordinates:null;
@@ -1479,7 +1561,10 @@ function planRoute(){
         if(map.routeLine)map.removeLayer(map.routeLine);
         routeCoords=coords.map(function(c){return[c[1],c[0]];});
         map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
+        // FIX 4: suppress moveend so fitBounds doesn't trigger a redundant fetchVisibleBounds
+        suppressMoveEnd=true;
         map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});
+        setTimeout(function(){suppressMoveEnd=false;},200);
         document.getElementById('progress-wrap').classList.add('visible');
         updateProgress();setStatus('Finding landmarks…');track('route_planned');
         var pts=Array.from({length:8},function(_,i){return coords[Math.floor(i*(coords.length-1)/7)];});
