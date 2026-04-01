@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.0.0</div>
+  <div id="splash-version">v2.0.2</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -472,7 +472,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.0.0
+// STORYROUTE v2.0.2
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1017,87 +1017,155 @@ function fetchArea(lat,lng){
   if(fetched.has(key))return;
   fetched.add(key);
 
+  // Cached tile — place markers whose stories are already cached instantly,
+  // generate any missing stories in background
   var cached=loadLM(lat,lng);
   if(cached&&cached.length&&cached[0].lat){
-    addLMs(cached);afterFetch();reverseGeocode(lat,lng);
-    // Re-run wiki filter in background on cached results missing wikiExtract
-    if(!cached[0].wikiOk) wikiFilterAndClean(cached,currentCityName);
+    reverseGeocode(lat,lng);
+    preloadAndPlace(cached, currentCityName, currentCountry, currentAreaName, false);
     return;
   }
   localStorage.removeItem('sr_lm_'+lat.toFixed(2)+'_'+lng.toFixed(2));
 
-  setStatus('Loading landmarks…');
-  reverseGeocode(lat,lng);
+  setStatus('Searching for landmarks…');
 
-  var r=1500;
-  var q='[out:json][timeout:20];('
-    +'node["name"]["historic"](around:'+r+','+lat+','+lng+');'
-    +'node["name"]["tourism"~"attraction|museum|gallery|artwork|viewpoint|memorial|ruins|castle"](around:'+r+','+lat+','+lng+');'
-    +'node["name"]["amenity"~"pub|bar|place_of_worship|cinema|theatre|arts_centre|library|marketplace"](around:'+r+','+lat+','+lng+');'
-    +'node["name"]["leisure"~"park|garden|nature_reserve|stadium"](around:'+r+','+lat+','+lng+');'
-    +'node["name"]["natural"~"peak|hill|beach|bay|spring|waterfall"](around:'+r+','+lat+','+lng+');'
-    +'node["name"]["man_made"~"lighthouse|tower|windmill|watermill"](around:'+r+','+lat+','+lng+');'
-    +'node["name"]["waterway"~"canal|lock_gate"](around:'+r+','+lat+','+lng+');'
-    +'node["name"]["railway"~"station|halt"](around:'+r+','+lat+','+lng+');'
-    +'way["name"]["historic"](around:'+r+','+lat+','+lng+');'
-    +'way["name"]["tourism"~"attraction|museum|gallery|memorial|ruins|castle"](around:'+r+','+lat+','+lng+');'
-    +'way["name"]["amenity"~"pub|place_of_worship|cinema|theatre|library|marketplace"](around:'+r+','+lat+','+lng+');'
-    +'way["name"]["leisure"~"park|garden|stadium"](around:'+r+','+lat+','+lng+');'
-    +'way["name"]["man_made"~"lighthouse|tower|bridge"](around:'+r+','+lat+','+lng+');'
-    +'way["name"]["waterway"="canal"](around:'+r+','+lat+','+lng+');'
-    +');out center 40;';
+  // Reverse geocode FIRST — gives richer Wikipedia search context
+  reverseGeocodePromise(lat,lng).then(function(loc){
+    var r=1500;
+    var q='[out:json][timeout:20];('
+      +'node["name"]["historic"](around:'+r+','+lat+','+lng+');'
+      +'node["name"]["tourism"~"attraction|museum|gallery|artwork|viewpoint|memorial|ruins|castle"](around:'+r+','+lat+','+lng+');'
+      +'node["name"]["amenity"~"pub|bar|place_of_worship|cinema|theatre|arts_centre|library|marketplace"](around:'+r+','+lat+','+lng+');'
+      +'node["name"]["leisure"~"park|garden|nature_reserve|stadium"](around:'+r+','+lat+','+lng+');'
+      +'node["name"]["natural"~"peak|hill|beach|bay|spring|waterfall"](around:'+r+','+lat+','+lng+');'
+      +'node["name"]["man_made"~"lighthouse|tower|windmill|watermill"](around:'+r+','+lat+','+lng+');'
+      +'node["name"]["waterway"~"canal|lock_gate"](around:'+r+','+lat+','+lng+');'
+      +'node["name"]["railway"~"station|halt"](around:'+r+','+lat+','+lng+');'
+      +'way["name"]["historic"](around:'+r+','+lat+','+lng+');'
+      +'way["name"]["tourism"~"attraction|museum|gallery|memorial|ruins|castle"](around:'+r+','+lat+','+lng+');'
+      +'way["name"]["amenity"~"pub|place_of_worship|cinema|theatre|library|marketplace"](around:'+r+','+lat+','+lng+');'
+      +'way["name"]["leisure"~"park|garden|stadium"](around:'+r+','+lat+','+lng+');'
+      +'way["name"]["man_made"~"lighthouse|tower|bridge"](around:'+r+','+lat+','+lng+');'
+      +'way["name"]["waterway"="canal"](around:'+r+','+lat+','+lng+');'
+      +');out center 40;';
 
-  fetch(OVERPASS,{method:'POST',body:'data='+encodeURIComponent(q)})
-    .then(function(res){return res.json();})
-    .then(function(data){
-      var elements=data.elements||[];
-      var seen=new Set();
-      var arr=[];
-      elements.forEach(function(el){
-        if(!el.tags||!el.tags.name)return;
-        var name=el.tags.name.trim();
-        if(seen.has(name))return; seen.add(name);
-        var elat=el.lat||(el.center&&el.center.lat);
-        var elng=el.lon||(el.center&&el.center.lon);
-        if(!elat||!elng)return;
-        arr.push({title:name,type:osmToType(el.tags),lat:elat,lng:elng});
+    fetch(OVERPASS,{method:'POST',body:'data='+encodeURIComponent(q)})
+      .then(function(res){return res.json();})
+      .then(function(data){
+        var elements=data.elements||[];
+        var seen=new Set(), arr=[];
+        elements.forEach(function(el){
+          if(!el.tags||!el.tags.name)return;
+          var name=el.tags.name.trim();
+          if(seen.has(name))return; seen.add(name);
+          var elat=el.lat||(el.center&&el.center.lat);
+          var elng=el.lon||(el.center&&el.center.lon);
+          if(!elat||!elng)return;
+          arr.push({title:name,type:osmToType(el.tags),lat:elat,lng:elng,osmWiki:el.tags.wikipedia||null,osmWikidata:el.tags.wikidata||null});
+        });
+        if(!arr.length){fetched.delete(key);setStatus('No landmarks found here');return;}
+        // Sort: historically rich types first so best landmarks appear soonest
+        var typePriority={castle:0,abbey:0,monument:1,church:1,bridge:1,museum:1,
+          pub:2,harbour:2,tower:2,railway:2,park:3,garden:3,other:4};
+        arr.sort(function(a,b){return (typePriority[a.type]||4)-(typePriority[b.type]||4);});
+        // Cap at 15 — beyond that the AI queue gets too long
+        arr=arr.slice(0,15);
+        saveLM(lat,lng,arr);
+        preloadAndPlace(arr, loc.city, loc.country, loc.area, true);
+      })
+      .catch(function(err){
+        fetched.delete(key);
+        setStatus('Loading landmarks…');
+        console.error('Overpass:',err);
+        setTimeout(function(){fetchArea(lat,lng);},5000);
       });
-      if(!arr.length){fetched.delete(key);setStatus('No landmarks found here');return;}
-      // Show ALL landmarks immediately — no waiting for Wikipedia
-      saveLM(lat,lng,arr);
-      addLMs(arr);
-      afterFetch();
-      // Wikipedia filter runs silently in background
-      // Landmarks with no article get removed from map without user noticing
-      wikiFilterAndClean(arr, currentCityName);
-    })
-    .catch(function(err){
-      fetched.delete(key);
-      setStatus('Loading landmarks…');
-      console.error('Overpass:',err);
-      setTimeout(function(){fetchArea(lat,lng);},5000);
-    });
+  });
 }
 
-// Background wiki filter — enriches landmarks with Wikipedia extracts.
-// Does NOT remove landmarks — AI knowledge fallback handles those without Wikipedia.
-function wikiFilterAndClean(arr, city){
-  var CONCURRENT=5;
-  var idx=0;
-  function runNext(){
-    if(idx>=arr.length)return Promise.resolve();
-    var lm=arr[idx++];
-    if(lm.wikiOk||lm.wikiChecked)return runNext();
-    return fetchWikiExtract(lm.title, city).then(function(wiki){
-      lm.wikiChecked=true;
-      if(wiki){ lm.wikiOk=true; lm.wikiExtract=wiki.extract; }
-    }).catch(function(){lm.wikiChecked=true;})
-    .then(runNext);
-  }
-  var workers=[];
-  for(var i=0;i<Math.min(CONCURRENT,arr.length);i++) workers.push(runNext());
-  return Promise.all(workers);
+// Reverse geocode returning a promise with {city, country, area}
+function reverseGeocodePromise(lat,lng){
+  return fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',
+    {headers:{'User-Agent':'StoryRouteApp/1.0'}})
+    .then(function(r){return r.json();})
+    .then(function(r){
+      var city='',country='',area='';
+      if(r&&r.address){
+        city=r.address.city||r.address.town||r.address.village||r.address.county||'';
+        country=r.address.country||'';
+        area=r.address.suburb||r.address.neighbourhood||r.address.quarter||r.address.village||'';
+      }
+      currentCityName=city; currentCountry=country;
+      if(area) currentAreaName=area;
+      return {city:city,country:country,area:area};
+    })
+    .catch(function(){return {city:currentCityName,country:currentCountry,area:currentAreaName};});
 }
+
+// Pre-load story for each landmark BEFORE placing its marker.
+// Each marker pops onto the map the moment its story is ready — instantly on cache hit.
+function preloadAndPlace(landmarks, city, country, area, isNew){
+  var ready=0, total=landmarks.length;
+  setStatus('Loading stories… 0 / '+total);
+
+  var promises=landmarks.map(function(lm){
+    var id=lm.title.replace(/\W+/g,'_');
+
+    // Story already cached? Place marker immediately
+    var cached=loadStory(id);
+    if(cached){
+      lm.wikiExtract=lm.wikiExtract||null;
+      addSingleLM(lm);
+      ready++;
+      setStatus('Loading stories… '+ready+' / '+total);
+      if(ready===total) afterFetch();
+      return Promise.resolve();
+    }
+
+    // Fetch Wikipedia with full location context (parallel — not rate limited)
+    return fetchWikiExtract(lm.title, city, country, area, lm.osmWiki, lm.osmWikidata)
+      .then(function(wiki){
+        if(wiki){lm.wikiOk=true; lm.wikiExtract=wiki.extract; lm.sourceLabel=wiki.source||'Wikipedia';}
+        // Generate story — goes through the serialised AI queue
+        return getStory(lm);
+      })
+      .then(function(story){
+        if(story&&story.length>15) saveStory(id, story);
+        addSingleLM(lm);
+        ready++;
+        setStatus('Loading stories… '+ready+' / '+total);
+        if(ready===total) afterFetch();
+      })
+      .catch(function(){
+        // Story failed — still show the landmark, tap will retry
+        addSingleLM(lm);
+        ready++;
+        if(ready===total) afterFetch();
+      });
+  });
+
+  return Promise.all(promises);
+}
+
+// Place a single landmark marker on the map
+function addSingleLM(lm){
+  if(!lm||!lm.title||!lm.lat||!lm.lng)return;
+  var id=lm.title.replace(/\W+/g,'_');
+  var ptype=ALL_TYPES.includes(lm.type)?lm.type:'other';
+  if(markers[id]){
+    if(isTypeVisible(ptype)){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
+    else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}
+    return;
+  }
+  if(!isTypeVisible(ptype))return;
+  var html='<div class="lm-dot" id="lm-'+id+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
+  var icon=L.divIcon({html:html,iconSize:[28,28],iconAnchor:[14,14],className:''});
+  var lmObj={id:id,title:lm.title,type:ptype,lat:+lm.lat,lng:+lm.lng};
+  var m=L.marker([+lm.lat,+lm.lng],{icon:icon,_title:lm.title,_type:ptype})
+    .addTo(map).bindTooltip(lm.title,{direction:'top'});
+  m.on('click',function(){track('marker_tap',{title:lm.title,type:ptype});onTapMarker(lmObj);});
+  markers[id]=m;
+}
+
 
 function fetchNeighbourhoods(lat,lng){
   var key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
@@ -1144,24 +1212,9 @@ function reverseGeocode(lat,lng){
 
 // Place landmark markers — all items have real Overpass coords, placed synchronously
 function addLMs(arr){
-  arr.forEach(function(item){
-    if(!item.title||!item.lat||!item.lng)return;
-    var id=item.title.replace(/\W+/g,'_');
-    var ptype=ALL_TYPES.includes(item.type)?item.type:'other';
-    if(markers[id]){
-      if(isTypeVisible(ptype)){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
-      else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}
-      return;
-    }
-    if(!isTypeVisible(ptype))return;
-    var html='<div class="lm-dot" id="lm-'+id+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
-    var lm={id:id,title:item.title,type:ptype,lat:item.lat,lng:item.lng};
-    var m=L.marker([item.lat,item.lng],{icon:L.divIcon({html:html,iconSize:[28,28],iconAnchor:[14,14],className:''}),_title:item.title,_type:ptype})
-      .addTo(map).bindTooltip(item.title,{direction:'top'});
-    m.on('click',function(){track('marker_tap',{title:item.title,type:ptype});onTapMarker(lm);});
-    markers[id]=m;
-  });
+  (arr||[]).forEach(function(lm){ addSingleLM(lm); });
 }
+
 
 function addNeighbourhoods(arr){
   arr.forEach(function(item){
@@ -1247,62 +1300,134 @@ function updateProgress(){
 // ═══════════════════════════════════════════════════════════════
 var _wikiCache = {};
 
-function fetchWikiExtract(name, city) {
-  var key = name + '|' + (city||'');
+function fetchWikiExtract(name, city, country, area, osmWikiTag, osmWikidata) {
+  var key = name + '|' + (city||'') + '|' + (country||'');
   if (_wikiCache[key] !== undefined) return Promise.resolve(_wikiCache[key]);
 
-  // Try three queries in decreasing specificity
+  // ── SOURCE 1: OSM wikipedia= tag (most authoritative — direct article link) ──
+  // Format from OSM: "en:Christ Church Cathedral, Dublin" or "Christ Church Cathedral"
+  if (osmWikiTag) {
+    var parts = osmWikiTag.split(':');
+    var wLang  = parts.length > 1 && parts[0].length <= 3 ? parts[0] : 'en';
+    var wTitle = parts.length > 1 && parts[0].length <= 3 ? parts.slice(1).join(':') : osmWikiTag;
+    return fetch(
+      'https://' + wLang + '.wikipedia.org/w/api.php?action=query&titles=' +
+      encodeURIComponent(wTitle) +
+      '&prop=extracts&exintro=true&explaintext=true&exsectionformat=plain&format=json&origin=*'
+    )
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var pages = d && d.query && d.query.pages;
+      if (!pages) return null;
+      var page = Object.values(pages)[0];
+      if (!page || !page.extract || page.extract.length < 200) return null;
+      var result = {
+        title: page.title,
+        extract: page.extract.slice(0, 1500).trim(),
+        source: 'Wikipedia (OSM-linked)'
+      };
+      _wikiCache[key] = result;
+      return result;
+    })
+    .catch(function(){ return null; })
+    .then(function(result){
+      if (result) return result;
+      // OSM tag fetch failed — continue to search fallback
+      return fetchWikiBySearch(name, city, country, area, key);
+    });
+  }
+
+  // ── SOURCE 2 + 3: Wikipedia search then DuckDuckGo ───────────────────────
+  return fetchWikiBySearch(name, city, country, area, key);
+}
+
+// Wikipedia search with full location context
+function fetchWikiBySearch(name, city, country, area, cacheKey) {
+  var stripped = name.replace(/^(The |St\.?\s|Saint )/i, '');
   var queries = [
-    city ? name + ' ' + city : null,
+    city && country ? name + ', ' + city + ', ' + country : null,
+    area && city    ? name + ', ' + area + ', ' + city     : null,
+    city            ? name + ', ' + city                   : null,
+    country         ? name + ', ' + country                : null,
     name,
-    name.replace(/^(The |St\.?\s|Saint )/i, '')
+    stripped !== name ? stripped : null
   ].filter(Boolean).filter(function(q,i,a){ return a.indexOf(q)===i; });
 
   var qi = 0;
-  function tryNext() {
-    if (qi >= queries.length) { _wikiCache[key] = null; return Promise.resolve(null); }
+  function tryWiki() {
+    if (qi >= queries.length) {
+      // ── SOURCE 3: DuckDuckGo Instant Answers (Britannica, Fandom, etc.) ──
+      return fetchDDG(name, city, country, cacheKey);
+    }
     var q = queries[qi++];
     return fetch(
       'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
       encodeURIComponent(q) + '&srlimit=3&format=json&origin=*'
     )
     .then(function(r){ return r.json(); })
-    .then(function(data) {
+    .then(function(data){
       var results = data && data.query && data.query.search;
-      if (!results || results.length === 0) return tryNext();
-
-      // Pick the best match — prefer titles that contain the landmark name
+      if (!results || results.length === 0) return tryWiki();
       var nameLower = name.toLowerCase();
       var best = results.find(function(r){
         return r.title.toLowerCase().indexOf(nameLower) !== -1;
       }) || results[0];
-
       return fetch(
         'https://en.wikipedia.org/w/api.php?action=query&titles=' +
         encodeURIComponent(best.title) +
         '&prop=extracts&exintro=true&explaintext=true&exsectionformat=plain&format=json&origin=*'
       )
       .then(function(r){ return r.json(); })
-      .then(function(d) {
+      .then(function(d){
         var pages = d && d.query && d.query.pages;
-        if (!pages) return tryNext();
+        if (!pages) return tryWiki();
         var page = Object.values(pages)[0];
-        // Require at least 300 chars — rules out stubs and disambiguation pages
-        if (!page || !page.extract || page.extract.length < 300) return tryNext();
-        var extract = page.extract.slice(0, 1500).trim();
+        if (!page || !page.extract || page.extract.length < 300) return tryWiki();
         var result = {
           title: page.title,
-          extract: extract,
-          url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(page.title.replace(/ /g,'_'))
+          extract: page.extract.slice(0, 1500).trim(),
+          source: 'Wikipedia'
         };
-        _wikiCache[key] = result;
+        if (cacheKey) _wikiCache[cacheKey] = result;
         return result;
       });
     })
-    .catch(function(){ return tryNext(); });
+    .catch(function(){ return tryWiki(); });
   }
-  return tryNext();
+  return tryWiki();
 }
+
+// DuckDuckGo Instant Answers API — sources include Britannica, Fandom,
+// government sites, and others beyond Wikipedia.
+// Free, no key, CORS-enabled.
+function fetchDDG(name, city, country, cacheKey) {
+  var q = name + (city ? ' ' + city : '') + (country ? ' ' + country : '');
+  return fetch(
+    'https://api.duckduckgo.com/?q=' + encodeURIComponent(q) +
+    '&format=json&no_html=1&skip_disambig=1&no_redirect=1'
+  )
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    var abstract = data && data.Abstract;
+    // DDG returns empty abstract for disambiguation or unknown topics
+    if (!abstract || abstract.length < 150) {
+      if (cacheKey) _wikiCache[cacheKey] = null;
+      return null;
+    }
+    var result = {
+      title: data.Heading || name,
+      extract: abstract.slice(0, 1500),
+      source: data.AbstractSource || 'DuckDuckGo'
+    };
+    if (cacheKey) _wikiCache[cacheKey] = result;
+    return result;
+  })
+  .catch(function(){
+    if (cacheKey) _wikiCache[cacheKey] = null;
+    return null;
+  });
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 // STORY GENERATION
@@ -1328,7 +1453,7 @@ function getStory(p) {
   // ── All other landmarks: Wikipedia first, AI enhances, fallback always shows ─
   var extractPromise = p.wikiExtract
     ? Promise.resolve(p.wikiExtract)
-    : fetchWikiExtract(p.title, currentCityName).then(function(w){ return w ? w.extract : null; });
+    : fetchWikiExtract(p.title, currentCityName, currentCountry, currentAreaName, p.osmWiki, p.osmWikidata).then(function(w){ return w ? w.extract : null; });
 
   return extractPromise.then(function(extract) {
     if (extract) {
@@ -1339,7 +1464,7 @@ function getStory(p) {
         'write a spoken-word story about ' + p.title + ' in ' + place + ' for someone standing in front of it. ' +
         typeHint + ' Include specific dates, names, or numbers. ' +
         'No cliches. Second-person present tense. 4-5 sentences, about 100 words. Story only. ' +
-        'WIKIPEDIA SOURCE: ' + extract
+        'SOURCE (' + (p.sourceLabel||'Wikipedia') + '): ' + extract
       ).catch(function(){
         // AI failed — use the Wikipedia extract directly, trimmed to 3 sentences
         return trimToStory(extract, 3);
