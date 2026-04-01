@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.1.1</div>
+  <div id="splash-version">v2.1.2</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -483,7 +483,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.1.1
+// STORYROUTE v2.1.2
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1170,93 +1170,135 @@ function renderAuthPanel(){
   }else{
     body.innerHTML=
       '<div class="auth-title">Sign in / Restore Pro</div>'
-      +'<div class="auth-sub" style="margin-bottom:14px;">'
-        +'Enter your email. We send a <b>6-digit code</b> — type it here inside the app. '
-        +'No need to click a link. Works perfectly in the installed app.'
-      +'</div>'
-      // Step 1 — email
+      // Step 1 — email input + send button
       +'<div id="auth-step1">'
+        +'<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;">'
+          +'Enter your email. We send a link — <b>copy that link</b> from Gmail and paste it below. No browser needed.'
+        +'</div>'
         +'<input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com" autocomplete="email">'
-        +'<button class="auth-btn" id="auth-send-btn" onclick="sendOtp()">Send 6-digit code</button>'
+        +'<button class="auth-btn" id="auth-send-btn" onclick="sendLoginEmail()">Send sign-in link</button>'
         +'<div class="auth-msg" id="auth-msg"></div>'
       +'</div>'
-      // Step 2 — OTP code (hidden until email sent)
+      // Step 2 — paste link (shown after email sent)
       +'<div id="auth-step2" style="display:none">'
-        +'<div style="font-size:13px;color:#555;margin-bottom:10px;">Check your email for a 6-digit code and enter it below:</div>'
-        +'<input class="auth-input" id="auth-otp-input" type="number" placeholder="123456" maxlength="6" style="letter-spacing:4px;font-size:22px;text-align:center;">'
-        +'<button class="auth-btn" id="auth-verify-btn" onclick="verifyOtp()">Verify & sign in</button>'
+        +'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:#0369a1;line-height:1.6;">'
+          +'<b>📧 Check your email</b><br>'
+          +'1. Open the email from StoryRoute in Gmail<br>'
+          +'2. <b>Long-press</b> the sign-in button / link → <b>Copy link</b><br>'
+          +'3. Paste the copied link in the box below'
+        +'</div>'
+        +'<textarea id="auth-link-input" style="width:100%;height:80px;padding:10px;border:1.5px solid #d1d5db;border-radius:10px;font-size:12px;resize:none;outline:none;color:#374151;" placeholder="Paste the link from your email here…"></textarea>'
+        +'<button class="auth-btn" id="auth-verify-btn" onclick="verifyPastedLink()" style="margin-top:8px;">Sign in with pasted link</button>'
         +'<div class="auth-msg" id="auth-otp-msg"></div>'
         +'<button onclick="renderAuthPanel()" style="width:100%;padding:8px;background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;margin-top:4px;">← Use a different email</button>'
       +'</div>'
       +'<div class="auth-divider"></div>'
-      // Restore Pro shortcut — just email lookup, no code needed for free restore
-      +'<div style="font-size:12px;color:#888;text-align:center;margin-top:4px;">'
-        +'Switched device? Sign in with your email to restore Pro across all your devices.'
+      +'<div style="font-size:12px;color:#aaa;text-align:center;">'
+        +'Signing in syncs your Pro status across all your devices.'
       +'</div>';
   }
 }
 
-// _otpEmail stores the email between sendOtp and verifyOtp steps
 var _otpEmail = '';
 
-function sendOtp(){
+function sendLoginEmail(){
   var email=document.getElementById('auth-email-input')?document.getElementById('auth-email-input').value.trim():'';
   var btn=document.getElementById('auth-send-btn'),msg=document.getElementById('auth-msg');
   if(!email||!email.includes('@')){msg.style.color='#ef4444';msg.textContent=T('enterEmail');return;}
   if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready — try again in a moment';return;}
   btn.disabled=true;btn.textContent=T('sending');
   _otpEmail=email;
-  // signInWithOtp sends a 6-digit code to the email (also sends the magic link,
-  // but we tell the user to use the code — works in any context including PWA)
   supabaseClient.auth.signInWithOtp({
     email:email,
-    options:{
-      emailRedirectTo:location.origin,
-      shouldCreateUser:true
-    }
+    options:{emailRedirectTo:location.origin,shouldCreateUser:true}
   }).then(function(r){
     if(r.error){
       msg.style.color='#ef4444';msg.textContent=r.error.message;
-      btn.disabled=false;btn.textContent='Send 6-digit code';
+      btn.disabled=false;btn.textContent='Send sign-in link';
     }else{
-      // Show OTP step
       document.getElementById('auth-step1').style.display='none';
       document.getElementById('auth-step2').style.display='block';
-      document.getElementById('auth-otp-input').focus();
+      document.getElementById('auth-link-input').focus();
     }
   }).catch(function(e){
     msg.style.color='#ef4444';msg.textContent=e.message||'Error';
-    btn.disabled=false;btn.textContent='Send 6-digit code';
+    btn.disabled=false;btn.textContent='Send sign-in link';
   });
 }
 
-function verifyOtp(){
-  var code=document.getElementById('auth-otp-input')?document.getElementById('auth-otp-input').value.trim():'';
+// Extract the session from a pasted magic link URL and sign in — works entirely
+// inside the PWA with no browser redirect
+function verifyPastedLink(){
+  var raw=document.getElementById('auth-link-input')?document.getElementById('auth-link-input').value.trim():'';
   var btn=document.getElementById('auth-verify-btn'),msg=document.getElementById('auth-otp-msg');
-  if(!code||code.length<6){msg.style.color='#ef4444';msg.textContent='Enter the 6-digit code from your email';return;}
+  if(!raw||raw.length<20){msg.style.color='#ef4444';msg.textContent='Please paste the link from your email';return;}
   if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready';return;}
-  btn.disabled=true;btn.textContent='Verifying…';
-  supabaseClient.auth.verifyOtp({
-    email:_otpEmail,
-    token:code,
-    type:'email'
-  }).then(function(r){
-    if(r.error){
-      msg.style.color='#ef4444';msg.textContent=r.error.message||'Invalid code — check your email';
-      btn.disabled=false;btn.textContent='Verify & sign in';
-    }else{
-      // Success — onAuthStateChange fires and handles everything
-      msg.style.color='#22c55e';msg.textContent='✓ Signed in!';
-      setTimeout(function(){closePanel('auth');},800);
-    }
-  }).catch(function(e){
-    msg.style.color='#ef4444';msg.textContent=e.message||'Error';
-    btn.disabled=false;btn.textContent='Verify & sign in';
-  });
+  btn.disabled=true;btn.textContent='Signing in…';
+
+  // Parse token from the URL — Supabase magic links contain either:
+  // A) ?token_hash=...&type=email  (PKCE / newer format)
+  // B) #access_token=...&refresh_token=...  (implicit format)
+  // C) ?code=...  (PKCE code exchange format)
+  var url;
+  try{url=new URL(raw);}catch(e){
+    msg.style.color='#ef4444';msg.textContent='That does not look like a valid link. Please paste the full URL from the email.';
+    btn.disabled=false;btn.textContent='Sign in with pasted link';
+    return;
+  }
+
+  // Try PKCE token_hash (most common in newer Supabase)
+  var tokenHash=url.searchParams.get('token_hash');
+  var type=url.searchParams.get('type')||'email';
+  if(tokenHash){
+    supabaseClient.auth.verifyOtp({token_hash:tokenHash,type:type})
+      .then(function(r){handleVerifyResult(r,btn,msg);})
+      .catch(function(e){handleVerifyError(e,btn,msg);});
+    return;
+  }
+
+  // Try PKCE code
+  var code=url.searchParams.get('code');
+  if(code){
+    supabaseClient.auth.exchangeCodeForSession(code)
+      .then(function(r){handleVerifyResult(r,btn,msg);})
+      .catch(function(e){handleVerifyError(e,btn,msg);});
+    return;
+  }
+
+  // Try implicit flow hash params
+  var hash=url.hash.slice(1);
+  var params=new URLSearchParams(hash);
+  var access=params.get('access_token');
+  var refresh=params.get('refresh_token');
+  if(access&&refresh){
+    supabaseClient.auth.setSession({access_token:access,refresh_token:refresh})
+      .then(function(r){handleVerifyResult(r,btn,msg);})
+      .catch(function(e){handleVerifyError(e,btn,msg);});
+    return;
+  }
+
+  msg.style.color='#ef4444';
+  msg.textContent='Could not find a sign-in token in that link. Make sure you copied the full URL.';
+  btn.disabled=false;btn.textContent='Sign in with pasted link';
 }
 
-// Keep sendMagicLink as alias for backward compatibility
-function sendMagicLink(){ sendOtp(); }
+function handleVerifyResult(r,btn,msg){
+  if(r.error){
+    msg.style.color='#ef4444';
+    msg.textContent=r.error.message||'Link expired or invalid — send a new one';
+    btn.disabled=false;btn.textContent='Sign in with pasted link';
+  }else{
+    msg.style.color='#22c55e';msg.textContent='✓ Signed in!';
+    setTimeout(function(){closePanel('auth');},800);
+  }
+}
+function handleVerifyError(e,btn,msg){
+  msg.style.color='#ef4444';msg.textContent=e.message||'Error — try sending a new link';
+  btn.disabled=false;btn.textContent='Sign in with pasted link';
+}
+
+function sendMagicLink(){ sendLoginEmail(); }
+function sendOtp(){ sendLoginEmail(); }
 
 function signOut(){
   if(supabaseClient)supabaseClient.auth.signOut();
