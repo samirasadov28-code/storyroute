@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.1.0</div>
+  <div id="splash-version">v2.1.1</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -483,7 +483,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.1.0
+// STORYROUTE v2.1.1
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1077,8 +1077,9 @@ function initSupabaseEarly(){
       auth:{
         persistSession:true,
         autoRefreshToken:true,
-        detectSessionInUrl:true,  // picks up #access_token from magic link
-        storageKey:'sr_sb_session'
+        detectSessionInUrl:true,
+        storageKey:'sr_sb_session',
+        flowType:'pkce'  // enables OTP code verification in-app
       }
     });
     // Auth state listener — fires on sign-in, sign-out, token refresh
@@ -1126,7 +1127,7 @@ function initSupabase(){
 function loadProStatus(){
   if(!supabaseClient||!currentUser)return;
   supabaseClient.from('profiles').select('is_pro').eq('id',currentUser.id).single()
-    .then(function(r){userIsPro=r.data?r.data.is_pro:false;if(userIsPro)localStorage.setItem('sr_pro','true');updateMenuUser();})
+    .then(function(r){userIsPro=r.data?r.data.is_pro:false;if(userIsPro){localStorage.setItem('sr_pro','true');showToast('⭐ Pro restored!');}updateMenuUser();})
     .catch(function(){userIsPro=localStorage.getItem('sr_pro')==='true';});
 }
 function updateMenuUser(){
@@ -1156,27 +1157,111 @@ function renderAuthPanel(){
   try{cachedUser=JSON.parse(localStorage.getItem('sr_user')||'null');}catch(e){}
   var user=currentUser||(cachedUser?{email:cachedUser.email}:null);
   if(user){
-    body.innerHTML='<div class="auth-pro-badge"><div class="pro-icon">'+(userIsPro?'⭐':'👤')+'</div><div class="pro-text">'+user.email+'</div><div class="pro-sub">'+(userIsPro?'Pro member — unlimited stories':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
-      +(userIsPro?'':'<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button><button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
-      +'<div class="auth-divider"></div><button class="auth-logout" onclick="signOut()">Sign out</button>';
+    body.innerHTML=
+      '<div class="auth-pro-badge">'
+        +'<div class="pro-icon">'+(userIsPro?'⭐':'👤')+'</div>'
+        +'<div class="pro-text">'+user.email+'</div>'
+        +'<div class="pro-sub">'+(userIsPro?'Pro — unlimited stories everywhere':'Free plan — '+FREE_LIMIT+' stories/day')+'</div>'
+      +'</div>'
+      +(userIsPro?'':'<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button>'
+        +'<button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
+      +'<div class="auth-divider"></div>'
+      +'<button class="auth-logout" onclick="signOut()">Sign out</button>';
   }else{
-    body.innerHTML='<div class="auth-title">Sign in for persistent Pro</div><div class="auth-sub">Enter your email — we\'ll send a magic link, no password needed.</div><input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com"><button class="auth-btn" id="auth-send-btn" onclick="sendMagicLink()">Send magic link</button><div class="auth-msg" id="auth-msg"></div><div class="auth-divider"></div><div style="font-size:12px;color:#bbb;text-align:center;">Already paid? Sign in with the email you used at checkout.</div>';
+    body.innerHTML=
+      '<div class="auth-title">Sign in / Restore Pro</div>'
+      +'<div class="auth-sub" style="margin-bottom:14px;">'
+        +'Enter your email. We send a <b>6-digit code</b> — type it here inside the app. '
+        +'No need to click a link. Works perfectly in the installed app.'
+      +'</div>'
+      // Step 1 — email
+      +'<div id="auth-step1">'
+        +'<input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com" autocomplete="email">'
+        +'<button class="auth-btn" id="auth-send-btn" onclick="sendOtp()">Send 6-digit code</button>'
+        +'<div class="auth-msg" id="auth-msg"></div>'
+      +'</div>'
+      // Step 2 — OTP code (hidden until email sent)
+      +'<div id="auth-step2" style="display:none">'
+        +'<div style="font-size:13px;color:#555;margin-bottom:10px;">Check your email for a 6-digit code and enter it below:</div>'
+        +'<input class="auth-input" id="auth-otp-input" type="number" placeholder="123456" maxlength="6" style="letter-spacing:4px;font-size:22px;text-align:center;">'
+        +'<button class="auth-btn" id="auth-verify-btn" onclick="verifyOtp()">Verify & sign in</button>'
+        +'<div class="auth-msg" id="auth-otp-msg"></div>'
+        +'<button onclick="renderAuthPanel()" style="width:100%;padding:8px;background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;margin-top:4px;">← Use a different email</button>'
+      +'</div>'
+      +'<div class="auth-divider"></div>'
+      // Restore Pro shortcut — just email lookup, no code needed for free restore
+      +'<div style="font-size:12px;color:#888;text-align:center;margin-top:4px;">'
+        +'Switched device? Sign in with your email to restore Pro across all your devices.'
+      +'</div>';
   }
 }
-function sendMagicLink(){
+
+// _otpEmail stores the email between sendOtp and verifyOtp steps
+var _otpEmail = '';
+
+function sendOtp(){
   var email=document.getElementById('auth-email-input')?document.getElementById('auth-email-input').value.trim():'';
   var btn=document.getElementById('auth-send-btn'),msg=document.getElementById('auth-msg');
   if(!email||!email.includes('@')){msg.style.color='#ef4444';msg.textContent=T('enterEmail');return;}
-  if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not configured';return;}
+  if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready — try again in a moment';return;}
   btn.disabled=true;btn.textContent=T('sending');
-  supabaseClient.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin}}).then(function(r){
-    if(r.error){msg.style.color='#ef4444';msg.textContent=r.error.message;btn.disabled=false;btn.textContent=T('sendMagicLink');}
-    else{msg.style.color='#22c55e';msg.textContent=T('magicSent');btn.textContent=T('magicSent').split('!')[0]+' ✓';}
-  }).catch(function(e){msg.style.color='#ef4444';msg.textContent=e.message||'Error';btn.disabled=false;btn.textContent=T('sendMagicLink');});
+  _otpEmail=email;
+  // signInWithOtp sends a 6-digit code to the email (also sends the magic link,
+  // but we tell the user to use the code — works in any context including PWA)
+  supabaseClient.auth.signInWithOtp({
+    email:email,
+    options:{
+      emailRedirectTo:location.origin,
+      shouldCreateUser:true
+    }
+  }).then(function(r){
+    if(r.error){
+      msg.style.color='#ef4444';msg.textContent=r.error.message;
+      btn.disabled=false;btn.textContent='Send 6-digit code';
+    }else{
+      // Show OTP step
+      document.getElementById('auth-step1').style.display='none';
+      document.getElementById('auth-step2').style.display='block';
+      document.getElementById('auth-otp-input').focus();
+    }
+  }).catch(function(e){
+    msg.style.color='#ef4444';msg.textContent=e.message||'Error';
+    btn.disabled=false;btn.textContent='Send 6-digit code';
+  });
 }
+
+function verifyOtp(){
+  var code=document.getElementById('auth-otp-input')?document.getElementById('auth-otp-input').value.trim():'';
+  var btn=document.getElementById('auth-verify-btn'),msg=document.getElementById('auth-otp-msg');
+  if(!code||code.length<6){msg.style.color='#ef4444';msg.textContent='Enter the 6-digit code from your email';return;}
+  if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready';return;}
+  btn.disabled=true;btn.textContent='Verifying…';
+  supabaseClient.auth.verifyOtp({
+    email:_otpEmail,
+    token:code,
+    type:'email'
+  }).then(function(r){
+    if(r.error){
+      msg.style.color='#ef4444';msg.textContent=r.error.message||'Invalid code — check your email';
+      btn.disabled=false;btn.textContent='Verify & sign in';
+    }else{
+      // Success — onAuthStateChange fires and handles everything
+      msg.style.color='#22c55e';msg.textContent='✓ Signed in!';
+      setTimeout(function(){closePanel('auth');},800);
+    }
+  }).catch(function(e){
+    msg.style.color='#ef4444';msg.textContent=e.message||'Error';
+    btn.disabled=false;btn.textContent='Verify & sign in';
+  });
+}
+
+// Keep sendMagicLink as alias for backward compatibility
+function sendMagicLink(){ sendOtp(); }
+
 function signOut(){
   if(supabaseClient)supabaseClient.auth.signOut();
-  currentUser=null;userIsPro=false;localStorage.removeItem('sr_pro');
+  currentUser=null;userIsPro=false;
+  localStorage.removeItem('sr_pro');localStorage.removeItem('sr_user');
   updateMenuUser();renderAuthPanel();showToast(T('signOut'));
 }
 
