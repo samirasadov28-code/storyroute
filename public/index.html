@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.0.2</div>
+  <div id="splash-version">v2.0.3</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -469,10 +469,10 @@ textarea.fb-input{height:120px;resize:none;}
 <!-- Leaflet first (sync, needed before map init) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <!-- FIX: Supabase async so it doesn't block JS parsing; initSupabase() retries if not ready -->
-<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.0.2
+// STORYROUTE v2.0.3
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -586,7 +586,7 @@ function openMap(){
   else if(consent==='accepted')gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
   if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('✅ Pro unlocked!');},800);}
   if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('🎉 Welcome to Pro!');},800);}
-  if(location.hash.includes('access_token')){showToast('✅ Signed in!');history.replaceState({},'',location.pathname);}
+  // Magic link hash is processed and cleared inside initSupabaseEarly → onAuthStateChange
   // One-time wipe of story cache from pre-Wikipedia era
   if(!localStorage.getItem('sr_wiki_era')){
     Object.keys(localStorage).forEach(function(k){
@@ -599,21 +599,59 @@ function openMap(){
 }
 
 // ── SUPABASE ───────────────────────────────────────────────────
-function initSupabase(){
-  if(typeof supabase==='undefined'){setTimeout(initSupabase,500);return;}
+// Called immediately when the Supabase CDN script loads (onload on the script tag).
+// This runs BEFORE the user taps "Open Map" so magic link tokens are captured.
+function initSupabaseEarly(){
   try{
-    supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
+      auth:{
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:true,  // picks up #access_token from magic link
+        storageKey:'sr_sb_session'
+      }
+    });
+    // Auth state listener — fires on sign-in, sign-out, token refresh
     supabaseClient.auth.onAuthStateChange(function(event,session){
       currentUser=session?session.user:null;
-      if(currentUser)loadProStatus();else userIsPro=localStorage.getItem('sr_pro')==='true';
+      if(currentUser){
+        // Cache user info locally for instant display on next visit
+        try{localStorage.setItem('sr_user',JSON.stringify({email:currentUser.email,id:currentUser.id}));}catch(e){}
+        loadProStatus();
+        // Only clear the hash AFTER Supabase has processed the token
+        if(location.hash.includes('access_token')){
+          showToast('✅ Signed in as '+currentUser.email);
+          history.replaceState({},'',location.pathname);
+        }
+      }else{
+        // Signed out — clear the cache
+        try{localStorage.removeItem('sr_user');}catch(e){}
+        userIsPro=localStorage.getItem('sr_pro')==='true';
+      }
       updateMenuUser();
     });
+    // Restore existing session immediately
     supabaseClient.auth.getSession().then(function(r){
       currentUser=r.data&&r.data.session?r.data.session.user:null;
-      if(currentUser)loadProStatus();else userIsPro=localStorage.getItem('sr_pro')==='true';
+      if(currentUser){
+        try{localStorage.setItem('sr_user',JSON.stringify({email:currentUser.email,id:currentUser.id}));}catch(e){}
+        loadProStatus();
+      }else{
+        userIsPro=localStorage.getItem('sr_pro')==='true';
+      }
       updateMenuUser();
     });
   }catch(e){userIsPro=localStorage.getItem('sr_pro')==='true';}
+}
+// Called inside openMap() — by this point Supabase is already running,
+// just ensures the UI reflects the current auth state
+function initSupabase(){
+  if(!supabaseClient){
+    // Script hasn't loaded yet — retry
+    setTimeout(initSupabase,300);
+    return;
+  }
+  updateMenuUser();
 }
 function loadProStatus(){
   if(!supabaseClient||!currentUser)return;
@@ -622,14 +660,33 @@ function loadProStatus(){
     .catch(function(){userIsPro=localStorage.getItem('sr_pro')==='true';});
 }
 function updateMenuUser(){
-  var e=document.getElementById('menu-user-email'),s=document.getElementById('menu-user-status'),a=document.getElementById('account-label');
-  if(currentUser){e.textContent=currentUser.email;s.textContent=userIsPro?'⭐ Pro member':'Free plan';if(a)a.textContent=userIsPro?'Pro ⭐':'';}
-  else{e.textContent='Not signed in';s.textContent=userIsPro?'⭐ Pro (local)':'Free plan';if(a)a.textContent='';}
+  var emailEl=document.getElementById('menu-user-email');
+  var statusEl=document.getElementById('menu-user-status');
+  var al=document.getElementById('account-label');
+  if(!emailEl)return; // DOM not ready yet
+  // Use live currentUser, or fall back to cached info from localStorage
+  var email='', isPro=userIsPro||localStorage.getItem('sr_pro')==='true';
+  var cachedUser=null;
+  try{cachedUser=JSON.parse(localStorage.getItem('sr_user')||'null');}catch(e){}
+  var user=currentUser||(cachedUser?{email:cachedUser.email}:null);
+  if(user){
+    emailEl.textContent=user.email;
+    statusEl.textContent=isPro?'⭐ Pro member':'Free plan';
+    if(al)al.textContent=isPro?'Pro ⭐':'';
+  }else{
+    emailEl.textContent='Not signed in';
+    statusEl.textContent=isPro?'⭐ Pro (local)':'Free plan';
+    if(al)al.textContent='';
+  }
 }
+
 function renderAuthPanel(){
   var body=document.getElementById('auth-body');
-  if(currentUser){
-    body.innerHTML='<div class="auth-pro-badge"><div class="pro-icon">'+(userIsPro?'⭐':'👤')+'</div><div class="pro-text">'+currentUser.email+'</div><div class="pro-sub">'+(userIsPro?'Pro member — unlimited stories':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
+  var cachedUser=null;
+  try{cachedUser=JSON.parse(localStorage.getItem('sr_user')||'null');}catch(e){}
+  var user=currentUser||(cachedUser?{email:cachedUser.email}:null);
+  if(user){
+    body.innerHTML='<div class="auth-pro-badge"><div class="pro-icon">'+(userIsPro?'⭐':'👤')+'</div><div class="pro-text">'+user.email+'</div><div class="pro-sub">'+(userIsPro?'Pro member — unlimited stories':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
       +(userIsPro?'':'<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button><button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
       +'<div class="auth-divider"></div><button class="auth-logout" onclick="signOut()">Sign out</button>';
   }else{
