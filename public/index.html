@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v1.9.5</div>
+  <div id="splash-version">v2.0.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -472,7 +472,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v1.9.5
+// STORYROUTE v2.0.0
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1316,86 +1316,124 @@ function getStory(p) {
     ? currentCityName + ', ' + currentCountry
     : currentCityName || currentCountry || 'this location';
 
+  // ── Neighbourhoods: always AI ─────────────────────────────────────────────
   if (p.isNb || p.type === 'area') {
     return callAI(
       'You are an expert audio tour guide. Write a vivid 5-sentence spoken story about the neighbourhood of ' + p.title + ' in ' + place + '. ' +
       'Cover its historical origins, what shaped it over the centuries, one notable event or resident, its street character, and what makes it distinct today. ' +
       'Include real dates and names. About 120 words. Story only.'
-    );
+    ).catch(function(){ return wikiOrFallback(p, place, null); });
   }
 
+  // ── All other landmarks: Wikipedia first, AI enhances, fallback always shows ─
   var extractPromise = p.wikiExtract
     ? Promise.resolve(p.wikiExtract)
     : fetchWikiExtract(p.title, currentCityName).then(function(w){ return w ? w.extract : null; });
 
   return extractPromise.then(function(extract) {
-    var typeHint = '';
-    switch(p.type){
-      case 'church': case 'abbey':       typeHint='Focus on founding date, one architectural highlight, and one dramatic event.'; break;
-      case 'pub':    case 'bar':         typeHint='Focus on its age or origin, one famous patron or story, and what makes it a local landmark.'; break;
-      case 'castle': case 'fort':        typeHint='Focus on who built it, one key battle or siege, and its condition today.'; break;
-      case 'museum': case 'gallery':     typeHint='Focus on its founding, its most remarkable exhibit, and why it matters.'; break;
-      case 'bridge':                     typeHint='Focus on when and why it was built and one engineering or historical detail.'; break;
-      case 'monument': case 'memorial':  typeHint='Focus on what it commemorates, who created it, and one striking detail.'; break;
-      case 'park':   case 'garden':      typeHint='Focus on its origins, one memorable event here, and its character today.'; break;
-      case 'railway':                    typeHint='Focus on when it opened, one memorable moment in its history, its architecture.'; break;
-      case 'harbour': case 'canal':      typeHint='Focus on what trade it served, its busiest era, and how it looks today.'; break;
-      case 'tower':  case 'lighthouse':  typeHint='Focus on its original purpose, one dramatic event, and what it symbolises.'; break;
-      default:                           typeHint='Focus on the most surprising historical fact and one vivid sensory detail.'; break;
-    }
-
-    if(extract){
+    if (extract) {
+      // We have Wikipedia — try to enhance with AI, fall back to raw extract if AI fails
+      var typeHint = getTypeHint(p.type);
       return callAI(
         'You are an expert audio tour guide. Using ONLY the facts in the Wikipedia source below, ' +
         'write a spoken-word story about ' + p.title + ' in ' + place + ' for someone standing in front of it. ' +
-        typeHint + ' Include at least two specific dates, names, or numbers. ' +
+        typeHint + ' Include specific dates, names, or numbers. ' +
         'No cliches. Second-person present tense. 4-5 sentences, about 100 words. Story only. ' +
         'WIKIPEDIA SOURCE: ' + extract
-      );
+      ).catch(function(){
+        // AI failed — use the Wikipedia extract directly, trimmed to 3 sentences
+        return trimToStory(extract, 3);
+      });
     }
 
-    // No Wikipedia — use AI knowledge from training data (travel guides, local history, news, books)
+    // No Wikipedia — try AI knowledge, fall back to a minimal factual message
     return callAI(
-      'You are an expert audio tour guide with extensive knowledge from travel guides, local history books, and encyclopaedias. ' +
-      'Do you have specific factual knowledge about ' + p.title + ' in ' + place + '? ' +
-      'If yes: write a vivid spoken-word story about it for someone standing there now. ' +
-      typeHint + ' Include at least one specific date, name, or number. ' +
-      'No cliches. Second-person present tense. 4-5 sentences, about 100 words. Story only. ' +
-      'If you have NO specific knowledge of this exact place, respond with only the single word: UNKNOWN'
-    ).then(function(txt){
-      if(!txt||txt.trim().toUpperCase().startsWith('UNKNOWN')||txt.trim().length<30) return null;
+      'You are an expert audio tour guide with knowledge from travel guides, local history books, and encyclopaedias. ' +
+      'Write a vivid spoken-word story about ' + p.title + ' (' + p.type + ') in ' + place + ' for someone standing there now. ' +
+      getTypeHint(p.type) + ' ' +
+      'Include at least one specific date or name. No cliches. Second-person present tense. 4-5 sentences, about 100 words. ' +
+      'If you have absolutely no knowledge of this specific place, reply only: UNKNOWN'
+    ).then(function(txt) {
+      if (!txt || txt.trim().toUpperCase().startsWith('UNKNOWN') || txt.trim().length < 30)
+        return wikiOrFallback(p, place, null);
       return txt;
+    }).catch(function(){
+      return wikiOrFallback(p, place, null);
     });
   });
 }
 
-// Retry with backoff. A null return means no Wikipedia article — remove the
-// landmark from the map rather than showing a fabricated or filler story.
+// Returns the Wikipedia extract trimmed to N sentences, or a minimal fallback message.
+// NEVER returns null — the app always has something to say.
+function wikiOrFallback(p, place, extract) {
+  if (extract) return trimToStory(extract, 3);
+  // Minimal fallback using OSM data we already have — honest, never filler
+  var typeLabel = {
+    church:'church',abbey:'abbey',castle:'castle',pub:'pub',bar:'pub',
+    museum:'museum',gallery:'gallery',park:'park',bridge:'bridge',
+    monument:'monument',memorial:'memorial',tower:'tower',lighthouse:'lighthouse',
+    railway:'railway station',harbour:'harbour',canal:'canal',
+    school:'school',library:'library',market:'market'
+  }[p.type] || p.type;
+  return 'You are standing at ' + p.title + ', a ' + typeLabel + ' in ' + place + '. ' +
+    'Story details are loading — try tapping again in a moment.';
+}
+
+// Trim a Wikipedia extract to at most N sentences, targeting ~100 words
+function trimToStory(extract, maxSentences) {
+  var sentences = extract.replace(/[\r\n]+/g,' ').match(/[^.!?]{10,}[.!?]+/g) || [];
+  var out = '', words = 0;
+  for (var i = 0; i < Math.min(sentences.length, maxSentences || 3); i++) {
+    var s = sentences[i].trim();
+    out += (out ? ' ' : '') + s;
+    words += s.split(/\s+/).length;
+    if (words >= 80) break;
+  }
+  return out || extract.slice(0, 400);
+}
+
+function getTypeHint(type) {
+  switch(type){
+    case 'church': case 'abbey':       return 'Focus on founding date, one architectural highlight, and one dramatic historical event.';
+    case 'pub':    case 'bar':         return 'Focus on its age or origin, one famous patron or story, and what makes it a local landmark.';
+    case 'castle': case 'fort':        return 'Focus on who built it, one key battle or siege, and its condition today.';
+    case 'museum': case 'gallery':     return 'Focus on its founding, its most remarkable exhibit, and why it matters.';
+    case 'bridge':                     return 'Focus on when and why it was built and one engineering or historical detail.';
+    case 'monument': case 'memorial':  return 'Focus on what it commemorates, who created it, and one striking detail.';
+    case 'park':   case 'garden':      return 'Focus on its origins, one memorable event here, and its character today.';
+    case 'railway':                    return 'Focus on when it opened, one memorable moment, and its architecture.';
+    case 'harbour': case 'canal':      return 'Focus on what trade it served, its busiest era, and how it looks today.';
+    case 'tower':  case 'lighthouse':  return 'Focus on its original purpose, one dramatic event, and what it symbolises.';
+    default:                           return 'Focus on the most surprising historical fact and one vivid sensory detail.';
+  }
+}
+
+// Retry with backoff. NEVER returns null due to API failure.
 function getStoryWithRetry(p, attempt) {
   attempt = attempt || 0;
   return getStory(p).then(function(txt) {
-    // null = no Wikipedia article found
-    if (txt === null) return null;
-    if (!txt || txt.trim().length < 20) throw new Error('Too short');
+    if (!txt || txt.trim().length < 10) throw new Error('Too short');
     return txt;
   }).catch(function(err) {
     var msg = err && err.message;
-    if(msg === 'api_banned'){
-      // API key banned or invalid — no point retrying, hide landmark
-      console.error('Groq API key issue — check your GROQ_API_KEY env var');
-      return null;
+    if (msg === 'api_banned') {
+      console.error('Groq API key issue — check GROQ_API_KEY in Netlify env vars');
+      // Use Wikipedia extract directly if we have it, otherwise fallback message
+      var place = currentCityName && currentCountry ? currentCityName+', '+currentCountry : currentCityName||'this area';
+      return p.wikiExtract ? trimToStory(p.wikiExtract, 3) : wikiOrFallback(p, place, null);
     }
     console.warn('Story attempt '+(attempt+1)+' failed for "'+p.title+'":', msg);
-    if(attempt < 2){
-      // Short backoff: 3s, 6s — don't punish the user with 15+ second waits
-      var delay = attempt===0 ? 3000 : 6000;
+    if (attempt < 2) {
+      var delay = attempt === 0 ? 3000 : 6000;
       return sleep(delay).then(function(){ return getStoryWithRetry(p, attempt+1); });
     }
-    return null;
+    // All retries exhausted — still show something, never hide the landmark
+    var pl = currentCityName && currentCountry ? currentCityName+', '+currentCountry : currentCityName||'this area';
+    return p.wikiExtract ? trimToStory(p.wikiExtract, 3) : wikiOrFallback(p, pl, null);
   });
 }
 
-// Remove a landmark marker from map and markers registry (called when no story found)
+
 function hideLandmark(id) {
   if (markers[id]) {
     map.removeLayer(markers[id]);
@@ -1452,7 +1490,7 @@ function playLandmark(p){
   var cached=loadStory(p.id);
   if(cached){finishPlay(p,cached);return;}
   getStoryWithRetry(p).then(function(txt){
-    if(txt===null){hideLandmark(p.id);speaking=false;if(tourOn)setTimeout(playNearest,500);return;}
+    // story always present now
     saveStory(p.id,txt);finishPlay(p,txt);
   }).catch(function(){speaking=false;if(tourOn)setTimeout(playNearest,3000);});
 }
@@ -1472,7 +1510,7 @@ function prefetchStory(p){
   var cached=loadStory(p.id);
   if(cached&&!visited.has(p.id)){nxtStory=Object.assign({},p,{text:cached});document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;return;}
   getStoryWithRetry(p).then(function(txt){
-    if(txt===null){hideLandmark(p.id);prefetchId=null;document.getElementById('next-info').textContent='';return;}
+    // story always present now
     if(!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory=Object.assign({},p,{text:txt});document.getElementById('next-info').innerHTML='✅ Next: <b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}
   }).catch(function(){prefetchId=null;document.getElementById('next-info').textContent='';});
 }
@@ -1497,10 +1535,7 @@ function playLandmarkOnDemand(p){
   var cached=loadStory(p.id);
   if(cached){curStory=Object.assign({},p,{text:cached});showStory(p.title,cached,p.type);tts(cached,onDone);return;}
   getStoryWithRetry(p).then(function(txt){
-    if(txt===null){
-      hideLandmark(p.id);document.getElementById('story').style.display='none';
-      speaking=false;showToast('No story found for '+p.title);onDone();return;
-    }
+    // story always present now
     saveStory(p.id,txt);curStory=Object.assign({},p,{text:txt});showStory(p.title,txt,p.type);tts(txt,onDone);
   }).catch(function(){speaking=false;onDone();});
 }
