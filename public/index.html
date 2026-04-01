@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.1.3</div>
+  <div id="splash-version">v2.1.4</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -483,7 +483,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.1.3
+// STORYROUTE v2.1.4
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1079,7 +1079,6 @@ function initSupabaseEarly(){
         autoRefreshToken:true,
         detectSessionInUrl:true,
         storageKey:'sr_sb_session',
-        flowType:'pkce'  // enables OTP code verification in-app
       }
     });
     // Auth state listener — fires on sign-in, sign-out, token refresh
@@ -1201,10 +1200,18 @@ function sendOtp(){
   if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready — try again in a moment';return;}
   btn.disabled=true;btn.textContent=T('sending');
   _otpEmail=email;
+  // Timeout so UI never freezes if Supabase hangs
+  var otpTimer=setTimeout(function(){
+    msg.style.color='#ef4444';
+    msg.textContent='Request timed out — check your connection and try again';
+    btn.disabled=false;btn.textContent='Send code';
+  },12000);
+
   supabaseClient.auth.signInWithOtp({
     email:email,
     options:{emailRedirectTo:location.origin,shouldCreateUser:true}
   }).then(function(r){
+    clearTimeout(otpTimer);
     if(r.error){
       msg.style.color='#ef4444';msg.textContent=r.error.message;
       btn.disabled=false;btn.textContent='Send code';
@@ -1216,7 +1223,8 @@ function sendOtp(){
       document.getElementById('auth-otp-input').focus();
     }
   }).catch(function(e){
-    msg.style.color='#ef4444';msg.textContent=e.message||'Error';
+    clearTimeout(otpTimer);
+    msg.style.color='#ef4444';msg.textContent=e.message||'Network error — try again';
     btn.disabled=false;btn.textContent='Send code';
   });
 }
@@ -1227,11 +1235,18 @@ function verifyOtp(){
   if(!code||code.length<6){msg.style.color='#ef4444';msg.textContent='Enter the 6-digit code from your email';return;}
   if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready';return;}
   btn.disabled=true;btn.textContent='Verifying…';
+  var verifyTimer=setTimeout(function(){
+    msg.style.color='#ef4444';
+    msg.textContent='Request timed out — check your connection and try again';
+    btn.disabled=false;btn.textContent='Verify & sign in';
+  },12000);
+
   supabaseClient.auth.verifyOtp({
     email:_otpEmail,
     token:code,
     type:'email'
   }).then(function(r){
+    clearTimeout(verifyTimer);
     if(r.error){
       msg.style.color='#ef4444';msg.textContent=r.error.message||'Invalid code — check your email';
       btn.disabled=false;btn.textContent='Verify & sign in';
@@ -1240,6 +1255,7 @@ function verifyOtp(){
       setTimeout(function(){closePanel('auth');},800);
     }
   }).catch(function(e){
+    clearTimeout(verifyTimer);
     msg.style.color='#ef4444';msg.textContent=e.message||'Error';
     btn.disabled=false;btn.textContent='Verify & sign in';
   });
