@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.1.5</div>
+  <div id="splash-version">v2.1.6</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -483,7 +483,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.1.5
+// STORYROUTE v2.1.6
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1170,7 +1170,7 @@ function renderAuthPanel(){
     body.innerHTML=
       '<div class="auth-title">Sign in / Restore Pro</div>'
       +'<div id="auth-step1">'
-        +'<div style="font-size:13px;color:#666;line-height:1.6;margin-bottom:12px;">Enter your email — we will send a 6-digit code to enter here in the app.</div>'
+        +'<div style="font-size:13px;color:#666;line-height:1.6;margin-bottom:12px;">Enter your email — we will send an 8-digit code to enter here in the app.</div>'
         +'<input class="auth-input" id="auth-email-input" type="email" placeholder="your@email.com" autocomplete="email">'
         +'<button class="auth-btn" id="auth-send-btn" onclick="sendOtp()">Send code</button>'
         +'<div class="auth-msg" id="auth-msg"></div>'
@@ -1180,8 +1180,8 @@ function renderAuthPanel(){
           +'<div style="font-size:13px;color:#555;margin-bottom:4px;">Code sent to</div>'
           +'<div style="font-size:14px;font-weight:700;color:#1a2240;" id="auth-email-shown"></div>'
         +'</div>'
-        +'<input class="auth-input" id="auth-otp-input" type="tel" inputmode="numeric" placeholder="123456"'
-          +' maxlength="6" style="letter-spacing:6px;font-size:28px;text-align:center;font-weight:700;">'
+        +'<input class="auth-input" id="auth-otp-input" type="tel" inputmode="numeric" placeholder="12345678"'
+          +' maxlength="8" style="letter-spacing:4px;font-size:26px;text-align:center;font-weight:700;">'
         +'<button class="auth-btn" id="auth-verify-btn" onclick="verifyOtp()">Verify &amp; sign in</button>'
         +'<div class="auth-msg" id="auth-otp-msg"></div>'
         +'<button onclick="renderAuthPanel()" style="width:100%;padding:8px;background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;margin-top:4px;">← Different email</button>'
@@ -1232,7 +1232,7 @@ function sendOtp(){
 function verifyOtp(){
   var code=document.getElementById('auth-otp-input')?document.getElementById('auth-otp-input').value.trim():'';
   var btn=document.getElementById('auth-verify-btn'),msg=document.getElementById('auth-otp-msg');
-  if(!code||code.length<6){msg.style.color='#ef4444';msg.textContent='Enter the 6-digit code from your email';return;}
+  if(!code||code.length<6||code.length>8){msg.style.color='#ef4444';msg.textContent='Enter the code from your email (6-8 digits)';return;}
   if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready';return;}
   btn.disabled=true;btn.textContent='Verifying…';
   var verifyTimer=setTimeout(function(){
@@ -1241,6 +1241,8 @@ function verifyOtp(){
     btn.disabled=false;btn.textContent='Verify & sign in';
   },12000);
 
+  // Try 'email' type first, fall back to 'magiclink' type
+  // Supabase sends different token types depending on template config
   supabaseClient.auth.verifyOtp({
     email:_otpEmail,
     token:code,
@@ -1248,9 +1250,20 @@ function verifyOtp(){
   }).then(function(r){
     clearTimeout(verifyTimer);
     if(r.error){
-      msg.style.color='#ef4444';msg.textContent=r.error.message||'Invalid code — check your email';
+      // Try magiclink type as fallback
+      return supabaseClient.auth.verifyOtp({
+        email:_otpEmail,
+        token:code,
+        type:'magiclink'
+      });
+    }
+    return r;
+  }).then(function(r){
+    clearTimeout(verifyTimer);
+    if(r && r.error){
+      msg.style.color='#ef4444';msg.textContent='Invalid code — please check your email and try again';
       btn.disabled=false;btn.textContent='Verify & sign in';
-    } else {
+    } else if(r) {
       msg.style.color='#22c55e';msg.textContent='✓ Signed in!';
       setTimeout(function(){closePanel('auth');},800);
     }
