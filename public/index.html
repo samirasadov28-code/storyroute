@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.1.6</div>
+  <div id="splash-version">v2.1.7</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -306,6 +306,7 @@ textarea.fb-input{height:120px;resize:none;}
     <button class="mi" onclick="openPanel('speed');closeMenu();"><span class="mi-icon">⚡</span>Speed<span class="mi-badge" id="speed-label"></span></button>
     <button class="mi" onclick="toggleRotate();closeMenu();"><span class="mi-icon">🔄</span>Rotate voices<span class="mi-badge" id="rotate-label"></span></button>
     <button class="mi" onclick="openPanel('filter');closeMenu();"><span class="mi-icon">🏷️</span>Landmark types<span class="mi-badge" id="filter-label"></span></button>
+    <button class="mi" onclick="openLangPanel();closeMenu();"><span class="mi-icon">🌐</span>Language<span class="mi-badge" id="lang-menu-label"></span></button>
     <div class="mi-divider"></div>
     <button class="mi" onclick="renderAuthPanel();openPanel('auth');closeMenu();"><span class="mi-icon">👤</span>Account / Pro<span class="mi-badge" id="account-label"></span></button>
     <button class="mi" onclick="openPanel('feedback');closeMenu();"><span class="mi-icon">💬</span>Send feedback</button>
@@ -483,7 +484,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.1.6
+// STORYROUTE v2.1.7
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1367,6 +1368,7 @@ function updateMenuLabels(){
   var sl=document.getElementById('speed-label');if(sl)sl.textContent=sp.label.split(' ')[0]+' '+sp.val+'×';
   var rl=document.getElementById('rotate-label');if(rl)rl.textContent=rotateVoices?'On':'Off';
   var fl=document.getElementById('filter-label');if(fl)fl.textContent=activeTypes.size===ALL_TYPES.length?'All':activeTypes.size+' types';
+  var ll=document.getElementById('lang-menu-label');if(ll)ll.textContent=_lang.label.split(' ')[0]+' '+_lang.label.split(' ').slice(1).join(' ');
 }
 
 // ── UTILS / PAYWALL ────────────────────────────────────────────
@@ -2183,12 +2185,12 @@ function getStoryWithRetry(p, attempt) {
   attempt = attempt || 0;
   return getStory(p).then(function(txt) {
     if (!txt || txt.trim().length < 10) throw new Error('Too short');
-    return txt;
+    // Translate into the selected language before caching/speaking
+    return translateStory(txt, _lang.storyLang);
   }).catch(function(err) {
     var msg = err && err.message;
     if (msg === 'api_banned') {
       console.error('Groq API key issue — check GROQ_API_KEY in Netlify env vars');
-      // Use Wikipedia extract directly if we have it, otherwise fallback message
       var place = currentCityName && currentCountry ? currentCityName+', '+currentCountry : currentCityName||'this area';
       return p.wikiExtract ? trimToStory(p.wikiExtract, 3) : wikiOrFallback(p, place, null);
     }
@@ -2197,12 +2199,24 @@ function getStoryWithRetry(p, attempt) {
       var delay = attempt === 0 ? 3000 : 6000;
       return sleep(delay).then(function(){ return getStoryWithRetry(p, attempt+1); });
     }
-    // All retries exhausted — still show something, never hide the landmark
     var pl = currentCityName && currentCountry ? currentCityName+', '+currentCountry : currentCityName||'this area';
     return p.wikiExtract ? trimToStory(p.wikiExtract, 3) : wikiOrFallback(p, pl, null);
   });
 }
 
+
+// Translate a story from English into the active language using the AI queue.
+// Stories are always generated in English (Wikipedia sources are English),
+// then translated before being spoken. The translated version is what gets
+// cached and read aloud.
+function translateStory(englishText, langLabel){
+  if(_lang.code === 'en') return Promise.resolve(englishText);
+  return callAI(
+    'Translate the following audio tour story into ' + langLabel + '. ' +
+    'Keep the same vivid, spoken-word style. Keep all names, dates and numbers as-is. ' +
+    'Return only the translated text, nothing else.\n\n' + englishText
+  ).catch(function(){ return englishText; }); // fallback to English if translation fails
+}
 
 function hideLandmark(id) {
   if (markers[id]) {
