@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.1.7</div>
+  <div id="splash-version">v2.1.8</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -484,7 +484,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.1.7
+// STORYROUTE v2.1.8
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1757,11 +1757,12 @@ function preloadAndPlace(landmarks, city, country, area, isNew){
     }
 
     // Fetch Wikipedia with full location context (parallel — not rate limited)
-    return fetchWikiExtract(lm.title, city, country, area, lm.osmWiki, lm.osmWikidata)
+    var _tw=({pub:'pub',bar:'pub',church:'church',castle:'castle',bridge:'bridge',museum:'museum',park:'park',abbey:'abbey',tower:'tower',railway:'railway station',harbour:'harbour',monument:'monument'})[lm.type]||'';
+    return fetchWikiExtract(lm.title, city, country, area, lm.osmWiki, lm.osmWikidata, _tw)
       .then(function(wiki){
         if(wiki){lm.wikiOk=true; lm.wikiExtract=wiki.extract; lm.sourceLabel=wiki.source||'Wikipedia';}
-        // Generate story — goes through the serialised AI queue
-        return getStory(lm);
+        // Generate + translate story
+        return getStoryWithRetry(lm);
       })
       .then(function(story){
         if(story&&story.length>15) saveStory(id, story);
@@ -1935,7 +1936,7 @@ function updateProgress(){
 // ═══════════════════════════════════════════════════════════════
 var _wikiCache = {};
 
-function fetchWikiExtract(name, city, country, area, osmWikiTag, osmWikidata) {
+function fetchWikiExtract(name, city, country, area, osmWikiTag, osmWikidata, tw) {
   var key = name + '|' + (city||'') + '|' + (country||'');
   if (_wikiCache[key] !== undefined) return Promise.resolve(_wikiCache[key]);
 
@@ -1968,22 +1969,25 @@ function fetchWikiExtract(name, city, country, area, osmWikiTag, osmWikidata) {
     .then(function(result){
       if (result) return result;
       // OSM tag fetch failed — continue to search fallback
-      return fetchWikiBySearch(name, city, country, area, key);
+      return fetchWikiBySearch(name, city, country, area, key, tw);
     });
   }
 
   // ── SOURCE 2 + 3: Wikipedia search then DuckDuckGo ───────────────────────
-  return fetchWikiBySearch(name, city, country, area, key);
+  return fetchWikiBySearch(name, city, country, area, key, tw);
 }
 
 // Wikipedia search with full location context
-function fetchWikiBySearch(name, city, country, area, cacheKey) {
+function fetchWikiBySearch(name, city, country, area, cacheKey, tw) {
+  tw=tw||'';
   var stripped = name.replace(/^(The |St\.?\s|Saint )/i, '');
   var queries = [
-    city && country ? name + ', ' + city + ', ' + country : null,
-    area && city    ? name + ', ' + area + ', ' + city     : null,
-    city            ? name + ', ' + city                   : null,
-    country         ? name + ', ' + country                : null,
+    tw&&city&&country ? name+' '+tw+' '+city+' '+country : null,
+    city && country ? name + ' ' + city + ' ' + country : null,
+    tw&&city ? name+' '+tw+' '+city : null,
+    area && city    ? name + ' ' + area + ' ' + city     : null,
+    city            ? name + ' ' + city                   : null,
+    country         ? name + ' ' + country                : null,
     name,
     stripped !== name ? stripped : null
   ].filter(Boolean).filter(function(q,i,a){ return a.indexOf(q)===i; });
@@ -2082,14 +2086,14 @@ function getStory(p) {
       'You are a captivating storyteller. Tell a vivid story about the neighbourhood of ' + p.title + ' in ' + place + '. ' +
       'Find the most interesting angle: its origin story, a famous resident, a dramatic past event, what shaped its character. ' +
       'Include real dates and names. Vivid language, no cliches, around 120 words. Spoken story only. ' +
-      'Narrate in ' + _lang.storyLang + '.'
+      'Spoken story only.'
     ).catch(function(){ return wikiOrFallback(p, place, null); });
   }
 
   // ── All other landmarks: Wikipedia first, AI enhances, fallback always shows ─
   var extractPromise = p.wikiExtract
     ? Promise.resolve(p.wikiExtract)
-    : fetchWikiExtract(p.title, currentCityName, currentCountry, currentAreaName, p.osmWiki, p.osmWikidata).then(function(w){ return w ? w.extract : null; });
+    : fetchWikiExtract(p.title, currentCityName, currentCountry, currentAreaName, p.osmWiki, p.osmWikidata, ({pub:'pub',bar:'pub',church:'church',castle:'castle',bridge:'bridge',museum:'museum',park:'park',abbey:'abbey',tower:'tower',railway:'railway station',harbour:'harbour',monument:'monument'})[p.type]||'').then(function(w){ return w ? w.extract : null; });
 
   return extractPromise.then(function(extract) {
     if (extract) {
@@ -2106,7 +2110,6 @@ function getStory(p) {
         'vivid present-tense language as if speaking to someone standing there; ' +
         'DO NOT start with the name of the place; vary your sentence length; no cliches; ' +
         '6-8 sentences, around 160 words. Spoken story only, no heading. ' +
-        'Narrate in ' + _lang.storyLang + '. ' +
         'SOURCE (' + (p.sourceLabel||'Wikipedia') + '):\n' + extract
       ).catch(function(){
         // AI failed — use the Wikipedia extract directly, trimmed to 3 sentences
@@ -2114,18 +2117,26 @@ function getStory(p) {
       });
     }
 
-    // No Wikipedia — try AI knowledge, fall back to a minimal factual message
-    return callAI(
-      'You are a captivating storyteller and historian giving an audio tour. ' +
-      'Tell the BEST STORY you know about ' + p.title + ' (' + p.type + ') in ' + place + '. ' +
-      'Find the most dramatic or surprising moment in its history: a famous event, person, legend, or scandal. ' +
-      'Build the story around that, then weave in key facts. ' +
-      getTypeHint(p.type) + ' ' +
-      'Rules: specific names, dates, numbers; vivid present-tense language; DO NOT start with the place name; ' +
-      'no cliches; 6-8 sentences, around 160 words. Spoken story only. ' +
-      'Narrate in ' + _lang.storyLang + '. ' +
-      'If you have NO specific knowledge of this exact place, reply only: UNKNOWN'
-    ).then(function(txt) {
+    // No Wikipedia — type-specific prompt
+    var noWikiPrompt;
+    if(p.type==='pub'||p.type==='bar'){
+      noWikiPrompt=
+        'You are a local pub historian. Tell the story of ' + p.title + ' in ' + place + '. ' +
+        'Cover: when established, famous regulars or literary connections, notable events, its character. ' +
+        'If this is a lesser-known local, describe what pubs like this meant to this community. ' +
+        'Vivid present-tense; do not start with the pub name; no cliches; 6-8 sentences, 160 words. ' +
+        'If you have no knowledge of this specific pub, reply only: UNKNOWN';
+    } else {
+      noWikiPrompt=
+        'You are a captivating storyteller giving an audio tour. ' +
+        'Tell the best story you know about ' + p.title + ' (' + p.type + ') in ' + place + '. ' +
+        'Find the most dramatic moment: a famous event, person, legend, or scandal. ' +
+        getTypeHint(p.type) + ' ' +
+        'Specific names, dates, numbers; vivid present-tense; do not start with the place name; ' +
+        'no cliches; 6-8 sentences, 160 words. Spoken story only. ' +
+        'If you have NO knowledge of this exact place, reply only: UNKNOWN';
+    }
+    return callAI(noWikiPrompt).then(function(txt) {
       if (!txt || txt.trim().toUpperCase().startsWith('UNKNOWN') || txt.trim().length < 30)
         return wikiOrFallback(p, place, null);
       return txt;
