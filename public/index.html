@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.1.4</div>
+  <div id="splash-version">v2.1.5</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -483,7 +483,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.1.4
+// STORYROUTE v2.1.5
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1262,8 +1262,6 @@ function verifyOtp(){
 }
 
 function sendMagicLink(){ sendOtp(); }
-function sendMagicLink(){ sendLoginEmail(); }
-function sendOtp(){ sendLoginEmail(); }
 
 function signOut(){
   if(supabaseClient)supabaseClient.auth.signOut();
