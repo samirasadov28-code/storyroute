@@ -270,7 +270,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.0.3</div>
+  <div id="splash-version">v2.0.4</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -472,7 +472,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.0.3
+// STORYROUTE v2.0.4
 // Landmarks: Overpass API (real OSM data, real coords, global)
 // Stories:   Groq / AI (only called when user taps a marker)
 // ═══════════════════════════════════════════════════════════════
@@ -1370,7 +1370,7 @@ function fetchWikiExtract(name, city, country, area, osmWikiTag, osmWikidata) {
     return fetch(
       'https://' + wLang + '.wikipedia.org/w/api.php?action=query&titles=' +
       encodeURIComponent(wTitle) +
-      '&prop=extracts&exintro=true&explaintext=true&exsectionformat=plain&format=json&origin=*'
+      '&prop=extracts&explaintext=true&exsectionformat=plain&format=json&origin=*'
     )
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -1380,7 +1380,7 @@ function fetchWikiExtract(name, city, country, area, osmWikiTag, osmWikidata) {
       if (!page || !page.extract || page.extract.length < 200) return null;
       var result = {
         title: page.title,
-        extract: page.extract.slice(0, 1500).trim(),
+        extract: page.extract.slice(0, 5000).trim(),
         source: 'Wikipedia (OSM-linked)'
       };
       _wikiCache[key] = result;
@@ -1432,7 +1432,7 @@ function fetchWikiBySearch(name, city, country, area, cacheKey) {
       return fetch(
         'https://en.wikipedia.org/w/api.php?action=query&titles=' +
         encodeURIComponent(best.title) +
-        '&prop=extracts&exintro=true&explaintext=true&exsectionformat=plain&format=json&origin=*'
+        '&prop=extracts&explaintext=true&exsectionformat=plain&format=json&origin=*'
       )
       .then(function(r){ return r.json(); })
       .then(function(d){
@@ -1442,7 +1442,7 @@ function fetchWikiBySearch(name, city, country, area, cacheKey) {
         if (!page || !page.extract || page.extract.length < 300) return tryWiki();
         var result = {
           title: page.title,
-          extract: page.extract.slice(0, 1500).trim(),
+          extract: page.extract.slice(0, 5000).trim(),
           source: 'Wikipedia'
         };
         if (cacheKey) _wikiCache[cacheKey] = result;
@@ -1517,24 +1517,29 @@ function getStory(p) {
       // We have Wikipedia — try to enhance with AI, fall back to raw extract if AI fails
       var typeHint = getTypeHint(p.type);
       return callAI(
-        'You are an expert audio tour guide. Using ONLY the facts in the Wikipedia source below, ' +
-        'write a spoken-word story about ' + p.title + ' in ' + place + ' for someone standing in front of it. ' +
-        typeHint + ' Include specific dates, names, or numbers. ' +
-        'No cliches. Second-person present tense. 4-5 sentences, about 100 words. Story only. ' +
-        'SOURCE (' + (p.sourceLabel||'Wikipedia') + '): ' + extract
+        'You are an expert audio tour guide giving a rich, detailed narration. ' +
+        'Using the source material below, write an engaging spoken-word story about ' + p.title + ' in ' + place + '. ' +
+        'Read the full source and pull out the most interesting facts: founding date, key events, notable people, ' +
+        'architectural details, legends, and surprising details. ' +
+        typeHint + ' ' +
+        'Requirements: at least three specific facts (dates, names, numbers); vivid language; ' +
+        'second-person present tense; no cliches; 6-8 sentences, around 160 words. Story only. ' +
+        'SOURCE (' + (p.sourceLabel||'Wikipedia') + '):\n' + extract
       ).catch(function(){
         // AI failed — use the Wikipedia extract directly, trimmed to 3 sentences
-        return trimToStory(extract, 3);
+        return trimToStory(extract, 5);
       });
     }
 
     // No Wikipedia — try AI knowledge, fall back to a minimal factual message
     return callAI(
-      'You are an expert audio tour guide with knowledge from travel guides, local history books, and encyclopaedias. ' +
-      'Write a vivid spoken-word story about ' + p.title + ' (' + p.type + ') in ' + place + ' for someone standing there now. ' +
+      'You are an expert audio tour guide. ' +
+      'Write a rich, detailed spoken-word story about ' + p.title + ' (' + p.type + ') in ' + place + '. ' +
+      'Draw on everything you know: founding history, key events, notable people, architecture, local legends. ' +
       getTypeHint(p.type) + ' ' +
-      'Include at least one specific date or name. No cliches. Second-person present tense. 4-5 sentences, about 100 words. ' +
-      'If you have absolutely no knowledge of this specific place, reply only: UNKNOWN'
+      'Requirements: at least two specific facts (dates, names, numbers); vivid language; ' +
+      'second-person present tense; no cliches; 6-8 sentences, around 160 words. Story only. ' +
+      'If you have NO specific knowledge of this exact place, reply only: UNKNOWN'
     ).then(function(txt) {
       if (!txt || txt.trim().toUpperCase().startsWith('UNKNOWN') || txt.trim().length < 30)
         return wikiOrFallback(p, place, null);
@@ -1548,7 +1553,7 @@ function getStory(p) {
 // Returns the Wikipedia extract trimmed to N sentences, or a minimal fallback message.
 // NEVER returns null — the app always has something to say.
 function wikiOrFallback(p, place, extract) {
-  if (extract) return trimToStory(extract, 3);
+  if (extract) return trimToStory(extract, 5);
   // Minimal fallback using OSM data we already have — honest, never filler
   var typeLabel = {
     church:'church',abbey:'abbey',castle:'castle',pub:'pub',bar:'pub',
