@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.2.1</div>
+  <div id="splash-version">v2.2.2</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -484,7 +484,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.2.1
+// STORYROUTE v2.2.2
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -1035,8 +1035,8 @@ function loadStoryPhoto(title){
 // ── CACHE ───────────────────────────────────────────────────────
 function saveLM(la,ln,a,pfx){pfx=pfx||'sr_lm_';try{localStorage.setItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2),JSON.stringify(a));}catch(e){}}
 function loadLM(la,ln,pfx){pfx=pfx||'sr_lm_';try{var d=localStorage.getItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2));var a=d?JSON.parse(d):null;return(a&&a.length&&a[0].lat)?a:null;}catch(e){return null;}}
-function saveStory(id,t){try{localStorage.setItem('sr_s_'+id,t);}catch(e){}}
-function loadStory(id){try{return localStorage.getItem('sr_s_'+id)||null;}catch(e){return null;}}
+function saveStory(id,t){try{localStorage.setItem('sr_s_'+_lang.code+'_'+id,t);}catch(e){}}
+function loadStory(id){try{return localStorage.getItem('sr_s_'+_lang.code+'_'+id)||null;}catch(e){return null;}}
 function saveLongStory(k,t){try{localStorage.setItem('sr_ls_'+k,t);}catch(e){}}
 function loadLongStory(k){try{return localStorage.getItem('sr_ls_'+k)||null;}catch(e){return null;}}
 
@@ -1587,7 +1587,9 @@ function favLongStory(i){
 // ── UI HELPERS ──────────────────────────────────────────────────
 function showStory(name,text,type){
   document.getElementById('story-name').textContent=name;document.getElementById('story-text').textContent=text;
-  document.getElementById('story-type-badge').textContent=(type&&type!=='other')?type:'';
+  var badge=document.getElementById('story-type-badge');
+  var langTag=_lang.code!=='en'?' · '+_lang.label.split(' ')[0]+' '+_lang.name:'';
+  badge.textContent=((type&&type!=='other')?type:'')+langTag;
   document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
   if(text!=='⏳ Loading story…')loadStoryPhoto(name);
