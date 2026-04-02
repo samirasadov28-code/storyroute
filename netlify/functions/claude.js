@@ -58,11 +58,10 @@ export default async (req, context) => {
             "Authorization": `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            // Upgraded from llama-3.1-8b-instant for richer story output
             model: "llama-3.3-70b-versatile",
-            // Bumped from 1024 to avoid JSON truncation on longer stories
-            max_tokens: 2048,
-            temperature: 0.7,
+            max_tokens: 1024,
+            temperature: 0.9,
+            system: "You are a masterful audio tour storyteller. You write rich, vivid, specific spoken-word stories for people walking past historic landmarks. Your stories are gripping, full of real names, dates, and surprising details. You never use filler phrases. You always write at least 180 words. You always complete your story — never cut it short.",
             messages: body.messages
           })
         });
