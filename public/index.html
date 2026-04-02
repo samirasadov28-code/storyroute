@@ -175,7 +175,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .pick-desc{font-size:11px;color:#999;}
 .pick-check{width:20px;height:20px;background:#f0a500;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;margin-left:auto;}
 /* LANGUAGE BTN */
-#lang-btn{position:fixed;bottom:80px;right:14px;z-index:1003;width:46px;height:46px;background:#1a2240;color:#fff;border:none;border-radius:12px;font-size:20px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.25);touch-action:manipulation;display:flex;align-items:center;justify-content:center;}
+
 #lang-panel{position:fixed;top:0;right:0;bottom:0;width:min(280px,85vw);background:#fff;z-index:3001;transform:translateX(110%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.15);}
 #lang-panel.open{transform:translateX(0);}
 
@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.2.2</div>
+  <div id="splash-version">v2.2.3</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -401,7 +401,6 @@ textarea.fb-input{height:120px;resize:none;}
   <button class="zbtn" onclick="map.setZoom(map.getZoom()+1)">+</button>
   <button class="zbtn" onclick="map.setZoom(map.getZoom()-1)">−</button>
 </div>
-<button id="lang-btn" onclick="openLangPanel()" title="Change language">🌐</button>
 
 <!-- LANGUAGE PANEL -->
 <div id="lang-panel">
@@ -484,7 +483,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.2.2
+// STORYROUTE v2.2.3
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -854,11 +853,7 @@ function renderLangPanel(){
 function pickLang(i){
   _lang=LANGUAGES[i];
   localStorage.setItem('sr_lang',_lang.code);
-  // Voice switches to match language
-  selectedVoice=_lang.tts;
-  localStorage.setItem('sr_voice_cfg',JSON.stringify(_lang.tts));
-  // Clear story cache so stories regenerate in new language
-  Object.keys(localStorage).forEach(k=>{if(k.startsWith('sr_s_')||k.startsWith('sr_ls_'))localStorage.removeItem(k);});
+  // Language selection only affects UI text, not stories or voice
   closeLangPanel();
   updateLangBtn();updateMenuLabels();applyTranslations();
   showToast(T('language')+': '+_lang.label);
@@ -966,8 +961,7 @@ function cancelAudio(){try{speechSynthesis.cancel();}catch(e){}if(currentAudio){
 function tts(text,onDone){
   var speed=voiceSpeed;cancelAudio();
   var voice=rotateVoices?VOICES.filter(v=>v.hl!=='device')[landmarkCount%VOICES.filter(v=>v.hl!=='device').length]:selectedVoice;
-  // If selected language is non-English, force language voice (ignores rotation)
-  if(_lang.code!=='en')voice=_lang.tts;
+  // English only
   setBadge(voice.label||'🌐');
   if(!voice.hl||voice.hl==='device'){
     try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.rate=speed;u.volume=1;u.pitch=1;var v=currentVoice();if(v)u.voice=v;u.onend=onDone;u.onerror=()=>onDone();speechSynthesis.speak(u);}catch(e){onDone();}
@@ -1035,8 +1029,8 @@ function loadStoryPhoto(title){
 // ── CACHE ───────────────────────────────────────────────────────
 function saveLM(la,ln,a,pfx){pfx=pfx||'sr_lm_';try{localStorage.setItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2),JSON.stringify(a));}catch(e){}}
 function loadLM(la,ln,pfx){pfx=pfx||'sr_lm_';try{var d=localStorage.getItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2));var a=d?JSON.parse(d):null;return(a&&a.length&&a[0].lat)?a:null;}catch(e){return null;}}
-function saveStory(id,t){try{localStorage.setItem('sr_s_'+_lang.code+'_'+id,t);}catch(e){}}
-function loadStory(id){try{return localStorage.getItem('sr_s_'+_lang.code+'_'+id)||null;}catch(e){return null;}}
+function saveStory(id,t){try{localStorage.setItem('sr_s_'+id,t);}catch(e){}}
+function loadStory(id){try{return localStorage.getItem('sr_s_'+id)||null;}catch(e){return null;}}
 function saveLongStory(k,t){try{localStorage.setItem('sr_ls_'+k,t);}catch(e){}}
 function loadLongStory(k){try{return localStorage.getItem('sr_ls_'+k)||null;}catch(e){return null;}}
 
@@ -1232,68 +1226,65 @@ function fetchNeighbourhoods(lat,lng){
 // KEY DESIGN: Groq generates the story AND delivers it in the target language
 // in a single API call. No separate translation step — simpler, faster, correct.
 function buildStoryPrompt(p, place, extract, source){
-  var langLine = _lang.code==='en' ? '' : ' Write the entire story in '+_lang.name+'. ';
+  var langLine = '';
   var typeHints = {
-    church:'Focus on founding date, architectural highlights, and one dramatic historical event.',
-    abbey:'Focus on founding date, monastic life, and one dramatic historical event.',
-    pub:'Focus on when it was established, famous regulars or events, and what makes it a local institution.',
-    bar:'Focus on when it was established, famous regulars or events, and what makes it a local institution.',
-    castle:'Focus on who built it, one key siege or battle, and its condition today.',
-    museum:'Focus on its founding, most remarkable exhibit, and why it matters.',
-    gallery:'Focus on its founding, most remarkable collection, and why it matters.',
-    bridge:'Focus on when and why it was built and one engineering or historical highlight.',
-    monument:'Focus on what it commemorates, who created it, and one striking detail.',
-    memorial:'Focus on what it commemorates, who created it, and one striking detail.',
-    park:'Focus on its origins, one memorable event here, and its character today.',
-    garden:'Focus on its origins, design, and its character today.',
-    railway:'Focus on when it opened, one memorable moment in its history, and its architecture.',
-    harbour:'Focus on the trade it served, its busiest era, and how it looks today.',
-    canal:'Focus on the trade it served, its busiest era, and how it looks today.',
-    tower:'Focus on its original purpose, one dramatic event, and what it symbolises.',
-    lighthouse:'Focus on its original purpose, the dangers it guarded against, and what it symbolises.',
+    church:'Focus on the founding date, the most dramatic event in its history, a notable person buried or worshipped here, and one striking architectural detail.',
+    abbey:'Focus on the founding, the monastic community that lived here, a dramatic moment of dissolution or conflict, and what survives today.',
+    pub:'Focus on when it opened, its most famous regulars or literary connections, one extraordinary event or legend associated with it, and what makes it unmistakable today.',
+    bar:'Focus on when it opened, its most famous regulars, one extraordinary event or legend, and what makes it unmistakable today.',
+    castle:'Focus on who built it and why, the most dramatic siege or battle fought here, a notable prisoner or resident, and its fate over the centuries.',
+    museum:'Focus on how and why it was founded, its single most extraordinary object or collection, one surprising or little-known fact about it.',
+    gallery:'Focus on how it was founded, its most remarkable works, and what makes its collection distinctive.',
+    bridge:'Focus on the engineering challenge it solved, when and by whom it was built, one near-disaster or dramatic incident, and what it felt like to cross it when new.',
+    monument:'Focus on exactly what or who it commemorates, the story behind its creation, and one detail that most passers-by miss.',
+    memorial:'Focus on the event or people it commemorates, the human stories behind it, and how the memorial came to exist.',
+    park:'Focus on who designed it and why, the most dramatic historical event that happened within its boundaries, and how locals have used it across the centuries.',
+    garden:'Focus on who created it, its most unusual or prized feature, and the stories of those who have walked here.',
+    railway:'Focus on when it opened, the engineering feat it represented, one famous journey or passenger, and its architecture.',
+    harbour:'Focus on the trade that made it, its busiest era, the most dramatic arrival or departure ever recorded here.',
+    canal:'Focus on why it was dug, the goods and people it carried, and one remarkable moment from its working life.',
+    tower:'Focus on its original military or signal purpose, one moment of drama — a siege, a fire, a famous prisoner — and what it symbolises now.',
+    lighthouse:'Focus on the dangers it was built to guard against, a famous shipwreck it did or did not prevent, and the solitary life of its keepers.',
   };
-  var hint=typeHints[p.type]||'Focus on the most surprising historical fact and a vivid sensory detail.';
+  var hint = typeHints[p.type] || 'Focus on the most surprising historical fact, one specific person or event, and a vivid sensory detail that brings the place alive.';
 
   if(extract){
-    return 'You are a captivating storyteller and historian giving an audio tour. '
-      +'Your job is to tell the BEST STORY hidden in the source below — not summarise it. '
-      +'Find the most dramatic, surprising, or human moment: a siege, a scandal, a famous visitor, a ghost, a legend. '
-      +'Build the story around that moment, then weave in key facts. '
-      +'Topic: '+p.title+' in '+place+'. '+hint+' '
-      +'Rules: use specific names, dates, and numbers from the source; '
-      +'vivid present-tense language; DO NOT start with the name of the place; '
-      +'no cliches; 6-8 sentences, around 160 words. Spoken story only, no heading.'
-      +langLine
-      +'\n\nSOURCE ('+source+'):\n'+extract;
+    return 'You are a masterful storyteller and historian narrating a walking audio tour. '
+      +'You have been given source material about '+p.title+' in '+place+'. '
+      +'Your task is NOT to summarise this material — it is to find the single most dramatic, surprising, or human moment buried inside it and build a compelling story around it. '
+      +'Look for: a siege, a scandal, a famous love affair, a near-destruction, a ghost story, a record broken, a famous last words, an unlikely survival. '
+      +''+hint+' '
+      +'Open with atmosphere or action — never with the name of the place. '
+      +'Speak directly to the listener as if they are standing there right now. '
+      +'Use specific names, dates, and numbers drawn from the source. '
+      +'Vary your sentence length — short punchy sentences for drama, longer ones for atmosphere. '
+      +'Avoid all clichés. No "rich history", "stood the test of time", "worth a visit". '
+      +'Write 8-10 flowing sentences, around 200 words. Spoken audio story only. SOURCE ('+source+'): '+extract;
   }
 
   if(p.type==='pub'||p.type==='bar'){
-    return 'You are a local pub historian giving an audio tour. '
-      +'Tell the story of '+p.title+' in '+place+'. '
-      +'Cover: when it was established, any famous regulars or literary/political connections, notable events, its architectural character. '
-      +'If it is a lesser-known local, describe what pubs like this meant to this community and era. '
-      +'Rules: vivid present-tense; do not start with the pub name; no cliches; 6-8 sentences, 160 words.'
-      +langLine
-      +'\nIf you have no knowledge of this specific pub, reply only: UNKNOWN';
+    return 'You are a gifted local historian and storyteller narrating a walking audio tour. '
+      +'Tell the story of '+p.title+' in '+place+' as if speaking to someone standing outside it right now. '
+      +'Draw on everything you know: its founding, its most famous regulars, any literary or political connections, notable events, its architecture and atmosphere, what it is locally celebrated for. '
+      +'If this is a famous pub, tell its specific story. If it is a lesser-known local, describe what pubs like this meant to the community and what life inside looked like across the decades. '
+      +'Open with a vivid scene — not with the pub name. Specific names, dates, and details. '
+      +'Vary sentence length. No cliches. 8-10 sentences, around 200 words. Spoken story only. If you have truly no knowledge of this specific place, reply only: UNKNOWN';
   }
 
-  return 'You are a captivating storyteller giving an audio tour. '
-    +'Tell the BEST STORY you know about '+p.title+' ('+p.type+') in '+place+'. '
-    +'Find the most dramatic moment: a famous event, person, legend, or scandal. '
-    +hint+' '
-    +'Rules: specific names, dates, numbers; vivid present-tense; do not start with the place name; '
-    +'no cliches; 6-8 sentences, 160 words.'
-    +langLine
-    +'\nIf you have NO knowledge of this exact place, reply only: UNKNOWN';
+  return 'You are a masterful storyteller and historian narrating a walking audio tour. '
+    +'Tell the single best story you know about '+p.title+' ('+p.type+') in '+place+'. '
+    +'Find the most dramatic or surprising moment in its history: a famous event, an extraordinary person, a legend, a scandal, a near-miss. Build the entire story around that moment. '
+    +''+hint+' '
+    +'Open with atmosphere or action — never the place name. Speak to the listener standing there now. '
+    +'Specific names, dates, numbers. Vary sentence length. No cliches. 8-10 sentences, around 200 words. Spoken story only. If you have NO specific knowledge of this exact place, reply only: UNKNOWN';
 }
 
 function getStory(p){
   var place=currentCityName&&currentCountry?currentCityName+', '+currentCountry:currentCityName||currentCountry||'this location';
   if(p.isNb||p.type==='area'){
-    var langLine=_lang.code==='en'?'':' Write entirely in '+_lang.name+'.';
     return callAI('You are a captivating storyteller. Tell a vivid story about the neighbourhood of '+p.title+' in '+place+'. '
       +'Find the most interesting angle: its origin, a famous resident, a dramatic past event. '
-      +'Include real dates and names. Vivid, no cliches, around 120 words. Spoken story only.'+langLine);
+      +'Include real dates and names. Vivid, no cliches, around 120 words. Spoken story only.');
   }
   var extractPromise=p.wikiExtract
     ?Promise.resolve({extract:p.wikiExtract,source:p.sourceLabel||'Wikipedia'})
@@ -1588,8 +1579,7 @@ function favLongStory(i){
 function showStory(name,text,type){
   document.getElementById('story-name').textContent=name;document.getElementById('story-text').textContent=text;
   var badge=document.getElementById('story-type-badge');
-  var langTag=_lang.code!=='en'?' · '+_lang.label.split(' ')[0]+' '+_lang.name:'';
-  badge.textContent=((type&&type!=='other')?type:'')+langTag;
+  badge.textContent=(type&&type!=='other')?type:'';
   document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
   if(text!=='⏳ Loading story…')loadStoryPhoto(name);
