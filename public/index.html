@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.2.3</div>
+  <div id="splash-version">v2.2.4</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -483,7 +483,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.2.3
+// STORYROUTE v2.2.4
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -1082,8 +1082,12 @@ function fetchWikiExtract(name,city,country,area,osmWikiTag,osmWikidata,tw){
       .then(r=>r.json()).then(function(d){
         var pages=d&&d.query&&d.query.pages;if(!pages)return null;
         var page=Object.values(pages)[0];
-        if(!page||!page.extract||page.extract.length<200)return null;
-        var result={title:page.title,extract:page.extract.slice(0,5000).trim(),source:'Wikipedia'};
+        if(!page||!page.extract||page.extract.length<400)return null;
+        var result={title:page.title,extract:(function(t){
+              // Strip Wikipedia reference/see-also sections which add no story value
+              var cut=t.search(/\n==\s*(References|See also|Notes|External links|Bibliography)/i);
+              return (cut>400?t.slice(0,cut):t).slice(0,5000).trim();
+            })(page.extract),source:'Wikipedia'};
         _wikiCache[key]=result;return result;
       }).catch(()=>null)
       .then(result=>{if(result)return result;return fetchWikiBySearch(name,city,country,area,key,tw);});
@@ -1117,8 +1121,12 @@ function fetchWikiBySearch(name,city,country,area,cacheKey,tw){
           .then(r=>r.json()).then(function(d){
             var pages=d&&d.query&&d.query.pages;if(!pages)return tryWiki();
             var page=Object.values(pages)[0];
-            if(!page||!page.extract||page.extract.length<300)return tryWiki();
-            var result={title:page.title,extract:page.extract.slice(0,5000).trim(),source:'Wikipedia'};
+            if(!page||!page.extract||page.extract.length<400)return tryWiki();
+            var result={title:page.title,extract:(function(t){
+              // Strip Wikipedia reference/see-also sections which add no story value
+              var cut=t.search(/\n==\s*(References|See also|Notes|External links|Bibliography)/i);
+              return (cut>400?t.slice(0,cut):t).slice(0,5000).trim();
+            })(page.extract),source:'Wikipedia'};
             if(cacheKey)_wikiCache[cacheKey]=result;return result;
           });
       }).catch(()=>tryWiki());
@@ -1259,7 +1267,7 @@ function buildStoryPrompt(p, place, extract, source){
       +'Use specific names, dates, and numbers drawn from the source. '
       +'Vary your sentence length — short punchy sentences for drama, longer ones for atmosphere. '
       +'Avoid all clichés. No "rich history", "stood the test of time", "worth a visit". '
-      +'Write 8-10 flowing sentences, around 200 words. Spoken audio story only. SOURCE ('+source+'): '+extract;
+      +'Write 8-10 flowing sentences. Minimum 180 words — do not cut the story short. This will be read aloud, so make every sentence count. SOURCE ('+source+'): '+extract;
   }
 
   if(p.type==='pub'||p.type==='bar'){
@@ -1268,7 +1276,7 @@ function buildStoryPrompt(p, place, extract, source){
       +'Draw on everything you know: its founding, its most famous regulars, any literary or political connections, notable events, its architecture and atmosphere, what it is locally celebrated for. '
       +'If this is a famous pub, tell its specific story. If it is a lesser-known local, describe what pubs like this meant to the community and what life inside looked like across the decades. '
       +'Open with a vivid scene — not with the pub name. Specific names, dates, and details. '
-      +'Vary sentence length. No cliches. 8-10 sentences, around 200 words. Spoken story only. If you have truly no knowledge of this specific place, reply only: UNKNOWN';
+      +'Vary sentence length. No cliches. 8-10 sentences, minimum 180 words. Do not end early. Spoken story only. If you have truly no knowledge of this specific place, reply only: UNKNOWN';
   }
 
   return 'You are a masterful storyteller and historian narrating a walking audio tour. '
@@ -1276,7 +1284,7 @@ function buildStoryPrompt(p, place, extract, source){
     +'Find the most dramatic or surprising moment in its history: a famous event, an extraordinary person, a legend, a scandal, a near-miss. Build the entire story around that moment. '
     +''+hint+' '
     +'Open with atmosphere or action — never the place name. Speak to the listener standing there now. '
-    +'Specific names, dates, numbers. Vary sentence length. No cliches. 8-10 sentences, around 200 words. Spoken story only. If you have NO specific knowledge of this exact place, reply only: UNKNOWN';
+    +'Specific names, dates, numbers. Vary sentence length. No cliches. 8-10 sentences, minimum 180 words. Do not end early. Spoken story only. If you have NO specific knowledge of this exact place, reply only: UNKNOWN';
 }
 
 function getStory(p){
@@ -1308,13 +1316,13 @@ function getStory(p){
 function getStoryWithRetry(p,attempt){
   attempt=attempt||0;
   return getStory(p).then(function(txt){
-    if(!txt||txt.trim().length<10)throw new Error('Too short');
+    if(!txt||txt.trim().split(/\s+/).length<80)throw new Error('Too short');
     return txt;
   }).catch(function(err){
     var msg=err&&err.message;
-    if(msg==='api_banned'){console.error('Groq API key issue');return p.wikiExtract?trimToStory(p.wikiExtract,5):null;}
+    if(msg==='api_banned'){console.error('Groq API key issue');return p.wikiExtract?trimToStory(p.wikiExtract,8):null;}
     if(attempt<2)return sleep(attempt===0?3000:6000).then(()=>getStoryWithRetry(p,attempt+1));
-    return p.wikiExtract?trimToStory(p.wikiExtract,5):null;
+    return p.wikiExtract?trimToStory(p.wikiExtract,8):null;
   });
 }
 function trimToStory(extract,maxSentences){
