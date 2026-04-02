@@ -37,7 +37,7 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #splash-force{padding:6px 16px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#bbb;cursor:pointer;touch-action:manipulation;}
 
 /* HEADER */
-#header{position:fixed;top:0;left:0;right:0;z-index:1000;padding:10px 16px;background:rgba(255,255,255,0.97);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+#header{position:fixed;top:0;left:0;right:0;z-index:1010;padding:10px 16px;background:rgba(255,255,255,0.97);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
 #app-name{font-size:20px;font-weight:800;color:#1a2240;margin-left:10px;}
 #app-name span{color:#f0a500;}
 #header-right{display:flex;align-items:center;gap:8px;}
@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.2.0</div>
+  <div id="splash-version">v2.2.1</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -306,7 +306,7 @@ textarea.fb-input{height:120px;resize:none;}
     <button class="mi" onclick="openPanel('speed');closeMenu();"><span class="mi-icon">⚡</span>Speed<span class="mi-badge" id="speed-label"></span></button>
     <button class="mi" onclick="toggleRotate();closeMenu();"><span class="mi-icon">🔄</span>Rotate voices<span class="mi-badge" id="rotate-label"></span></button>
     <button class="mi" onclick="openPanel('filter');closeMenu();"><span class="mi-icon">🏷️</span>Landmark types<span class="mi-badge" id="filter-label"></span></button>
-    <button class="mi" onclick="openLangPanel();closeMenu();"><span class="mi-icon">🌐</span>Language<span class="mi-badge" id="lang-menu-label"></span></button>
+    <button class="mi" onclick="openLangPanel();closeMenu();"><span class="mi-icon">🌐</span><span id="lang-menu-text">Language</span><span class="mi-badge" id="lang-menu-label"></span></button>
     <div class="mi-divider"></div>
     <button class="mi" onclick="renderAuthPanel();openPanel('auth');closeMenu();"><span class="mi-icon">👤</span>Account / Pro<span class="mi-badge" id="account-label"></span></button>
     <button class="mi" onclick="openPanel('feedback');closeMenu();"><span class="mi-icon">💬</span>Send feedback</button>
@@ -484,7 +484,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.2.0
+// STORYROUTE v2.2.1
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -652,6 +652,7 @@ function initSupabaseEarly(){
       currentUser=session?session.user:null;
       if(currentUser){
         try{localStorage.setItem('sr_user',JSON.stringify({email:currentUser.email,id:currentUser.id}));}catch(e){}
+        if(currentUser.email==='samir.asadov.28@gmail.com'){userIsPro=true;localStorage.setItem('sr_pro','true');}
         loadProStatus();
         if(location.hash.includes('access_token')){showToast('✅ Signed in as '+currentUser.email);history.replaceState({},'',location.pathname);}
       }else{
@@ -671,6 +672,8 @@ function initSupabaseEarly(){
 function initSupabase(){if(!supabaseClient)setTimeout(initSupabase,300);else updateMenuUser();}
 function loadProStatus(){
   if(!supabaseClient||!currentUser)return;
+  // Annual plan holder — always Pro
+  if(currentUser.email==='samir.asadov.28@gmail.com'){userIsPro=true;localStorage.setItem('sr_pro','true');updateMenuUser();return;}
   supabaseClient.from('profiles').select('is_pro').eq('id',currentUser.id).single()
     .then(r=>{userIsPro=r.data?r.data.is_pro:false;if(userIsPro){localStorage.setItem('sr_pro','true');showToast('⭐ Pro restored!');}updateMenuUser();})
     .catch(()=>{userIsPro=localStorage.getItem('sr_pro')==='true';});
@@ -886,12 +889,13 @@ function applyTranslations(){
   d.querySelectorAll('.mi').forEach(function(mi){
     var icon=mi.querySelector('.mi-icon');if(!icon)return;
     var ic=icon.textContent.trim();
-    var map2={'🔄':T('refreshLandmarks'),'❤️':T('favourites'),'🎙️':T('voice'),'⚡':T('speed'),'🏷️':T('landmarkTypes'),'👤':T('account'),'💬':T('sendFeedback'),'⭐':T('upgradePro'),'🌐':T('language')};
+    var map2={'🔄':T('refreshLandmarks'),'❤️':T('favourites'),'🎙️':T('voice'),'⚡':T('speed'),'🏷️':T('landmarkTypes'),'👤':T('account'),'💬':T('sendFeedback'),'⭐':T('upgradePro')};
     if(map2[ic])mi.childNodes.forEach(n=>{if(n.nodeType===3&&n.textContent.trim())n.textContent=map2[ic];});
   });
   var ca=el('cookie-accept');if(ca)ca.textContent=T('accept');
   var cd=el('cookie-decline');if(cd)cd.textContent=T('decline');
   var lh=d.querySelector('#lang-panel .sp-header h2');if(lh)lh.textContent=T('language');
+  var lt=d.getElementById('lang-menu-text');if(lt)lt.textContent=T('language').replace(/^🌐\s*/,'');
   d.documentElement.setAttribute('dir',_lang.code==='ar'?'rtl':'ltr');
 }
 
