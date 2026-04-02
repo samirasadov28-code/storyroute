@@ -274,7 +274,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.1.8</div>
+  <div id="splash-version">v2.2.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
 </div>
 
@@ -484,557 +484,138 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.1.8
-// Landmarks: Overpass API (real OSM data, real coords, global)
-// Stories:   Groq / AI (only called when user taps a marker)
+// STORYROUTE v2.2.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
-const DUBLIN = [53.3438, -6.2546];
-const FREE_LIMIT = 20;
-const TRAVEL_MODES = { walking:{radius:200}, driving:{radius:10000}, long:{radius:25000} };
-const VOICERSS_KEY = '293997f94bec46f386498eb580855415';
-const SUPABASE_URL = 'https://ruihamvwpzynerggufif.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1aWhhbXZ3cHp5bmVyZ2d1ZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg1MTAsImV4cCI6MjA5MDA1NDUxMH0.G2gf88U1N4wp1p_xt-xlJfG3e9d3FTfN4qdu8hOfYmE';
-const OVERPASS = 'https://overpass-api.de/api/interpreter';
+const DUBLIN=[53.3438,-6.2546];
+const FREE_LIMIT=20;
+const TRAVEL_MODES={walking:{radius:200},driving:{radius:10000},long:{radius:25000}};
+const VOICERSS_KEY='293997f94bec46f386498eb580855415';
+const OVERPASS='https://overpass-api.de/api/interpreter';
+const SUPABASE_URL='https://ruihamvwpzynerggufif.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1aWhhbXZ3cHp5bmVyZ2d1ZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg1MTAsImV4cCI6MjA5MDA1NDUxMH0.G2gf88U1N4wp1p_xt-xlJfG3e9d3FTfN4qdu8hOfYmE';
 
-const TYPE_ICON = {
-  monument:'🏛',church:'⛪',castle:'🏰',street:'🛤',building:'🏢',bridge:'🌉',
-  park:'🌿',museum:'🎭',person:'👤',nature:'🌊',pub:'🍺',beach:'🏖',
-  estate:'🏡',school:'🏫',sport:'🏟',area:'🏙',legend:'🐉',history:'📜',
-  market:'🛒',harbour:'⚓',tower:'🗼',abbey:'🕍',well:'💧',hill:'⛰️',
-  island:'🏝️',gate:'🚪',hall:'🏤',cinema:'🎬',railway:'🚂',canal:'🚣',
-  neighbourhood:'🏘',other:'📍'
+const TYPE_ICON={monument:'🏛',church:'⛪',castle:'🏰',street:'🛤',building:'🏢',bridge:'🌉',park:'🌿',museum:'🎭',person:'👤',nature:'🌊',pub:'🍺',beach:'🏖',estate:'🏡',school:'🏫',sport:'🏟',area:'🏙',legend:'🐉',history:'📜',market:'🛒',harbour:'⚓',tower:'🗼',abbey:'🕍',well:'💧',hill:'⛰️',island:'🏝️',gate:'🚪',hall:'🏤',cinema:'🎬',railway:'🚂',canal:'🚣',neighbourhood:'🏘',other:'📍'};
+const ALL_TYPES=['monument','church','castle','street','building','bridge','park','museum','person','nature','pub','beach','estate','school','sport','abbey','harbour','tower','market','gate','hall','cinema','railway','canal','well','hill','island','history','legend','area','neighbourhood','other'];
+const TYPE_LABELS={monument:'🏛 Monument',church:'⛪ Church',castle:'🏰 Castle',street:'🛤 Street',building:'🏢 Building',bridge:'🌉 Bridge',park:'🌿 Park',museum:'🎭 Museum',person:'👤 Person',nature:'🌊 Nature',pub:'🍺 Pub',beach:'🏖 Beach',estate:'🏡 Estate',school:'🏫 School',sport:'🏟 Sport',abbey:'🕍 Abbey',harbour:'⚓ Harbour',tower:'🗼 Tower',market:'🛒 Market',gate:'🚪 Gate',hall:'🏤 Hall',cinema:'🎬 Cinema',railway:'🚂 Railway',canal:'🚣 Canal',well:'💧 Well',hill:'⛰️ Hill',island:'🏝️ Island',history:'📜 History',legend:'🐉 Legend',area:'🏙 Area',neighbourhood:'🏘 Neighbourhood',other:'📍 Other'};
+
+const OSM_TYPE={monument:'monument',memorial:'monument',castle:'castle',fort:'castle',church:'church',cathedral:'church',chapel:'church',abbey:'abbey',monastery:'abbey',bridge:'bridge',tower:'tower',lighthouse:'tower',windmill:'tower',watermill:'tower',well:'well',ruins:'history',archaeological_site:'history',battlefield:'history',city_gate:'gate',gate:'gate',manor:'estate',hall:'hall',museum:'museum',gallery:'museum',attraction:'monument',artwork:'monument',viewpoint:'nature',pub:'pub',bar:'pub',place_of_worship:'church',theatre:'hall',cinema:'cinema',library:'hall',marketplace:'market',school:'school',university:'school',park:'park',garden:'park',nature_reserve:'nature',stadium:'sport',peak:'hill',beach:'beach',bay:'nature',cliff:'nature',island:'island',spring:'well',canal:'canal',dock:'harbour',harbour:'harbour',pier:'harbour',station:'railway',halt:'railway'};
+
+const VOICES=[
+  {hl:'en-gb',v:'Alice',label:'🇬🇧 Alice',desc:'British female'},
+  {hl:'en-gb',v:'Nancy',label:'🇬🇧 Nancy',desc:'British female'},
+  {hl:'en-gb',v:'Harry',label:'🇬🇧 Harry',desc:'British male'},
+  {hl:'en-gb',v:'George',label:'🇬🇧 George',desc:'British male'},
+  {hl:'en-us',v:'Linda',label:'🇺🇸 Linda',desc:'American female'},
+  {hl:'en-us',v:'Amy',label:'🇺🇸 Amy',desc:'American female'},
+  {hl:'en-us',v:'Mary',label:'🇺🇸 Mary',desc:'American female'},
+  {hl:'en-us',v:'Emma',label:'🇺🇸 Emma',desc:'American female'},
+  {hl:'en-us',v:'Mike',label:'🇺🇸 Mike',desc:'American male'},
+  {hl:'en-us',v:'Brian',label:'🇺🇸 Brian',desc:'American male'},
+  {hl:'en-au',v:'Nicole',label:'🇦🇺 Nicole',desc:'Australian female'},
+  {hl:'en-ca',v:'Clara',label:'🇨🇦 Clara',desc:'Canadian female'},
+  {hl:'en-ca',v:'Steve',label:'🇨🇦 Steve',desc:'Canadian male'},
+  {hl:'en-ie',v:'',label:'🇮🇪 Irish',desc:'Irish English'},
+  {hl:'device',v:'',label:'📱 Device',desc:'Built-in browser voice'}
+];
+const SPEEDS=[{val:0.9,label:'🚶 Slow',desc:'0.9×'},{val:1.0,label:'🎯 Normal',desc:'1.0×'},{val:1.1,label:'⚡ Fast',desc:'1.1×'},{val:1.25,label:'🚀 Faster',desc:'1.25×'}];
+
+const LANGUAGES=[
+  {code:'en',label:'🇬🇧 English',   name:'English',             tts:{hl:'en-gb',v:'Alice'}},
+  {code:'uk',label:'🇺🇦 Ukrainian', name:'Ukrainian',           tts:{hl:'uk-ua',v:''}},
+  {code:'fr',label:'🇫🇷 French',    name:'French',              tts:{hl:'fr-fr',v:''}},
+  {code:'es',label:'🇪🇸 Spanish',   name:'Spanish',             tts:{hl:'es-es',v:''}},
+  {code:'de',label:'🇩🇪 German',    name:'German',              tts:{hl:'de-de',v:''}},
+  {code:'pt',label:'🇵🇹 Portuguese',name:'Portuguese',          tts:{hl:'pt-pt',v:''}},
+  {code:'it',label:'🇮🇹 Italian',   name:'Italian',             tts:{hl:'it-it',v:''}},
+  {code:'nl',label:'🇳🇱 Dutch',     name:'Dutch',               tts:{hl:'nl-nl',v:''}},
+  {code:'tr',label:'🇹🇷 Turkish',   name:'Turkish',             tts:{hl:'tr-tr',v:''}},
+  {code:'zh',label:'🇨🇳 Chinese',   name:'Mandarin Chinese',    tts:{hl:'zh-cn',v:''}},
+  {code:'ar',label:'🇸🇦 Arabic',    name:'Arabic',              tts:{hl:'ar-sa',v:''}},
+  {code:'hi',label:'🇮🇳 Hindi',     name:'Hindi',               tts:{hl:'hi-in',v:''}},
+];
+
+const STORY_TYPES=[
+  {type:'area',icon:'🏙',label:'Character',pill:'pill-area',prompt:(a,c,lang)=>`You are a captivating local storyteller. Write a vivid 200-word story about the character and soul of ${a} in ${c}. Warm spoken style. Story only. Write entirely in ${lang}.`},
+  {type:'legend',icon:'🐉',label:'Local legend',pill:'pill-legend',prompt:(a,c,lang)=>`You are a captivating local storyteller. Tell a local legend or ghost story from ${a}, ${c}. Around 200 words. Story only. Write entirely in ${lang}.`},
+  {type:'history',icon:'📜',label:'History',pill:'pill-history',prompt:(a,c,lang)=>`You are a historian and storyteller. Narrate a significant historical moment connected to ${a}, ${c}. Around 200 words. Story only. Write entirely in ${lang}.`}
+];
+
+// ── TRANSLATIONS ────────────────────────────────────────────────
+const TR={
+  en:{openMap:'Open Map',startListening:'▶ Start Listening',stopListening:'⏹ Stop Listening',explore:'📍 Explore',route:'🗺️ Route',stories:'📖 Stories',walking:'🚶 Walking',shortDrive:'🚗 Short Drive',longDrive:'🛣️ Long Drive',replay:'▶ Replay',share:'↑ Share',stop:'⏹ Stop',skip:'⏭ Skip',hide:'Hide ↓',show:'Show ↑',more:'+ More',listen:'▶ Listen',read:'Read',refreshLandmarks:'Refresh landmarks',favourites:'Favourites',voice:'Voice',speed:'Speed',rotateVoices:'Rotate voices',landmarkTypes:'Landmark types',account:'Account / Pro',sendFeedback:'Send feedback',upgradePro:'Upgrade to Pro',planRoute:'Plan Route & Discover Stories',storiesNearYou:'📖 Stories near you',detectingArea:'Detecting area…',gettingLocation:'Getting location…',findingLocation:'Finding your location…',loadingLandmarks:'Loading landmarks…',searchingLandmarks:'Searching for landmarks…',loadingStories:'Loading stories…',noLandmarks:'No landmarks found here',noRange:'No unvisited landmarks in range',refreshing:'Refreshing…',tourActive:'Tour active',preparing:'⏳ Preparing:',nextUp:'✅ Next:',queuing:'Queuing:',noFavs:'No favourites yet.\nTap ❤️ on a story to save it.',play:'▶ Play',signOut:'Sign out',sendMagicLink:'Send code',magicSent:'Code sent! Check your email.',sending:'Sending…',copied:'Copied!',locationFound:'📍 Location found — refreshing…',proMember:'⭐ Pro member',freePlan:'Free plan',proLocal:'⭐ Pro (local)',notSignedIn:'Not signed in',enterEmail:'Enter a valid email',allOn:'All on',allOff:'All off',apply:'✓ Apply',nearby:'Nearby area',landmark:'landmark',landmarks:'landmarks',accept:'✓ Accept',decline:'✕ Decline',language:'🌐 Language',menu:'Menu',perMonth:'€3.99 / month',perYear:'€29.99 / year',maybeLater:'Maybe later'},
+  uk:{openMap:'Відкрити карту',startListening:'▶ Слухати',stopListening:'⏹ Зупинити',explore:'📍 Дослідження',route:'🗺️ Маршрут',stories:'📖 Історії',walking:'🚶 Пішки',shortDrive:'🚗 Коротка поїздка',longDrive:'🛣️ Далека поїздка',replay:'▶ Повтор',share:'↑ Поділитись',stop:'⏹ Стоп',skip:'⏭ Пропустити',hide:'Сховати ↓',show:'Показати ↑',more:'+ Більше',listen:'▶ Слухати',read:'Читати',refreshLandmarks:'Оновити пам\'ятки',favourites:'Улюблені',voice:'Голос',speed:'Швидкість',rotateVoices:'Змінювати голоси',landmarkTypes:'Типи пам\'яток',account:'Акаунт / Pro',sendFeedback:'Надіслати відгук',upgradePro:'Оновити до Pro',planRoute:'Маршрут та історії',storiesNearYou:'📖 Історії поруч',detectingArea:'Визначення місця…',gettingLocation:'Визначення місцезнаходження…',findingLocation:'Пошук місцезнаходження…',loadingLandmarks:'Завантаження пам\'яток…',searchingLandmarks:'Пошук пам\'яток…',loadingStories:'Завантаження історій…',noLandmarks:'Пам\'яток не знайдено',noRange:'Немає непосещених пам\'яток поруч',refreshing:'Оновлення…',tourActive:'Тур активний',preparing:'⏳ Підготовка:',nextUp:'✅ Далі:',queuing:'У черзі:',noFavs:'Улюблених немає.\nНатисніть ❤️, щоб зберегти.',play:'▶ Відтворити',signOut:'Вийти',sendMagicLink:'Надіслати код',magicSent:'Код надіслано! Перевірте пошту.',sending:'Надсилання…',copied:'Скопійовано!',locationFound:'📍 Місцезнаходження знайдено — оновлення…',proMember:'⭐ Pro учасник',freePlan:'Безкоштовний план',proLocal:'⭐ Pro (локально)',notSignedIn:'Не увійшли',enterEmail:'Введіть дійсну адресу',allOn:'Всі увімк.',allOff:'Всі вимк.',apply:'✓ Застосувати',nearby:'Поруч',landmark:'пам\'ятка',landmarks:'пам\'яток',accept:'✓ Прийняти',decline:'✕ Відхилити',language:'🌐 Мова',menu:'Меню',perMonth:'€3.99 / місяць',perYear:'€29.99 / рік',maybeLater:'Можливо пізніше'},
+  fr:{openMap:'Ouvrir la carte',startListening:'▶ Écouter',stopListening:'⏹ Arrêter',explore:'📍 Explorer',route:'🗺️ Itinéraire',stories:'📖 Histoires',walking:'🚶 À pied',shortDrive:'🚗 Courte route',longDrive:'🛣️ Longue route',replay:'▶ Rejouer',share:'↑ Partager',stop:'⏹ Stop',skip:'⏭ Passer',hide:'Masquer ↓',show:'Afficher ↑',more:'+ Plus',listen:'▶ Écouter',read:'Lire',refreshLandmarks:'Actualiser les sites',favourites:'Favoris',voice:'Voix',speed:'Vitesse',rotateVoices:'Alterner les voix',landmarkTypes:'Types de sites',account:'Compte / Pro',sendFeedback:'Envoyer un avis',upgradePro:'Passer à Pro',planRoute:'Planifier l\'itinéraire',storiesNearYou:'📖 Histoires à proximité',detectingArea:'Détection de la zone…',gettingLocation:'Localisation en cours…',findingLocation:'Recherche de position…',loadingLandmarks:'Chargement des sites…',searchingLandmarks:'Recherche de sites…',loadingStories:'Chargement des histoires…',noLandmarks:'Aucun site trouvé ici',noRange:'Aucun site non visité à proximité',refreshing:'Actualisation…',tourActive:'Tour en cours',preparing:'⏳ Préparation :',nextUp:'✅ Suivant :',queuing:'En file :',noFavs:'Pas encore de favoris.\nAppuyez sur ❤️ pour sauvegarder.',play:'▶ Lire',signOut:'Se déconnecter',sendMagicLink:'Envoyer le code',magicSent:'Code envoyé ! Vérifiez votre email.',sending:'Envoi…',copied:'Copié !',locationFound:'📍 Position trouvée — actualisation…',proMember:'⭐ Membre Pro',freePlan:'Plan gratuit',proLocal:'⭐ Pro (local)',notSignedIn:'Non connecté',enterEmail:'Entrez un email valide',allOn:'Tout activer',allOff:'Tout désactiver',apply:'✓ Appliquer',nearby:'Zone proche',landmark:'site',landmarks:'sites',accept:'✓ Accepter',decline:'✕ Refuser',language:'🌐 Langue',menu:'Menu',perMonth:'€3.99 / mois',perYear:'€29.99 / an',maybeLater:'Plus tard'},
+  es:{openMap:'Abrir mapa',startListening:'▶ Escuchar',stopListening:'⏹ Detener',explore:'📍 Explorar',route:'🗺️ Ruta',stories:'📖 Historias',walking:'🚶 A pie',shortDrive:'🚗 Viaje corto',longDrive:'🛣️ Viaje largo',replay:'▶ Repetir',share:'↑ Compartir',stop:'⏹ Parar',skip:'⏭ Saltar',hide:'Ocultar ↓',show:'Mostrar ↑',more:'+ Más',listen:'▶ Escuchar',read:'Leer',refreshLandmarks:'Actualizar lugares',favourites:'Favoritos',voice:'Voz',speed:'Velocidad',rotateVoices:'Rotar voces',landmarkTypes:'Tipos de lugares',account:'Cuenta / Pro',sendFeedback:'Enviar comentario',upgradePro:'Mejorar a Pro',planRoute:'Planificar ruta',storiesNearYou:'📖 Historias cerca de ti',detectingArea:'Detectando área…',gettingLocation:'Obteniendo ubicación…',findingLocation:'Buscando posición…',loadingLandmarks:'Cargando lugares…',searchingLandmarks:'Buscando lugares…',loadingStories:'Cargando historias…',noLandmarks:'No se encontraron lugares aquí',noRange:'No hay lugares no visitados cerca',refreshing:'Actualizando…',tourActive:'Tour activo',preparing:'⏳ Preparando:',nextUp:'✅ Siguiente:',queuing:'En cola:',noFavs:'Aún sin favoritos.\nToca ❤️ para guardar.',play:'▶ Reproducir',signOut:'Cerrar sesión',sendMagicLink:'Enviar código',magicSent:'¡Código enviado! Revisa tu email.',sending:'Enviando…',copied:'¡Copiado!',locationFound:'📍 Ubicación encontrada — actualizando…',proMember:'⭐ Miembro Pro',freePlan:'Plan gratuito',proLocal:'⭐ Pro (local)',notSignedIn:'No conectado',enterEmail:'Introduce un email válido',allOn:'Activar todo',allOff:'Desactivar todo',apply:'✓ Aplicar',nearby:'Zona cercana',landmark:'lugar',landmarks:'lugares',accept:'✓ Aceptar',decline:'✕ Rechazar',language:'🌐 Idioma',menu:'Menú',perMonth:'€3.99 / mes',perYear:'€29.99 / año',maybeLater:'Quizás después'},
+  de:{openMap:'Karte öffnen',startListening:'▶ Zuhören',stopListening:'⏹ Stoppen',explore:'📍 Erkunden',route:'🗺️ Route',stories:'📖 Geschichten',walking:'🚶 Zu Fuß',shortDrive:'🚗 Kurze Fahrt',longDrive:'🛣️ Lange Fahrt',replay:'▶ Wiederholen',share:'↑ Teilen',stop:'⏹ Stopp',skip:'⏭ Überspringen',hide:'Ausblenden ↓',show:'Einblenden ↑',more:'+ Mehr',listen:'▶ Anhören',read:'Lesen',refreshLandmarks:'Sehenswürdigkeiten aktualisieren',favourites:'Favoriten',voice:'Stimme',speed:'Geschwindigkeit',rotateVoices:'Stimmen wechseln',landmarkTypes:'Sehenswürdigkeitstypen',account:'Konto / Pro',sendFeedback:'Feedback senden',upgradePro:'Auf Pro upgraden',planRoute:'Route planen',storiesNearYou:'📖 Geschichten in der Nähe',detectingArea:'Bereich wird erkannt…',gettingLocation:'Standort wird ermittelt…',findingLocation:'Position wird gesucht…',loadingLandmarks:'Sehenswürdigkeiten laden…',searchingLandmarks:'Sehenswürdigkeiten suchen…',loadingStories:'Geschichten laden…',noLandmarks:'Keine Sehenswürdigkeiten gefunden',noRange:'Keine unbesuchten Sehenswürdigkeiten in der Nähe',refreshing:'Aktualisierung…',tourActive:'Tour aktiv',preparing:'⏳ Vorbereitung:',nextUp:'✅ Weiter:',queuing:'In Warteschlange:',noFavs:'Noch keine Favoriten.\nTippe ❤️ zum Speichern.',play:'▶ Abspielen',signOut:'Abmelden',sendMagicLink:'Code senden',magicSent:'Code gesendet! E-Mail prüfen.',sending:'Senden…',copied:'Kopiert!',locationFound:'📍 Standort gefunden — Aktualisierung…',proMember:'⭐ Pro-Mitglied',freePlan:'Kostenloser Plan',proLocal:'⭐ Pro (lokal)',notSignedIn:'Nicht angemeldet',enterEmail:'Gültige E-Mail eingeben',allOn:'Alle ein',allOff:'Alle aus',apply:'✓ Anwenden',nearby:'Nahbereich',landmark:'Sehenswürdigkeit',landmarks:'Sehenswürdigkeiten',accept:'✓ Akzeptieren',decline:'✕ Ablehnen',language:'🌐 Sprache',menu:'Menü',perMonth:'€3.99 / Monat',perYear:'€29.99 / Jahr',maybeLater:'Vielleicht später'},
+  pt:{openMap:'Abrir mapa',startListening:'▶ Ouvir',stopListening:'⏹ Parar',explore:'📍 Explorar',route:'🗺️ Rota',stories:'📖 Histórias',walking:'🚶 A pé',shortDrive:'🚗 Viagem curta',longDrive:'🛣️ Viagem longa',replay:'▶ Repetir',share:'↑ Partilhar',stop:'⏹ Parar',skip:'⏭ Saltar',hide:'Ocultar ↓',show:'Mostrar ↑',more:'+ Mais',listen:'▶ Ouvir',read:'Ler',refreshLandmarks:'Atualizar locais',favourites:'Favoritos',voice:'Voz',speed:'Velocidade',rotateVoices:'Alternar vozes',landmarkTypes:'Tipos de locais',account:'Conta / Pro',sendFeedback:'Enviar comentário',upgradePro:'Atualizar para Pro',planRoute:'Planear rota',storiesNearYou:'📖 Histórias perto de si',detectingArea:'A detetar área…',gettingLocation:'A obter localização…',findingLocation:'A procurar posição…',loadingLandmarks:'A carregar locais…',searchingLandmarks:'A procurar locais…',loadingStories:'A carregar histórias…',noLandmarks:'Sem locais encontrados aqui',noRange:'Sem locais não visitados perto',refreshing:'A atualizar…',tourActive:'Tour ativo',preparing:'⏳ A preparar:',nextUp:'✅ A seguir:',queuing:'Na fila:',noFavs:'Sem favoritos ainda.\nToque ❤️ para guardar.',play:'▶ Reproduzir',signOut:'Terminar sessão',sendMagicLink:'Enviar código',magicSent:'Código enviado! Verifique o seu email.',sending:'A enviar…',copied:'Copiado!',locationFound:'📍 Localização encontrada — a atualizar…',proMember:'⭐ Membro Pro',freePlan:'Plano gratuito',proLocal:'⭐ Pro (local)',notSignedIn:'Não autenticado',enterEmail:'Introduza um email válido',allOn:'Tudo ativo',allOff:'Tudo inativo',apply:'✓ Aplicar',nearby:'Área próxima',landmark:'local',landmarks:'locais',accept:'✓ Aceitar',decline:'✕ Recusar',language:'🌐 Idioma',menu:'Menu',perMonth:'€3.99 / mês',perYear:'€29.99 / ano',maybeLater:'Talvez mais tarde'},
+  it:{openMap:'Apri mappa',startListening:'▶ Ascolta',stopListening:'⏹ Ferma',explore:'📍 Esplora',route:'🗺️ Percorso',stories:'📖 Storie',walking:'🚶 A piedi',shortDrive:'🚗 Gita breve',longDrive:'🛣️ Gita lunga',replay:'▶ Riproduci',share:'↑ Condividi',stop:'⏹ Stop',skip:'⏭ Salta',hide:'Nascondi ↓',show:'Mostra ↑',more:'+ Altro',listen:'▶ Ascolta',read:'Leggi',refreshLandmarks:'Aggiorna luoghi',favourites:'Preferiti',voice:'Voce',speed:'Velocità',rotateVoices:'Ruota voci',landmarkTypes:'Tipi di luoghi',account:'Account / Pro',sendFeedback:'Invia commento',upgradePro:'Passa a Pro',planRoute:'Pianifica percorso',storiesNearYou:'📖 Storie vicino a te',detectingArea:'Rilevamento area…',gettingLocation:'Recupero posizione…',findingLocation:'Ricerca posizione…',loadingLandmarks:'Caricamento luoghi…',searchingLandmarks:'Ricerca luoghi…',loadingStories:'Caricamento storie…',noLandmarks:'Nessun luogo trovato qui',noRange:'Nessun luogo non visitato nelle vicinanze',refreshing:'Aggiornamento…',tourActive:'Tour attivo',preparing:'⏳ Preparazione:',nextUp:'✅ Prossimo:',queuing:'In coda:',noFavs:'Nessun preferito ancora.\nTocca ❤️ per salvare.',play:'▶ Riproduci',signOut:'Esci',sendMagicLink:'Invia codice',magicSent:'Codice inviato! Controlla la tua email.',sending:'Invio…',copied:'Copiato!',locationFound:'📍 Posizione trovata — aggiornamento…',proMember:'⭐ Membro Pro',freePlan:'Piano gratuito',proLocal:'⭐ Pro (locale)',notSignedIn:'Non connesso',enterEmail:'Inserisci un email valido',allOn:'Attiva tutto',allOff:'Disattiva tutto',apply:'✓ Applica',nearby:'Zona vicina',landmark:'luogo',landmarks:'luoghi',accept:'✓ Accetta',decline:'✕ Rifiuta',language:'🌐 Lingua',menu:'Menu',perMonth:'€3.99 / mese',perYear:'€29.99 / anno',maybeLater:'Forse dopo'},
+  nl:{openMap:'Kaart openen',startListening:'▶ Luisteren',stopListening:'⏹ Stoppen',explore:'📍 Verkennen',route:'🗺️ Route',stories:'📖 Verhalen',walking:'🚶 Lopen',shortDrive:'🚗 Korte rit',longDrive:'🛣️ Lange rit',replay:'▶ Herspelen',share:'↑ Delen',stop:'⏹ Stop',skip:'⏭ Overslaan',hide:'Verbergen ↓',show:'Tonen ↑',more:'+ Meer',listen:'▶ Luisteren',read:'Lezen',refreshLandmarks:'Bezienswaardigheden vernieuwen',favourites:'Favorieten',voice:'Stem',speed:'Snelheid',rotateVoices:'Stemmen wisselen',landmarkTypes:'Types bezienswaardigheden',account:'Account / Pro',sendFeedback:'Feedback sturen',upgradePro:'Upgraden naar Pro',planRoute:'Route plannen',storiesNearYou:'📖 Verhalen in de buurt',detectingArea:'Gebied detecteren…',gettingLocation:'Locatie ophalen…',findingLocation:'Positie zoeken…',loadingLandmarks:'Bezienswaardigheden laden…',searchingLandmarks:'Bezienswaardigheden zoeken…',loadingStories:'Verhalen laden…',noLandmarks:'Geen bezienswaardigheden gevonden',noRange:'Geen onbezochte bezienswaardigheden in de buurt',refreshing:'Vernieuwen…',tourActive:'Tour actief',preparing:'⏳ Voorbereiden:',nextUp:'✅ Volgende:',queuing:'In wachtrij:',noFavs:'Nog geen favorieten.\nTik ❤️ om op te slaan.',play:'▶ Afspelen',signOut:'Uitloggen',sendMagicLink:'Code verzenden',magicSent:'Code verzonden! Controleer uw email.',sending:'Verzenden…',copied:'Gekopieerd!',locationFound:'📍 Locatie gevonden — vernieuwen…',proMember:'⭐ Pro-lid',freePlan:'Gratis plan',proLocal:'⭐ Pro (lokaal)',notSignedIn:'Niet ingelogd',enterEmail:'Voer een geldig e-mailadres in',allOn:'Alles aan',allOff:'Alles uit',apply:'✓ Toepassen',nearby:'Nabijgelegen',landmark:'bezienswaardigheid',landmarks:'bezienswaardigheden',accept:'✓ Accepteren',decline:'✕ Weigeren',language:'🌐 Taal',menu:'Menu',perMonth:'€3.99 / maand',perYear:'€29.99 / jaar',maybeLater:'Misschien later'},
+  tr:{openMap:'Haritayı aç',startListening:'▶ Dinle',stopListening:'⏹ Durdur',explore:'📍 Keşfet',route:'🗺️ Rota',stories:'📖 Hikayeler',walking:'🚶 Yürüyüş',shortDrive:'🚗 Kısa sürüş',longDrive:'🛣️ Uzun sürüş',replay:'▶ Tekrar',share:'↑ Paylaş',stop:'⏹ Dur',skip:'⏭ Atla',hide:'Gizle ↓',show:'Göster ↑',more:'+ Daha fazla',listen:'▶ Dinle',read:'Oku',refreshLandmarks:'Yerleri yenile',favourites:'Favoriler',voice:'Ses',speed:'Hız',rotateVoices:'Sesleri döndür',landmarkTypes:'Yer türleri',account:'Hesap / Pro',sendFeedback:'Geri bildirim gönder',upgradePro:'Pro\'ya yükselt',planRoute:'Rota planla',storiesNearYou:'📖 Yakındaki hikayeler',detectingArea:'Bölge tespit ediliyor…',gettingLocation:'Konum alınıyor…',findingLocation:'Konum aranıyor…',loadingLandmarks:'Yerler yükleniyor…',searchingLandmarks:'Yerler aranıyor…',loadingStories:'Hikayeler yükleniyor…',noLandmarks:'Burada yer bulunamadı',noRange:'Yakında ziyaret edilmemiş yer yok',refreshing:'Yenileniyor…',tourActive:'Tur aktif',preparing:'⏳ Hazırlanıyor:',nextUp:'✅ Sonraki:',queuing:'Sırada:',noFavs:'Henüz favori yok.\nKaydetmek için ❤️ dokun.',play:'▶ Oynat',signOut:'Çıkış yap',sendMagicLink:'Kod gönder',magicSent:'Kod gönderildi! E-postanızı kontrol edin.',sending:'Gönderiliyor…',copied:'Kopyalandı!',locationFound:'📍 Konum bulundu — yenileniyor…',proMember:'⭐ Pro üye',freePlan:'Ücretsiz plan',proLocal:'⭐ Pro (yerel)',notSignedIn:'Giriş yapılmadı',enterEmail:'Geçerli bir e-posta girin',allOn:'Hepsini aç',allOff:'Hepsini kapat',apply:'✓ Uygula',nearby:'Yakın alan',landmark:'yer',landmarks:'yer',accept:'✓ Kabul et',decline:'✕ Reddet',language:'🌐 Dil',menu:'Menü',perMonth:'€3.99 / ay',perYear:'€29.99 / yıl',maybeLater:'Belki sonra'},
+  zh:{openMap:'打开地图',startListening:'▶ 开始收听',stopListening:'⏹ 停止',explore:'📍 探索',route:'🗺️ 路线',stories:'📖 故事',walking:'🚶 步行',shortDrive:'🚗 短途驾车',longDrive:'🛣️ 长途驾车',replay:'▶ 重播',share:'↑ 分享',stop:'⏹ 停止',skip:'⏭ 跳过',hide:'隐藏 ↓',show:'显示 ↑',more:'+ 更多',listen:'▶ 收听',read:'阅读',refreshLandmarks:'刷新地标',favourites:'收藏',voice:'语音',speed:'速度',rotateVoices:'轮换语音',landmarkTypes:'地标类型',account:'账户 / Pro',sendFeedback:'发送反馈',upgradePro:'升级到 Pro',planRoute:'规划路线',storiesNearYou:'📖 附近的故事',detectingArea:'正在检测区域…',gettingLocation:'正在获取位置…',findingLocation:'正在查找位置…',loadingLandmarks:'正在加载地标…',searchingLandmarks:'正在搜索地标…',loadingStories:'正在加载故事…',noLandmarks:'此处未找到地标',noRange:'附近没有未访问的地标',refreshing:'正在刷新…',tourActive:'游览进行中',preparing:'⏳ 准备中：',nextUp:'✅ 下一个：',queuing:'排队中：',noFavs:'暂无收藏。\n点击 ❤️ 保存。',play:'▶ 播放',signOut:'退出登录',sendMagicLink:'发送代码',magicSent:'代码已发送！请查收邮件。',sending:'发送中…',copied:'已复制！',locationFound:'📍 已找到位置 — 正在刷新…',proMember:'⭐ Pro 会员',freePlan:'免费计划',proLocal:'⭐ Pro（本地）',notSignedIn:'未登录',enterEmail:'请输入有效邮箱',allOn:'全部开启',allOff:'全部关闭',apply:'✓ 应用',nearby:'附近区域',landmark:'地标',landmarks:'个地标',accept:'✓ 接受',decline:'✕ 拒绝',language:'🌐 语言',menu:'菜单',perMonth:'€3.99 / 月',perYear:'€29.99 / 年',maybeLater:'稍后再说'},
+  ar:{openMap:'فتح الخريطة',startListening:'▶ استمع',stopListening:'⏹ إيقاف',explore:'📍 استكشاف',route:'🗺️ مسار',stories:'📖 قصص',walking:'🚶 مشياً',shortDrive:'🚗 رحلة قصيرة',longDrive:'🛣️ رحلة طويلة',replay:'▶ إعادة',share:'↑ مشاركة',stop:'⏹ إيقاف',skip:'⏭ تخطي',hide:'إخفاء ↓',show:'إظهار ↑',more:'+ المزيد',listen:'▶ استمع',read:'اقرأ',refreshLandmarks:'تحديث المعالم',favourites:'المفضلة',voice:'الصوت',speed:'السرعة',rotateVoices:'تناوب الأصوات',landmarkTypes:'أنواع المعالم',account:'الحساب / Pro',sendFeedback:'إرسال ملاحظات',upgradePro:'الترقية إلى Pro',planRoute:'خطط المسار',storiesNearYou:'📖 قصص قريبة منك',detectingArea:'جارٍ اكتشاف المنطقة…',gettingLocation:'جارٍ تحديد الموقع…',findingLocation:'جارٍ البحث عن الموقع…',loadingLandmarks:'جارٍ تحميل المعالم…',searchingLandmarks:'جارٍ البحث عن المعالم…',loadingStories:'جارٍ تحميل القصص…',noLandmarks:'لم يتم العثور على معالم هنا',noRange:'لا توجد معالم غير مزورة قريبة',refreshing:'جارٍ التحديث…',tourActive:'الجولة نشطة',preparing:'⏳ جارٍ التحضير:',nextUp:'✅ التالي:',queuing:'في قائمة الانتظار:',noFavs:'لا توجد مفضلة بعد.\nاضغط ❤️ للحفظ.',play:'▶ تشغيل',signOut:'تسجيل الخروج',sendMagicLink:'إرسال رمز',magicSent:'تم إرسال الرمز! تحقق من بريدك.',sending:'جارٍ الإرسال…',copied:'تم النسخ!',locationFound:'📍 تم العثور على الموقع — جارٍ التحديث…',proMember:'⭐ عضو Pro',freePlan:'الخطة المجانية',proLocal:'⭐ Pro (محلي)',notSignedIn:'غير مسجل الدخول',enterEmail:'أدخل بريداً إلكترونياً صالحاً',allOn:'تشغيل الكل',allOff:'إيقاف الكل',apply:'✓ تطبيق',nearby:'منطقة قريبة',landmark:'معلم',landmarks:'معالم',accept:'✓ قبول',decline:'✕ رفض',language:'🌐 اللغة',menu:'القائمة',perMonth:'€3.99 / شهر',perYear:'€29.99 / سنة',maybeLater:'ربما لاحقاً'},
+  hi:{openMap:'नक्शा खोलें',startListening:'▶ सुनना शुरू करें',stopListening:'⏹ रोकें',explore:'📍 खोजें',route:'🗺️ मार्ग',stories:'📖 कहानियाँ',walking:'🚶 पैदल',shortDrive:'🚗 छोटी सवारी',longDrive:'🛣️ लंबी सवारी',replay:'▶ फिर से',share:'↑ साझा करें',stop:'⏹ रोकें',skip:'⏭ छोड़ें',hide:'छुपाएँ ↓',show:'दिखाएँ ↑',more:'+ और',listen:'▶ सुनें',read:'पढ़ें',refreshLandmarks:'स्थल अपडेट करें',favourites:'पसंदीदा',voice:'आवाज़',speed:'गति',rotateVoices:'आवाज़ें बदलें',landmarkTypes:'स्थल प्रकार',account:'खाता / Pro',sendFeedback:'फ़ीडबैक भेजें',upgradePro:'Pro में अपग्रेड करें',planRoute:'मार्ग बनाएँ',storiesNearYou:'📖 पास की कहानियाँ',detectingArea:'क्षेत्र का पता लगाया जा रहा है…',gettingLocation:'स्थान प्राप्त हो रहा है…',findingLocation:'स्थिति खोजी जा रही है…',loadingLandmarks:'स्थल लोड हो रहे हैं…',searchingLandmarks:'स्थल खोजे जा रहे हैं…',loadingStories:'कहानियाँ लोड हो रही हैं…',noLandmarks:'यहाँ कोई स्थल नहीं मिला',noRange:'आसपास कोई अनदेखा स्थल नहीं',refreshing:'रिफ्रेश हो रहा है…',tourActive:'दौरा सक्रिय',preparing:'⏳ तैयारी:',nextUp:'✅ अगला:',queuing:'कतार में:',noFavs:'अभी कोई पसंदीदा नहीं।\nसहेजने के लिए ❤️ दबाएँ।',play:'▶ चलाएँ',signOut:'साइन आउट',sendMagicLink:'कोड भेजें',magicSent:'कोड भेजा गया! ईमेल जाँचें।',sending:'भेजा जा रहा है…',copied:'कॉपी हो गया!',locationFound:'📍 स्थान मिला — रिफ्रेश हो रहा है…',proMember:'⭐ Pro सदस्य',freePlan:'मुफ़्त योजना',proLocal:'⭐ Pro (स्थानीय)',notSignedIn:'साइन इन नहीं',enterEmail:'मान्य ईमेल दर्ज करें',allOn:'सभी चालू',allOff:'सभी बंद',apply:'✓ लागू करें',nearby:'पास का क्षेत्र',landmark:'स्थल',landmarks:'स्थल',accept:'✓ स्वीकार करें',decline:'✕ अस्वीकार करें',language:'🌐 भाषा',menu:'मेनू',perMonth:'€3.99 / माह',perYear:'€29.99 / वर्ष',maybeLater:'शायद बाद में'},
 };
-const ALL_TYPES = [
-  'monument','church','castle','street','building','bridge','park','museum',
-  'person','nature','pub','beach','estate','school','sport','abbey','harbour',
-  'tower','market','gate','hall','cinema','railway','canal','well','hill',
-  'island','history','legend','area','neighbourhood','other'
-];
-const TYPE_LABELS = {
-  monument:'🏛 Monument',church:'⛪ Church',castle:'🏰 Castle',street:'🛤 Street',
-  building:'🏢 Building',bridge:'🌉 Bridge',park:'🌿 Park',museum:'🎭 Museum',
-  person:'👤 Person',nature:'🌊 Nature',pub:'🍺 Pub',beach:'🏖 Beach',
-  estate:'🏡 Estate',school:'🏫 School',sport:'🏟 Sport',abbey:'🕍 Abbey',
-  harbour:'⚓ Harbour',tower:'🗼 Tower',market:'🛒 Market',gate:'🚪 Gate',
-  hall:'🏤 Hall',cinema:'🎬 Cinema',railway:'🚂 Railway',canal:'🚣 Canal',
-  well:'💧 Well',hill:'⛰️ Hill',island:'🏝️ Island',history:'📜 History',
-  legend:'🐉 Legend',area:'🏙 Area',neighbourhood:'🏘 Neighbourhood',other:'📍 Other'
-};
-const VOICES = [
-  {hl:'en-gb',v:'Alice',  label:'🇬🇧 Alice',  desc:'British female'},
-  {hl:'en-gb',v:'Nancy',  label:'🇬🇧 Nancy',  desc:'British female'},
-  {hl:'en-gb',v:'Harry',  label:'🇬🇧 Harry',  desc:'British male'},
-  {hl:'en-gb',v:'George', label:'🇬🇧 George', desc:'British male'},
-  {hl:'en-us',v:'Linda',  label:'🇺🇸 Linda',  desc:'American female'},
-  {hl:'en-us',v:'Amy',    label:'🇺🇸 Amy',    desc:'American female'},
-  {hl:'en-us',v:'Mary',   label:'🇺🇸 Mary',   desc:'American female'},
-  {hl:'en-us',v:'Emma',   label:'🇺🇸 Emma',   desc:'American female'},
-  {hl:'en-us',v:'Mike',   label:'🇺🇸 Mike',   desc:'American male'},
-  {hl:'en-us',v:'Brian',  label:'🇺🇸 Brian',  desc:'American male'},
-  {hl:'en-au',v:'Nicole', label:'🇦🇺 Nicole', desc:'Australian female'},
-  {hl:'en-ca',v:'Clara',  label:'🇨🇦 Clara',  desc:'Canadian female'},
-  {hl:'en-ca',v:'Steve',  label:'🇨🇦 Steve',  desc:'Canadian male'},
-  {hl:'en-ie',v:'',       label:'🇮🇪 Irish',  desc:'Irish English'},
-  {hl:'device',v:'',      label:'📱 Device',  desc:'Built-in browser voice'}
-];
-const SPEEDS = [
-  {val:0.9, label:'🚶 Slow',   desc:'0.9×'},
-  {val:1.0, label:'🎯 Normal', desc:'1.0×'},
-  {val:1.1, label:'⚡ Fast',   desc:'1.1× — default'},
-  {val:1.25,label:'🚀 Faster', desc:'1.25×'},
-];
-const LANGUAGES = [
-  {code:'en',  label:'🇬🇧 English',   storyLang:'English',    tts:{hl:'en-gb',v:'Alice'}},
-  {code:'uk',  label:'🇺🇦 Ukrainian', storyLang:'Ukrainian',  tts:{hl:'uk-ua',v:''}},
-  {code:'fr',  label:'🇫🇷 French',    storyLang:'French',     tts:{hl:'fr-fr',v:''}},
-  {code:'es',  label:'🇪🇸 Spanish',   storyLang:'Spanish',    tts:{hl:'es-es',v:''}},
-  {code:'de',  label:'🇩🇪 German',    storyLang:'German',     tts:{hl:'de-de',v:''}},
-  {code:'pt',  label:'🇵🇹 Portuguese',storyLang:'Portuguese', tts:{hl:'pt-pt',v:''}},
-  {code:'it',  label:'🇮🇹 Italian',   storyLang:'Italian',    tts:{hl:'it-it',v:''}},
-  {code:'nl',  label:'🇳🇱 Dutch',     storyLang:'Dutch',      tts:{hl:'nl-nl',v:''}},
-  {code:'tr',  label:'🇹🇷 Turkish',   storyLang:'Turkish',    tts:{hl:'tr-tr',v:''}},
-  {code:'zh',  label:'🇨🇳 Chinese',   storyLang:'Mandarin Chinese', tts:{hl:'zh-cn',v:''}},
-  {code:'ar',  label:'🇸🇦 Arabic',    storyLang:'Arabic',     tts:{hl:'ar-sa',v:''}},
-  {code:'hi',  label:'🇮🇳 Hindi',     storyLang:'Hindi',      tts:{hl:'hi-in',v:''}},
-];
+function T(k){var t=TR[_lang.code];return(t&&t[k])||TR.en[k]||k;}
 
-// ═══════════════════════════════════════════════════════════════
-// TRANSLATIONS  — T('key') returns the string in the active language
-// ═══════════════════════════════════════════════════════════════
-const TR = {
-  en: {
-    openMap:'Open Map', startListening:'▶ Start Listening', stopListening:'⏹ Stop Listening',
-    explore:'📍 Explore', route:'🗺️ Route', stories:'📖 Stories',
-    walking:'🚶 Walking', shortDrive:'🚗 Short Drive', longDrive:'🛣️ Long Drive',
-    replay:'▶ Replay', share:'↑ Share', stop:'⏹ Stop', skip:'⏭ Skip',
-    hide:'Hide ↓', show:'Show ↑', more:'+ More', listen:'▶ Listen', read:'Read',
-    refreshLandmarks:'Refresh landmarks', favourites:'Favourites',
-    voice:'Voice', speed:'Speed', rotateVoices:'Rotate voices',
-    landmarkTypes:'Landmark types', account:'Account / Pro', sendFeedback:'Send feedback',
-    upgradePro:'Upgrade to Pro', planRoute:'Plan Route & Discover Stories',
-    storiesNearYou:'📖 Stories near you', detectingArea:'Detecting area…',
-    gettingLocation:'Getting location…', findingLocation:'Finding your location…',
-    loadingLandmarks:'Loading landmarks…', searchingLandmarks:'Searching for landmarks…',
-    loadingStories:'Loading stories…', noLandmarks:'No landmarks found here',
-    noRange:'No unvisited landmarks in range', refreshing:'Refreshing…',
-    tourActive:'Tour active', preparing:'⏳ Preparing:', nextUp:'✅ Next:',
-    queuing:'Queuing:', noFavs:'No favourites yet.\nTap ❤️ on a story to save it.',
-    play:'▶ Play', signOut:'Sign out', sendMagicLink:'Send magic link',
-    magicSent:'✓ Magic link sent! Check your email.', sending:'Sending…',
-    copied:'Copied!', locationFound:'📍 Location found — refreshing…',
-    proMember:'⭐ Pro member', freePlan:'Free plan', proLocal:'⭐ Pro (local)',
-    notSignedIn:'Not signed in', enterEmail:'Enter a valid email',
-    allOn:'All on', allOff:'All off', apply:'✓ Apply',
-    nearby:'Nearby area', landmark:'landmark', landmarks:'landmarks',
-    cookie:'We use cookies to understand how StoryRoute is used.',
-    learnMore:'Learn more', accept:'✓ Accept', decline:'✕ Decline',
-    yourName:'Your name (optional)', yourEmail:'Your email (optional)',
-    yourMessage:'Your message…', sendFeedbackBtn:'Send feedback',
-    from:'📍 From — type or use location', to:'🏁 To — e.g. Trinity College',
-    paywall1:'You\'ve explored today\'s free stories',
-    paywall2:'Upgrade for unlimited access — launch offer now on.',
-    perMonth:'€3.99 / month', perYear:'€29.99 / year', maybeLater:'Maybe later',
-    language:'🌐 Language', menu:'Menu', signIn:'Sign in for persistent Pro',
-    signInSub:'Enter your email and we\'ll send a magic link — no password needed.',
-    alreadyPaid:'Already paid? Sign in with the email you used at checkout.',
-  },
-  uk: {
-    openMap:'Відкрити карту', startListening:'▶ Слухати', stopListening:'⏹ Зупинити',
-    explore:'📍 Дослідження', route:'🗺️ Маршрут', stories:'📖 Історії',
-    walking:'🚶 Пішки', shortDrive:'🚗 Коротка поїздка', longDrive:'🛣️ Далека поїздка',
-    replay:'▶ Повтор', share:'↑ Поділитись', stop:'⏹ Стоп', skip:'⏭ Пропустити',
-    hide:'Сховати ↓', show:'Показати ↑', more:'+ Більше', listen:'▶ Слухати', read:'Читати',
-    refreshLandmarks:'Оновити пам\'ятки', favourites:'Улюблені',
-    voice:'Голос', speed:'Швидкість', rotateVoices:'Змінювати голоси',
-    landmarkTypes:'Типи пам\'яток', account:'Акаунт / Pro', sendFeedback:'Надіслати відгук',
-    upgradePro:'Оновити до Pro', planRoute:'Побудувати маршрут і знайти історії',
-    storiesNearYou:'📖 Історії поруч', detectingArea:'Визначення місця…',
-    gettingLocation:'Визначення місцезнаходження…', findingLocation:'Пошук місцезнаходження…',
-    loadingLandmarks:'Завантаження пам\'яток…', searchingLandmarks:'Пошук пам\'яток…',
-    loadingStories:'Завантаження історій…', noLandmarks:'Пам\'яток не знайдено',
-    noRange:'Немає непосещених пам\'яток поруч', refreshing:'Оновлення…',
-    tourActive:'Тур активний', preparing:'⏳ Підготовка:', nextUp:'✅ Далі:',
-    queuing:'У черзі:', noFavs:'Улюблених немає.\nНатисніть ❤️, щоб зберегти.',
-    play:'▶ Відтворити', signOut:'Вийти', sendMagicLink:'Надіслати посилання',
-    magicSent:'✓ Посилання надіслано! Перевірте пошту.', sending:'Надсилання…',
-    copied:'Скопійовано!', locationFound:'📍 Місцезнаходження знайдено — оновлення…',
-    proMember:'⭐ Pro учасник', freePlan:'Безкоштовний план', proLocal:'⭐ Pro (локально)',
-    notSignedIn:'Не увійшли', enterEmail:'Введіть дійсну адресу',
-    allOn:'Всі увімк.', allOff:'Всі вимк.', apply:'✓ Застосувати',
-    nearby:'Поруч', landmark:'пам\'ятка', landmarks:'пам\'яток',
-    cookie:'Ми використовуємо файли cookie.',
-    learnMore:'Дізнатися більше', accept:'✓ Прийняти', decline:'✕ Відхилити',
-    yourName:'Ваше ім\'я (необов\'язково)', yourEmail:'Ваш email (необов\'язково)',
-    yourMessage:'Ваше повідомлення…', sendFeedbackBtn:'Надіслати відгук',
-    from:'📍 Звідки — введіть або використайте місцезнаходження', to:'🏁 Куди — напр. Хрещатик',
-    paywall1:'Ви вичерпали безкоштовні історії на сьогодні',
-    paywall2:'Оновіть для необмеженого доступу — спеціальна пропозиція.',
-    perMonth:'€3.99 / місяць', perYear:'€29.99 / рік', maybeLater:'Можливо пізніше',
-    language:'🌐 Мова', menu:'Меню', signIn:'Увійдіть для постійного Pro',
-    signInSub:'Введіть email і ми надішлемо посилання для входу.',
-    alreadyPaid:'Вже оплатили? Увійдіть з email, використаним при оплаті.',
-  },
-  fr: {
-    openMap:'Ouvrir la carte', startListening:'▶ Écouter', stopListening:'⏹ Arrêter',
-    explore:'📍 Explorer', route:'🗺️ Itinéraire', stories:'📖 Histoires',
-    walking:'🚶 À pied', shortDrive:'🚗 Courte route', longDrive:'🛣️ Longue route',
-    replay:'▶ Rejouer', share:'↑ Partager', stop:'⏹ Stop', skip:'⏭ Passer',
-    hide:'Masquer ↓', show:'Afficher ↑', more:'+ Plus', listen:'▶ Écouter', read:'Lire',
-    refreshLandmarks:'Actualiser les sites', favourites:'Favoris',
-    voice:'Voix', speed:'Vitesse', rotateVoices:'Alterner les voix',
-    landmarkTypes:'Types de sites', account:'Compte / Pro', sendFeedback:'Envoyer un avis',
-    upgradePro:'Passer à Pro', planRoute:'Planifier l\'itinéraire',
-    storiesNearYou:'📖 Histoires à proximité', detectingArea:'Détection de la zone…',
-    gettingLocation:'Localisation en cours…', findingLocation:'Recherche de position…',
-    loadingLandmarks:'Chargement des sites…', searchingLandmarks:'Recherche de sites…',
-    loadingStories:'Chargement des histoires…', noLandmarks:'Aucun site trouvé ici',
-    noRange:'Aucun site non visité à proximité', refreshing:'Actualisation…',
-    tourActive:'Tour en cours', preparing:'⏳ Préparation :', nextUp:'✅ Suivant :',
-    queuing:'En file :', noFavs:'Pas encore de favoris.\nAppuyez sur ❤️ pour sauvegarder.',
-    play:'▶ Lire', signOut:'Se déconnecter', sendMagicLink:'Envoyer le lien',
-    magicSent:'✓ Lien envoyé ! Vérifiez votre email.', sending:'Envoi…',
-    copied:'Copié !', locationFound:'📍 Position trouvée — actualisation…',
-    proMember:'⭐ Membre Pro', freePlan:'Plan gratuit', proLocal:'⭐ Pro (local)',
-    notSignedIn:'Non connecté', enterEmail:'Entrez un email valide',
-    allOn:'Tout activer', allOff:'Tout désactiver', apply:'✓ Appliquer',
-    nearby:'Zone proche', landmark:'site', landmarks:'sites',
-    cookie:'Nous utilisons des cookies pour comprendre l\'utilisation de StoryRoute.',
-    learnMore:'En savoir plus', accept:'✓ Accepter', decline:'✕ Refuser',
-    yourName:'Votre nom (facultatif)', yourEmail:'Votre email (facultatif)',
-    yourMessage:'Votre message…', sendFeedbackBtn:'Envoyer',
-    from:'📍 De — tapez ou utilisez votre position', to:'🏁 À — ex. Tour Eiffel',
-    paywall1:'Vous avez exploré les histoires gratuites du jour',
-    paywall2:'Passez à Pro pour un accès illimité.',
-    perMonth:'€3.99 / mois', perYear:'€29.99 / an', maybeLater:'Plus tard',
-    language:'🌐 Langue', menu:'Menu', signIn:'Connexion pour Pro persistant',
-    signInSub:'Entrez votre email et nous vous enverrons un lien magique.',
-    alreadyPaid:'Déjà payé ? Connectez-vous avec l\'email utilisé lors de l\'achat.',
-  },
-  es: {
-    openMap:'Abrir mapa', startListening:'▶ Escuchar', stopListening:'⏹ Detener',
-    explore:'📍 Explorar', route:'🗺️ Ruta', stories:'📖 Historias',
-    walking:'🚶 A pie', shortDrive:'🚗 Viaje corto', longDrive:'🛣️ Viaje largo',
-    replay:'▶ Repetir', share:'↑ Compartir', stop:'⏹ Parar', skip:'⏭ Saltar',
-    hide:'Ocultar ↓', show:'Mostrar ↑', more:'+ Más', listen:'▶ Escuchar', read:'Leer',
-    refreshLandmarks:'Actualizar lugares', favourites:'Favoritos',
-    voice:'Voz', speed:'Velocidad', rotateVoices:'Rotar voces',
-    landmarkTypes:'Tipos de lugares', account:'Cuenta / Pro', sendFeedback:'Enviar comentario',
-    upgradePro:'Mejorar a Pro', planRoute:'Planificar ruta y descubrir historias',
-    storiesNearYou:'📖 Historias cerca de ti', detectingArea:'Detectando área…',
-    gettingLocation:'Obteniendo ubicación…', findingLocation:'Buscando posición…',
-    loadingLandmarks:'Cargando lugares…', searchingLandmarks:'Buscando lugares…',
-    loadingStories:'Cargando historias…', noLandmarks:'No se encontraron lugares aquí',
-    noRange:'No hay lugares no visitados cerca', refreshing:'Actualizando…',
-    tourActive:'Tour activo', preparing:'⏳ Preparando:', nextUp:'✅ Siguiente:',
-    queuing:'En cola:', noFavs:'Aún sin favoritos.\nToca ❤️ para guardar.',
-    play:'▶ Reproducir', signOut:'Cerrar sesión', sendMagicLink:'Enviar enlace',
-    magicSent:'✓ ¡Enlace enviado! Revisa tu email.', sending:'Enviando…',
-    copied:'¡Copiado!', locationFound:'📍 Ubicación encontrada — actualizando…',
-    proMember:'⭐ Miembro Pro', freePlan:'Plan gratuito', proLocal:'⭐ Pro (local)',
-    notSignedIn:'No conectado', enterEmail:'Introduce un email válido',
-    allOn:'Activar todo', allOff:'Desactivar todo', apply:'✓ Aplicar',
-    nearby:'Zona cercana', landmark:'lugar', landmarks:'lugares',
-    cookie:'Usamos cookies para entender cómo se usa StoryRoute.',
-    learnMore:'Más información', accept:'✓ Aceptar', decline:'✕ Rechazar',
-    yourName:'Tu nombre (opcional)', yourEmail:'Tu email (opcional)',
-    yourMessage:'Tu mensaje…', sendFeedbackBtn:'Enviar comentario',
-    from:'📍 De — escribe o usa tu ubicación', to:'🏁 A — p. ej. Sagrada Familia',
-    paywall1:'Has explorado las historias gratuitas de hoy',
-    paywall2:'Actualiza para acceso ilimitado.',
-    perMonth:'€3.99 / mes', perYear:'€29.99 / año', maybeLater:'Quizás después',
-    language:'🌐 Idioma', menu:'Menú', signIn:'Inicia sesión para Pro persistente',
-    signInSub:'Introduce tu email y te enviaremos un enlace mágico.',
-    alreadyPaid:'¿Ya pagaste? Inicia sesión con el email usado en el pago.',
-  },
-  de: {
-    openMap:'Karte öffnen', startListening:'▶ Zuhören', stopListening:'⏹ Stoppen',
-    explore:'📍 Erkunden', route:'🗺️ Route', stories:'📖 Geschichten',
-    walking:'🚶 Zu Fuß', shortDrive:'🚗 Kurze Fahrt', longDrive:'🛣️ Lange Fahrt',
-    replay:'▶ Wiederholen', share:'↑ Teilen', stop:'⏹ Stopp', skip:'⏭ Überspringen',
-    hide:'Ausblenden ↓', show:'Einblenden ↑', more:'+ Mehr', listen:'▶ Anhören', read:'Lesen',
-    refreshLandmarks:'Sehenswürdigkeiten aktualisieren', favourites:'Favoriten',
-    voice:'Stimme', speed:'Geschwindigkeit', rotateVoices:'Stimmen wechseln',
-    landmarkTypes:'Sehenswürdigkeitstypen', account:'Konto / Pro', sendFeedback:'Feedback senden',
-    upgradePro:'Auf Pro upgraden', planRoute:'Route planen & Geschichten entdecken',
-    storiesNearYou:'📖 Geschichten in der Nähe', detectingArea:'Bereich wird erkannt…',
-    gettingLocation:'Standort wird ermittelt…', findingLocation:'Position wird gesucht…',
-    loadingLandmarks:'Sehenswürdigkeiten laden…', searchingLandmarks:'Sehenswürdigkeiten suchen…',
-    loadingStories:'Geschichten laden…', noLandmarks:'Keine Sehenswürdigkeiten gefunden',
-    noRange:'Keine unbesuchten Sehenswürdigkeiten in der Nähe', refreshing:'Aktualisierung…',
-    tourActive:'Tour aktiv', preparing:'⏳ Vorbereitung:', nextUp:'✅ Weiter:',
-    queuing:'In Warteschlange:', noFavs:'Noch keine Favoriten.\nTippe ❤️ zum Speichern.',
-    play:'▶ Abspielen', signOut:'Abmelden', sendMagicLink:'Link senden',
-    magicSent:'✓ Link gesendet! E-Mail prüfen.', sending:'Senden…',
-    copied:'Kopiert!', locationFound:'📍 Standort gefunden — Aktualisierung…',
-    proMember:'⭐ Pro-Mitglied', freePlan:'Kostenloser Plan', proLocal:'⭐ Pro (lokal)',
-    notSignedIn:'Nicht angemeldet', enterEmail:'Gültige E-Mail eingeben',
-    allOn:'Alle ein', allOff:'Alle aus', apply:'✓ Anwenden',
-    nearby:'Nahbereich', landmark:'Sehenswürdigkeit', landmarks:'Sehenswürdigkeiten',
-    cookie:'Wir verwenden Cookies, um die Nutzung von StoryRoute zu verstehen.',
-    learnMore:'Mehr erfahren', accept:'✓ Akzeptieren', decline:'✕ Ablehnen',
-    yourName:'Ihr Name (optional)', yourEmail:'Ihre E-Mail (optional)',
-    yourMessage:'Ihre Nachricht…', sendFeedbackBtn:'Feedback senden',
-    from:'📍 Von — eingeben oder Standort nutzen', to:'🏁 Nach — z. B. Brandenburger Tor',
-    paywall1:'Die kostenlosen Geschichten des Tages wurden erkundet',
-    paywall2:'Upgrade für unbegrenzten Zugang.',
-    perMonth:'€3.99 / Monat', perYear:'€29.99 / Jahr', maybeLater:'Vielleicht später',
-    language:'🌐 Sprache', menu:'Menü', signIn:'Anmelden für dauerhaftes Pro',
-    signInSub:'E-Mail eingeben und wir senden Ihnen einen magischen Link.',
-    alreadyPaid:'Bereits bezahlt? Mit der E-Mail aus dem Kauf anmelden.',
-  },
-  pt: {
-    openMap:'Abrir mapa', startListening:'▶ Ouvir', stopListening:'⏹ Parar',
-    explore:'📍 Explorar', route:'🗺️ Rota', stories:'📖 Histórias',
-    walking:'🚶 A pé', shortDrive:'🚗 Viagem curta', longDrive:'🛣️ Viagem longa',
-    replay:'▶ Repetir', share:'↑ Partilhar', stop:'⏹ Parar', skip:'⏭ Saltar',
-    hide:'Ocultar ↓', show:'Mostrar ↑', more:'+ Mais', listen:'▶ Ouvir', read:'Ler',
-    refreshLandmarks:'Atualizar locais', favourites:'Favoritos',
-    voice:'Voz', speed:'Velocidade', rotateVoices:'Alternar vozes',
-    landmarkTypes:'Tipos de locais', account:'Conta / Pro', sendFeedback:'Enviar comentário',
-    upgradePro:'Atualizar para Pro', planRoute:'Planear rota e descobrir histórias',
-    storiesNearYou:'📖 Histórias perto de si', detectingArea:'A detetar área…',
-    gettingLocation:'A obter localização…', findingLocation:'A procurar posição…',
-    loadingLandmarks:'A carregar locais…', searchingLandmarks:'A procurar locais…',
-    loadingStories:'A carregar histórias…', noLandmarks:'Sem locais encontrados aqui',
-    noRange:'Sem locais não visitados perto', refreshing:'A atualizar…',
-    tourActive:'Tour ativo', preparing:'⏳ A preparar:', nextUp:'✅ A seguir:',
-    queuing:'Na fila:', noFavs:'Sem favoritos ainda.\nToque ❤️ para guardar.',
-    play:'▶ Reproduzir', signOut:'Terminar sessão', sendMagicLink:'Enviar link',
-    magicSent:'✓ Link enviado! Verifique o seu email.', sending:'A enviar…',
-    copied:'Copiado!', locationFound:'📍 Localização encontrada — a atualizar…',
-    proMember:'⭐ Membro Pro', freePlan:'Plano gratuito', proLocal:'⭐ Pro (local)',
-    notSignedIn:'Não autenticado', enterEmail:'Introduza um email válido',
-    allOn:'Tudo ativo', allOff:'Tudo inativo', apply:'✓ Aplicar',
-    nearby:'Área próxima', landmark:'local', landmarks:'locais',
-    cookie:'Usamos cookies para perceber como o StoryRoute é utilizado.',
-    learnMore:'Saiba mais', accept:'✓ Aceitar', decline:'✕ Recusar',
-    yourName:'O seu nome (opcional)', yourEmail:'O seu email (opcional)',
-    yourMessage:'A sua mensagem…', sendFeedbackBtn:'Enviar comentário',
-    from:'📍 De — escreva ou use a sua localização', to:'🏁 Para — ex. Torre de Belém',
-    paywall1:'Explorou as histórias gratuitas de hoje',
-    paywall2:'Atualize para acesso ilimitado.',
-    perMonth:'€3.99 / mês', perYear:'€29.99 / ano', maybeLater:'Talvez mais tarde',
-    language:'🌐 Idioma', menu:'Menu', signIn:'Inicie sessão para Pro persistente',
-    signInSub:'Introduza o seu email e enviaremos um link mágico.',
-    alreadyPaid:'Já pagou? Inicie sessão com o email usado na compra.',
-  },
-  it: {
-    openMap:'Apri mappa', startListening:'▶ Ascolta', stopListening:'⏹ Ferma',
-    explore:'📍 Esplora', route:'🗺️ Percorso', stories:'📖 Storie',
-    walking:'🚶 A piedi', shortDrive:'🚗 Gita breve', longDrive:'🛣️ Gita lunga',
-    replay:'▶ Riproduci', share:'↑ Condividi', stop:'⏹ Stop', skip:'⏭ Salta',
-    hide:'Nascondi ↓', show:'Mostra ↑', more:'+ Altro', listen:'▶ Ascolta', read:'Leggi',
-    refreshLandmarks:'Aggiorna luoghi', favourites:'Preferiti',
-    voice:'Voce', speed:'Velocità', rotateVoices:'Ruota voci',
-    landmarkTypes:'Tipi di luoghi', account:'Account / Pro', sendFeedback:'Invia commento',
-    upgradePro:'Passa a Pro', planRoute:'Pianifica percorso e scopri storie',
-    storiesNearYou:'📖 Storie vicino a te', detectingArea:'Rilevamento area…',
-    gettingLocation:'Recupero posizione…', findingLocation:'Ricerca posizione…',
-    loadingLandmarks:'Caricamento luoghi…', searchingLandmarks:'Ricerca luoghi…',
-    loadingStories:'Caricamento storie…', noLandmarks:'Nessun luogo trovato qui',
-    noRange:'Nessun luogo non visitato nelle vicinanze', refreshing:'Aggiornamento…',
-    tourActive:'Tour attivo', preparing:'⏳ Preparazione:', nextUp:'✅ Prossimo:',
-    queuing:'In coda:', noFavs:'Nessun preferito ancora.\nTocca ❤️ per salvare.',
-    play:'▶ Riproduci', signOut:'Esci', sendMagicLink:'Invia link',
-    magicSent:'✓ Link inviato! Controlla la tua email.', sending:'Invio…',
-    copied:'Copiato!', locationFound:'📍 Posizione trovata — aggiornamento…',
-    proMember:'⭐ Membro Pro', freePlan:'Piano gratuito', proLocal:'⭐ Pro (locale)',
-    notSignedIn:'Non connesso', enterEmail:'Inserisci un email valido',
-    allOn:'Attiva tutto', allOff:'Disattiva tutto', apply:'✓ Applica',
-    nearby:'Zona vicina', landmark:'luogo', landmarks:'luoghi',
-    cookie:'Usiamo i cookie per capire come viene usato StoryRoute.',
-    learnMore:'Scopri di più', accept:'✓ Accetta', decline:'✕ Rifiuta',
-    yourName:'Il tuo nome (opzionale)', yourEmail:'La tua email (opzionale)',
-    yourMessage:'Il tuo messaggio…', sendFeedbackBtn:'Invia commento',
-    from:'📍 Da — scrivi o usa la tua posizione', to:'🏁 A — es. Colosseo',
-    paywall1:'Hai esplorato le storie gratuite di oggi',
-    paywall2:'Passa a Pro per accesso illimitato.',
-    perMonth:'€3.99 / mese', perYear:'€29.99 / anno', maybeLater:'Forse dopo',
-    language:'🌐 Lingua', menu:'Menu', signIn:'Accedi per Pro persistente',
-    signInSub:'Inserisci la tua email e ti invieremo un link magico.',
-    alreadyPaid:'Hai già pagato? Accedi con la email usata nell\'acquisto.',
-  },
-  nl: {
-    openMap:'Kaart openen', startListening:'▶ Luisteren', stopListening:'⏹ Stoppen',
-    explore:'📍 Verkennen', route:'🗺️ Route', stories:'📖 Verhalen',
-    walking:'🚶 Lopen', shortDrive:'🚗 Korte rit', longDrive:'🛣️ Lange rit',
-    replay:'▶ Herspelen', share:'↑ Delen', stop:'⏹ Stop', skip:'⏭ Overslaan',
-    hide:'Verbergen ↓', show:'Tonen ↑', more:'+ Meer', listen:'▶ Luisteren', read:'Lezen',
-    refreshLandmarks:'Bezienswaardigheden vernieuwen', favourites:'Favorieten',
-    voice:'Stem', speed:'Snelheid', rotateVoices:'Stemmen wisselen',
-    landmarkTypes:'Types bezienswaardigheden', account:'Account / Pro', sendFeedback:'Feedback sturen',
-    upgradePro:'Upgraden naar Pro', planRoute:'Route plannen & verhalen ontdekken',
-    storiesNearYou:'📖 Verhalen in de buurt', detectingArea:'Gebied detecteren…',
-    gettingLocation:'Locatie ophalen…', findingLocation:'Positie zoeken…',
-    loadingLandmarks:'Bezienswaardigheden laden…', searchingLandmarks:'Bezienswaardigheden zoeken…',
-    loadingStories:'Verhalen laden…', noLandmarks:'Geen bezienswaardigheden gevonden',
-    noRange:'Geen onbezochte bezienswaardigheden in de buurt', refreshing:'Vernieuwen…',
-    tourActive:'Tour actief', preparing:'⏳ Voorbereiden:', nextUp:'✅ Volgende:',
-    queuing:'In wachtrij:', noFavs:'Nog geen favorieten.\nTik ❤️ om op te slaan.',
-    play:'▶ Afspelen', signOut:'Uitloggen', sendMagicLink:'Link verzenden',
-    magicSent:'✓ Link verzonden! Controleer uw email.', sending:'Verzenden…',
-    copied:'Gekopieerd!', locationFound:'📍 Locatie gevonden — vernieuwen…',
-    proMember:'⭐ Pro-lid', freePlan:'Gratis plan', proLocal:'⭐ Pro (lokaal)',
-    notSignedIn:'Niet ingelogd', enterEmail:'Voer een geldig e-mailadres in',
-    allOn:'Alles aan', allOff:'Alles uit', apply:'✓ Toepassen',
-    nearby:'Nabijgelegen', landmark:'bezienswaardigheid', landmarks:'bezienswaardigheden',
-    cookie:'We gebruiken cookies om te begrijpen hoe StoryRoute wordt gebruikt.',
-    learnMore:'Meer info', accept:'✓ Accepteren', decline:'✕ Weigeren',
-    yourName:'Uw naam (optioneel)', yourEmail:'Uw e-mail (optioneel)',
-    yourMessage:'Uw bericht…', sendFeedbackBtn:'Feedback sturen',
-    from:'📍 Van — typ of gebruik uw locatie', to:'🏁 Naar — bijv. Rijksmuseum',
-    paywall1:'U heeft de gratis verhalen van vandaag verkend',
-    paywall2:'Upgrade voor onbeperkte toegang.',
-    perMonth:'€3.99 / maand', perYear:'€29.99 / jaar', maybeLater:'Misschien later',
-    language:'🌐 Taal', menu:'Menu', signIn:'Inloggen voor blijvend Pro',
-    signInSub:'Voer uw e-mail in en we sturen een magische link.',
-    alreadyPaid:'Al betaald? Log in met het e-mailadres dat u bij aankoop heeft gebruikt.',
-  },
-  tr: {
-    openMap:'Haritayı aç', startListening:'▶ Dinle', stopListening:'⏹ Durdur',
-    explore:'📍 Keşfet', route:'🗺️ Rota', stories:'📖 Hikayeler',
-    walking:'🚶 Yürüyüş', shortDrive:'🚗 Kısa sürüş', longDrive:'🛣️ Uzun sürüş',
-    replay:'▶ Tekrar', share:'↑ Paylaş', stop:'⏹ Dur', skip:'⏭ Atla',
-    hide:'Gizle ↓', show:'Göster ↑', more:'+ Daha fazla', listen:'▶ Dinle', read:'Oku',
-    refreshLandmarks:'Yerleri yenile', favourites:'Favoriler',
-    voice:'Ses', speed:'Hız', rotateVoices:'Sesleri döndür',
-    landmarkTypes:'Yer türleri', account:'Hesap / Pro', sendFeedback:'Geri bildirim gönder',
-    upgradePro:'Pro\'ya yükselt', planRoute:'Rota planla ve hikayeler keşfet',
-    storiesNearYou:'📖 Yakındaki hikayeler', detectingArea:'Bölge tespit ediliyor…',
-    gettingLocation:'Konum alınıyor…', findingLocation:'Konum aranıyor…',
-    loadingLandmarks:'Yerler yükleniyor…', searchingLandmarks:'Yerler aranıyor…',
-    loadingStories:'Hikayeler yükleniyor…', noLandmarks:'Burada yer bulunamadı',
-    noRange:'Yakında ziyaret edilmemiş yer yok', refreshing:'Yenileniyor…',
-    tourActive:'Tur aktif', preparing:'⏳ Hazırlanıyor:', nextUp:'✅ Sonraki:',
-    queuing:'Sırada:', noFavs:'Henüz favori yok.\nKaydetmek için ❤️ dokun.',
-    play:'▶ Oynat', signOut:'Çıkış yap', sendMagicLink:'Link gönder',
-    magicSent:'✓ Link gönderildi! E-postanızı kontrol edin.', sending:'Gönderiliyor…',
-    copied:'Kopyalandı!', locationFound:'📍 Konum bulundu — yenileniyor…',
-    proMember:'⭐ Pro üye', freePlan:'Ücretsiz plan', proLocal:'⭐ Pro (yerel)',
-    notSignedIn:'Giriş yapılmadı', enterEmail:'Geçerli bir e-posta girin',
-    allOn:'Hepsini aç', allOff:'Hepsini kapat', apply:'✓ Uygula',
-    nearby:'Yakın alan', landmark:'yer', landmarks:'yer',
-    cookie:'StoryRoute\'un nasıl kullanıldığını anlamak için çerezler kullanıyoruz.',
-    learnMore:'Daha fazla bilgi', accept:'✓ Kabul et', decline:'✕ Reddet',
-    yourName:'Adınız (isteğe bağlı)', yourEmail:'E-postanız (isteğe bağlı)',
-    yourMessage:'Mesajınız…', sendFeedbackBtn:'Geri bildirim gönder',
-    from:'📍 Nereden — yazın veya konumunuzu kullanın', to:'🏁 Nereye — örn. Ayasofya',
-    paywall1:'Bugünkü ücretsiz hikayeleri keşfettiniz',
-    paywall2:'Sınırsız erişim için yükseltin.',
-    perMonth:'€3.99 / ay', perYear:'€29.99 / yıl', maybeLater:'Belki sonra',
-    language:'🌐 Dil', menu:'Menü', signIn:'Kalıcı Pro için giriş yapın',
-    signInSub:'E-postanızı girin, size sihirli bir bağlantı gönderelim.',
-    alreadyPaid:'Zaten ödedi misiniz? Satın alırken kullandığınız e-posta ile giriş yapın.',
-  },
-  zh: {
-    openMap:'打开地图', startListening:'▶ 开始收听', stopListening:'⏹ 停止',
-    explore:'📍 探索', route:'🗺️ 路线', stories:'📖 故事',
-    walking:'🚶 步行', shortDrive:'🚗 短途驾车', longDrive:'🛣️ 长途驾车',
-    replay:'▶ 重播', share:'↑ 分享', stop:'⏹ 停止', skip:'⏭ 跳过',
-    hide:'隐藏 ↓', show:'显示 ↑', more:'+ 更多', listen:'▶ 收听', read:'阅读',
-    refreshLandmarks:'刷新地标', favourites:'收藏',
-    voice:'语音', speed:'速度', rotateVoices:'轮换语音',
-    landmarkTypes:'地标类型', account:'账户 / Pro', sendFeedback:'发送反馈',
-    upgradePro:'升级到 Pro', planRoute:'规划路线并发现故事',
-    storiesNearYou:'📖 附近的故事', detectingArea:'正在检测区域…',
-    gettingLocation:'正在获取位置…', findingLocation:'正在查找位置…',
-    loadingLandmarks:'正在加载地标…', searchingLandmarks:'正在搜索地标…',
-    loadingStories:'正在加载故事…', noLandmarks:'此处未找到地标',
-    noRange:'附近没有未访问的地标', refreshing:'正在刷新…',
-    tourActive:'游览进行中', preparing:'⏳ 准备中：', nextUp:'✅ 下一个：',
-    queuing:'排队中：', noFavs:'暂无收藏。\n点击 ❤️ 保存。',
-    play:'▶ 播放', signOut:'退出登录', sendMagicLink:'发送链接',
-    magicSent:'✓ 链接已发送！请查收邮件。', sending:'发送中…',
-    copied:'已复制！', locationFound:'📍 已找到位置 — 正在刷新…',
-    proMember:'⭐ Pro 会员', freePlan:'免费计划', proLocal:'⭐ Pro（本地）',
-    notSignedIn:'未登录', enterEmail:'请输入有效邮箱',
-    allOn:'全部开启', allOff:'全部关闭', apply:'✓ 应用',
-    nearby:'附近区域', landmark:'地标', landmarks:'个地标',
-    cookie:'我们使用 Cookie 了解 StoryRoute 的使用情况。',
-    learnMore:'了解更多', accept:'✓ 接受', decline:'✕ 拒绝',
-    yourName:'您的姓名（可选）', yourEmail:'您的邮箱（可选）',
-    yourMessage:'您的留言…', sendFeedbackBtn:'发送反馈',
-    from:'📍 出发地 — 输入或使用您的位置', to:'🏁 目的地 — 例如：故宫',
-    paywall1:'您已探索今日免费故事', paywall2:'升级以获取无限访问。',
-    perMonth:'€3.99 / 月', perYear:'€29.99 / 年', maybeLater:'稍后再说',
-    language:'🌐 语言', menu:'菜单', signIn:'登录以保持 Pro',
-    signInSub:'输入您的邮箱，我们将发送魔法链接。',
-    alreadyPaid:'已付款？使用购买时的邮箱登录。',
-  },
-  ar: {
-    openMap:'فتح الخريطة', startListening:'▶ استمع', stopListening:'⏹ إيقاف',
-    explore:'📍 استكشاف', route:'🗺️ مسار', stories:'📖 قصص',
-    walking:'🚶 مشياً', shortDrive:'🚗 رحلة قصيرة', longDrive:'🛣️ رحلة طويلة',
-    replay:'▶ إعادة', share:'↑ مشاركة', stop:'⏹ إيقاف', skip:'⏭ تخطي',
-    hide:'إخفاء ↓', show:'إظهار ↑', more:'+ المزيد', listen:'▶ استمع', read:'اقرأ',
-    refreshLandmarks:'تحديث المعالم', favourites:'المفضلة',
-    voice:'الصوت', speed:'السرعة', rotateVoices:'تناوب الأصوات',
-    landmarkTypes:'أنواع المعالم', account:'الحساب / Pro', sendFeedback:'إرسال ملاحظات',
-    upgradePro:'الترقية إلى Pro', planRoute:'خطط المسار واكتشف القصص',
-    storiesNearYou:'📖 قصص قريبة منك', detectingArea:'جارٍ اكتشاف المنطقة…',
-    gettingLocation:'جارٍ تحديد الموقع…', findingLocation:'جارٍ البحث عن الموقع…',
-    loadingLandmarks:'جارٍ تحميل المعالم…', searchingLandmarks:'جارٍ البحث عن المعالم…',
-    loadingStories:'جارٍ تحميل القصص…', noLandmarks:'لم يتم العثور على معالم هنا',
-    noRange:'لا توجد معالم غير مزورة قريبة', refreshing:'جارٍ التحديث…',
-    tourActive:'الجولة نشطة', preparing:'⏳ جارٍ التحضير:', nextUp:'✅ التالي:',
-    queuing:'في قائمة الانتظار:', noFavs:'لا توجد مفضلة بعد.\nاضغط ❤️ للحفظ.',
-    play:'▶ تشغيل', signOut:'تسجيل الخروج', sendMagicLink:'إرسال رابط',
-    magicSent:'✓ تم إرسال الرابط! تحقق من بريدك.', sending:'جارٍ الإرسال…',
-    copied:'تم النسخ!', locationFound:'📍 تم العثور على الموقع — جارٍ التحديث…',
-    proMember:'⭐ عضو Pro', freePlan:'الخطة المجانية', proLocal:'⭐ Pro (محلي)',
-    notSignedIn:'غير مسجل الدخول', enterEmail:'أدخل بريداً إلكترونياً صالحاً',
-    allOn:'تشغيل الكل', allOff:'إيقاف الكل', apply:'✓ تطبيق',
-    nearby:'منطقة قريبة', landmark:'معلم', landmarks:'معالم',
-    cookie:'نستخدم ملفات تعريف الارتباط لفهم كيفية استخدام StoryRoute.',
-    learnMore:'اعرف أكثر', accept:'✓ قبول', decline:'✕ رفض',
-    yourName:'اسمك (اختياري)', yourEmail:'بريدك الإلكتروني (اختياري)',
-    yourMessage:'رسالتك…', sendFeedbackBtn:'إرسال ملاحظات',
-    from:'📍 من — اكتب أو استخدم موقعك', to:'🏁 إلى — مثال: الأهرامات',
-    paywall1:'لقد استكشفت قصص اليوم المجانية',
-    paywall2:'قم بالترقية للوصول غير المحدود.',
-    perMonth:'€3.99 / شهر', perYear:'€29.99 / سنة', maybeLater:'ربما لاحقاً',
-    language:'🌐 اللغة', menu:'القائمة', signIn:'سجّل الدخول للحصول على Pro دائم',
-    signInSub:'أدخل بريدك الإلكتروني وسنرسل لك رابطاً سحرياً.',
-    alreadyPaid:'دفعت بالفعل؟ سجّل الدخول بالبريد المستخدم عند الشراء.',
-  },
-  hi: {
-    openMap:'नक्शा खोलें', startListening:'▶ सुनना शुरू करें', stopListening:'⏹ रोकें',
-    explore:'📍 खोजें', route:'🗺️ मार्ग', stories:'📖 कहानियाँ',
-    walking:'🚶 पैदल', shortDrive:'🚗 छोटी सवारी', longDrive:'🛣️ लंबी सवारी',
-    replay:'▶ फिर से', share:'↑ साझा करें', stop:'⏹ रोकें', skip:'⏭ छोड़ें',
-    hide:'छुपाएँ ↓', show:'दिखाएँ ↑', more:'+ और', listen:'▶ सुनें', read:'पढ़ें',
-    refreshLandmarks:'स्थल अपडेट करें', favourites:'पसंदीदा',
-    voice:'आवाज़', speed:'गति', rotateVoices:'आवाज़ें बदलें',
-    landmarkTypes:'स्थल प्रकार', account:'खाता / Pro', sendFeedback:'फ़ीडबैक भेजें',
-    upgradePro:'Pro में अपग्रेड करें', planRoute:'मार्ग बनाएँ और कहानियाँ खोजें',
-    storiesNearYou:'📖 पास की कहानियाँ', detectingArea:'क्षेत्र का पता लगाया जा रहा है…',
-    gettingLocation:'स्थान प्राप्त हो रहा है…', findingLocation:'स्थिति खोजी जा रही है…',
-    loadingLandmarks:'स्थल लोड हो रहे हैं…', searchingLandmarks:'स्थल खोजे जा रहे हैं…',
-    loadingStories:'कहानियाँ लोड हो रही हैं…', noLandmarks:'यहाँ कोई स्थल नहीं मिला',
-    noRange:'आसपास कोई अनदेखा स्थल नहीं', refreshing:'रिफ्रेश हो रहा है…',
-    tourActive:'दौरा सक्रिय', preparing:'⏳ तैयारी हो रही है:', nextUp:'✅ अगला:',
-    queuing:'कतार में:', noFavs:'अभी कोई पसंदीदा नहीं।\nसहेजने के लिए ❤️ दबाएँ।',
-    play:'▶ चलाएँ', signOut:'साइन आउट', sendMagicLink:'लिंक भेजें',
-    magicSent:'✓ लिंक भेजा गया! ईमेल जाँचें।', sending:'भेजा जा रहा है…',
-    copied:'कॉपी हो गया!', locationFound:'📍 स्थान मिला — रिफ्रेश हो रहा है…',
-    proMember:'⭐ Pro सदस्य', freePlan:'मुफ़्त योजना', proLocal:'⭐ Pro (स्थानीय)',
-    notSignedIn:'साइन इन नहीं', enterEmail:'मान्य ईमेल दर्ज करें',
-    allOn:'सभी चालू', allOff:'सभी बंद', apply:'✓ लागू करें',
-    nearby:'पास का क्षेत्र', landmark:'स्थल', landmarks:'स्थल',
-    cookie:'StoryRoute कैसे उपयोग किया जाता है यह समझने के लिए हम कुकी उपयोग करते हैं।',
-    learnMore:'अधिक जानें', accept:'✓ स्वीकार करें', decline:'✕ अस्वीकार करें',
-    yourName:'आपका नाम (वैकल्पिक)', yourEmail:'आपका ईमेल (वैकल्पिक)',
-    yourMessage:'आपका संदेश…', sendFeedbackBtn:'फ़ीडबैक भेजें',
-    from:'📍 कहाँ से — टाइप करें या स्थान उपयोग करें', to:'🏁 कहाँ — जैसे: ताज महल',
-    paywall1:'आपने आज की मुफ़्त कहानियाँ देख लीं',
-    paywall2:'असीमित पहुँच के लिए अपग्रेड करें।',
-    perMonth:'€3.99 / माह', perYear:'€29.99 / वर्ष', maybeLater:'शायद बाद में',
-    language:'🌐 भाषा', menu:'मेनू', signIn:'स्थायी Pro के लिए साइन इन करें',
-    signInSub:'अपना ईमेल दर्ज करें और हम एक जादुई लिंक भेजेंगे।',
-    alreadyPaid:'पहले से भुगतान किया? खरीदते समय उपयोग किए गए ईमेल से साइन इन करें।',
-  },
-};
-function T(k){ var t=TR[_lang.code]; return (t&&t[k])||TR.en[k]||k; }
 
-const STORY_TYPES = [
-  {type:'area',  icon:'🏙',label:'Character', pill:'pill-area',
-   prompt:(a,c)=>`You are a captivating local storyteller. Write a vivid story of around 200 words about the character and soul of ${a} in ${c}. Warm spoken style. Story only.`},
-  {type:'legend',icon:'🐉',label:'Local legend',pill:'pill-legend',
-   prompt:(a,c)=>`You are a captivating local storyteller. Tell a local legend or ghost story from ${a}, ${c}. Around 200 words. Story only.`},
-  {type:'history',icon:'📜',label:'History',   pill:'pill-history',
-   prompt:(a,c)=>`You are a historian and storyteller. Narrate a significant historical moment connected to ${a}, ${c}. Around 200 words. Story only.`}
-];
-
-// ── STATE ──────────────────────────────────────────────────────
-var markers={}, visited=new Set(), fetched=new Set(), fetchedNb=new Set();
-var userPos=null, tourOn=false, speaking=false;
-var curStory=null, nxtStory=null, prefetchId=null;
-var useCurrentLocFrom=false, routeCoords=[];
-var landmarkCount=0, favourites=[], proxTimer=null;
-var travelMode='walking', PROXIMITY_RADIUS=200;
-var voicePool=[], newWorker=null, currentAudio=null;
-var longStories=[], currentLongStoryIdx=-1, longSpeaking=false;
-var currentAreaName='this area', currentCityName='', currentCountry='';
+// ── STATE ───────────────────────────────────────────────────────
+var markers={},visited=new Set(),fetched=new Set(),fetchedNb=new Set();
+var userPos=null,tourOn=false,speaking=false;
+var curStory=null,nxtStory=null,prefetchId=null;
+var useCurrentLocFrom=false,routeCoords=[];
+var landmarkCount=0,favourites=[],proxTimer=null;
+var travelMode='walking',PROXIMITY_RADIUS=200;
+var voicePool=[],newWorker=null,currentAudio=null;
+var longStories=[],currentLongStoryIdx=-1,longSpeaking=false;
+var currentAreaName='this area',currentCityName='',currentCountry='';
 var photoCache={};
-var supabaseClient=null, currentUser=null, userIsPro=false;
-var map, hasRealGPS=false, progMove=false;
+var supabaseClient=null,currentUser=null,userIsPro=false;
+var hasRealGPS=false,progMove=false;
+var map;
+var _wikiCache={};
+var _aiQueue=Promise.resolve(),_lastAiCall=0;
+const AI_MIN_GAP=1200;
+var _otpEmail='';
 
-var selectedVoice = JSON.parse(localStorage.getItem('sr_voice_cfg')||'null')||VOICES[0];
-var _lang = (function(){
-  var saved = localStorage.getItem('sr_lang');
-  return LANGUAGES.find(function(l){return l.code===saved;})||LANGUAGES[0];
-})();
-var voiceSpeed = 1.1;
-var rotateVoices = localStorage.getItem('sr_rotate')!=='false';
-var _sf = JSON.parse(localStorage.getItem('sr_type_filter')||'null');
-var activeTypes = new Set(_sf ? ALL_TYPES.filter(t=>_sf.includes(t)) : ALL_TYPES);
+var selectedVoice=JSON.parse(localStorage.getItem('sr_voice_cfg')||'null')||VOICES[0];
+var voiceSpeed=1.1;
+var rotateVoices=localStorage.getItem('sr_rotate')!=='false';
+var _lang=(function(){var s=localStorage.getItem('sr_lang');return LANGUAGES.find(l=>l.code===s)||LANGUAGES[0];})();
+var _sf=JSON.parse(localStorage.getItem('sr_type_filter')||'null');
+var activeTypes=new Set(_sf?ALL_TYPES.filter(t=>_sf.includes(t)):ALL_TYPES);
 
 function track(n,p){try{gtag('event',n,p||{});}catch(e){}}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// ── OPEN MAP ───────────────────────────────────────────────────
+// ── AI QUEUE ────────────────────────────────────────────────────
+function callAI(prompt){
+  _aiQueue=_aiQueue.then(function(){
+    var wait=Math.max(0,_lastAiCall+AI_MIN_GAP-Date.now());
+    return sleep(wait).then(function(){
+      _lastAiCall=Date.now();
+      return fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})})
+        .then(function(r){
+          if(r.status===429){_lastAiCall=Date.now()+8000;throw new Error('rate_limited');}
+          if(r.status===401||r.status===403)throw new Error('api_banned');
+          if(!r.ok)throw new Error('HTTP '+r.status);
+          return r.json();
+        })
+        .then(function(d){
+          if(d.error)throw new Error(d.error);
+          var t=d&&d.content&&d.content[0]?d.content[0].text:'';
+          if(!t)throw new Error('Empty');
+          return t;
+        });
+    });
+  });
+  var result=_aiQueue;
+  _aiQueue=_aiQueue.catch(function(){});
+  return result;
+}
+
+// ── OPEN MAP ────────────────────────────────────────────────────
 function openMap(){
   document.getElementById('splash').style.display='none';
   try{var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}
@@ -1049,125 +630,72 @@ function openMap(){
     });
   }
   track('app_open');
-  updateLangBtn();
-  applyTranslations();
+  updateLangBtn();applyTranslations();
   loadFavs();loadVoices();updateMenuLabels();updateMenuUser();initSupabase();
   var consent=localStorage.getItem('sr_cookie');
-  if(!consent)setTimeout(function(){document.getElementById('cookie-banner').classList.add('visible');},2500);
+  if(!consent)setTimeout(()=>document.getElementById('cookie-banner').classList.add('visible'),2500);
   else if(consent==='accepted')gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
-  if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('✅ Pro unlocked!');},800);}
-  if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(function(){showToast('🎉 Welcome to Pro!');},800);}
-  // Magic link hash is processed and cleared inside initSupabaseEarly → onAuthStateChange
-  // One-time wipe of story cache from pre-Wikipedia era
+  if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('✅ Pro unlocked!'),800);}
+  if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('🎉 Welcome to Pro!'),800);}
   if(!localStorage.getItem('sr_wiki_era')){
-    Object.keys(localStorage).forEach(function(k){
-      if(k.startsWith('sr_s_')||k.startsWith('sr_lm_')||k.startsWith('sr_nb_'))
-        localStorage.removeItem(k);
-    });
+    Object.keys(localStorage).forEach(k=>{if(k.startsWith('sr_s_')||k.startsWith('sr_lm_')||k.startsWith('sr_nb_'))localStorage.removeItem(k);});
     localStorage.setItem('sr_wiki_era','1');
   }
   getGPS();
 }
 
-// ── SUPABASE ───────────────────────────────────────────────────
-// Called immediately when the Supabase CDN script loads (onload on the script tag).
-// This runs BEFORE the user taps "Open Map" so magic link tokens are captured.
+// ── SUPABASE ────────────────────────────────────────────────────
 function initSupabaseEarly(){
   try{
-    supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
-      auth:{
-        persistSession:true,
-        autoRefreshToken:true,
-        detectSessionInUrl:true,
-        storageKey:'sr_sb_session',
-      }
-    });
-    // Auth state listener — fires on sign-in, sign-out, token refresh
+    supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'sr_sb_session'}});
     supabaseClient.auth.onAuthStateChange(function(event,session){
       currentUser=session?session.user:null;
       if(currentUser){
-        // Cache user info locally for instant display on next visit
         try{localStorage.setItem('sr_user',JSON.stringify({email:currentUser.email,id:currentUser.id}));}catch(e){}
         loadProStatus();
-        // Only clear the hash AFTER Supabase has processed the token
-        if(location.hash.includes('access_token')){
-          showToast('✅ Signed in as '+currentUser.email);
-          history.replaceState({},'',location.pathname);
-        }
+        if(location.hash.includes('access_token')){showToast('✅ Signed in as '+currentUser.email);history.replaceState({},'',location.pathname);}
       }else{
-        // Signed out — clear the cache
         try{localStorage.removeItem('sr_user');}catch(e){}
         userIsPro=localStorage.getItem('sr_pro')==='true';
       }
       updateMenuUser();
     });
-    // Restore existing session immediately
     supabaseClient.auth.getSession().then(function(r){
       currentUser=r.data&&r.data.session?r.data.session.user:null;
-      if(currentUser){
-        try{localStorage.setItem('sr_user',JSON.stringify({email:currentUser.email,id:currentUser.id}));}catch(e){}
-        loadProStatus();
-      }else{
-        userIsPro=localStorage.getItem('sr_pro')==='true';
-      }
+      if(currentUser){try{localStorage.setItem('sr_user',JSON.stringify({email:currentUser.email,id:currentUser.id}));}catch(e){}loadProStatus();}
+      else userIsPro=localStorage.getItem('sr_pro')==='true';
       updateMenuUser();
     });
   }catch(e){userIsPro=localStorage.getItem('sr_pro')==='true';}
 }
-// Called inside openMap() — by this point Supabase is already running,
-// just ensures the UI reflects the current auth state
-function initSupabase(){
-  if(!supabaseClient){
-    // Script hasn't loaded yet — retry
-    setTimeout(initSupabase,300);
-    return;
-  }
-  updateMenuUser();
-}
+function initSupabase(){if(!supabaseClient)setTimeout(initSupabase,300);else updateMenuUser();}
 function loadProStatus(){
   if(!supabaseClient||!currentUser)return;
   supabaseClient.from('profiles').select('is_pro').eq('id',currentUser.id).single()
-    .then(function(r){userIsPro=r.data?r.data.is_pro:false;if(userIsPro){localStorage.setItem('sr_pro','true');showToast('⭐ Pro restored!');}updateMenuUser();})
-    .catch(function(){userIsPro=localStorage.getItem('sr_pro')==='true';});
+    .then(r=>{userIsPro=r.data?r.data.is_pro:false;if(userIsPro){localStorage.setItem('sr_pro','true');showToast('⭐ Pro restored!');}updateMenuUser();})
+    .catch(()=>{userIsPro=localStorage.getItem('sr_pro')==='true';});
 }
 function updateMenuUser(){
   var emailEl=document.getElementById('menu-user-email');
   var statusEl=document.getElementById('menu-user-status');
   var al=document.getElementById('account-label');
-  if(!emailEl)return; // DOM not ready yet
-  // Use live currentUser, or fall back to cached info from localStorage
-  var email='', isPro=userIsPro||localStorage.getItem('sr_pro')==='true';
-  var cachedUser=null;
-  try{cachedUser=JSON.parse(localStorage.getItem('sr_user')||'null');}catch(e){}
+  if(!emailEl)return;
+  var isPro=userIsPro||localStorage.getItem('sr_pro')==='true';
+  var cachedUser=null;try{cachedUser=JSON.parse(localStorage.getItem('sr_user')||'null');}catch(e){}
   var user=currentUser||(cachedUser?{email:cachedUser.email}:null);
-  if(user){
-    emailEl.textContent=user.email;
-    statusEl.textContent=isPro?T('proMember'):T('freePlan');
-    if(al)al.textContent=isPro?'Pro ⭐':'';
-  }else{
-    emailEl.textContent=T('notSignedIn');
-    statusEl.textContent=isPro?T('proLocal'):T('freePlan');
-    if(al)al.textContent='';
-  }
+  if(user){emailEl.textContent=user.email;statusEl.textContent=isPro?T('proMember'):T('freePlan');if(al)al.textContent=isPro?'Pro ⭐':'';}
+  else{emailEl.textContent=T('notSignedIn');statusEl.textContent=isPro?T('proLocal'):T('freePlan');if(al)al.textContent='';}
 }
-
 function renderAuthPanel(){
   var body=document.getElementById('auth-body');
-  var cachedUser=null;
-  try{cachedUser=JSON.parse(localStorage.getItem('sr_user')||'null');}catch(e){}
+  var cachedUser=null;try{cachedUser=JSON.parse(localStorage.getItem('sr_user')||'null');}catch(e){}
   var user=currentUser||(cachedUser?{email:cachedUser.email}:null);
   if(user){
-    body.innerHTML=
-      '<div class="auth-pro-badge">'
-        +'<div class="pro-icon">'+(userIsPro?'⭐':'👤')+'</div>'
-        +'<div class="pro-text">'+user.email+'</div>'
-        +'<div class="pro-sub">'+(userIsPro?'Pro — unlimited stories everywhere':'Free plan — '+FREE_LIMIT+' stories/day')+'</div>'
-      +'</div>'
-      +(userIsPro?'':'<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button>'
-        +'<button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
-      +'<div class="auth-divider"></div>'
-      +'<button class="auth-logout" onclick="signOut()">Sign out</button>';
-  } else {
+    var isPro=userIsPro||localStorage.getItem('sr_pro')==='true';
+    body.innerHTML='<div class="auth-pro-badge"><div class="pro-icon">'+(isPro?'⭐':'👤')+'</div><div class="pro-text">'+user.email+'</div><div class="pro-sub">'+(isPro?'Pro — unlimited stories everywhere':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
+      +(isPro?'':'<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button><button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
+      +'<div class="auth-divider"></div><button class="auth-logout" onclick="signOut()">'+T('signOut')+'</button>';
+  }else{
     body.innerHTML=
       '<div class="auth-title">Sign in / Restore Pro</div>'
       +'<div id="auth-step1">'
@@ -1177,12 +705,8 @@ function renderAuthPanel(){
         +'<div class="auth-msg" id="auth-msg"></div>'
       +'</div>'
       +'<div id="auth-step2" style="display:none">'
-        +'<div style="text-align:center;margin-bottom:14px;">'
-          +'<div style="font-size:13px;color:#555;margin-bottom:4px;">Code sent to</div>'
-          +'<div style="font-size:14px;font-weight:700;color:#1a2240;" id="auth-email-shown"></div>'
-        +'</div>'
-        +'<input class="auth-input" id="auth-otp-input" type="tel" inputmode="numeric" placeholder="12345678"'
-          +' maxlength="8" style="letter-spacing:4px;font-size:26px;text-align:center;font-weight:700;">'
+        +'<div style="text-align:center;margin-bottom:14px;"><div style="font-size:13px;color:#555;margin-bottom:4px;">Code sent to</div><div style="font-size:14px;font-weight:700;color:#1a2240;" id="auth-email-shown"></div></div>'
+        +'<input class="auth-input" id="auth-otp-input" type="tel" inputmode="numeric" placeholder="12345678" maxlength="8" style="letter-spacing:4px;font-size:26px;text-align:center;font-weight:700;">'
         +'<button class="auth-btn" id="auth-verify-btn" onclick="verifyOtp()">Verify &amp; sign in</button>'
         +'<div class="auth-msg" id="auth-otp-msg"></div>'
         +'<button onclick="renderAuthPanel()" style="width:100%;padding:8px;background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;margin-top:4px;">← Different email</button>'
@@ -1191,113 +715,62 @@ function renderAuthPanel(){
       +'<div style="font-size:12px;color:#aaa;text-align:center;">Signing in syncs your Pro status across all your devices.</div>';
   }
 }
-
-var _otpEmail = '';
-
 function sendOtp(){
   var email=document.getElementById('auth-email-input')?document.getElementById('auth-email-input').value.trim():'';
   var btn=document.getElementById('auth-send-btn'),msg=document.getElementById('auth-msg');
   if(!email||!email.includes('@')){msg.style.color='#ef4444';msg.textContent=T('enterEmail');return;}
-  if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready — try again in a moment';return;}
+  if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready — try again';return;}
   btn.disabled=true;btn.textContent=T('sending');
   _otpEmail=email;
-  // Timeout so UI never freezes if Supabase hangs
-  var otpTimer=setTimeout(function(){
-    msg.style.color='#ef4444';
-    msg.textContent='Request timed out — check your connection and try again';
-    btn.disabled=false;btn.textContent='Send code';
-  },12000);
-
-  supabaseClient.auth.signInWithOtp({
-    email:email,
-    options:{emailRedirectTo:location.origin,shouldCreateUser:true}
-  }).then(function(r){
-    clearTimeout(otpTimer);
-    if(r.error){
-      msg.style.color='#ef4444';msg.textContent=r.error.message;
-      btn.disabled=false;btn.textContent='Send code';
-    } else {
-      document.getElementById('auth-step1').style.display='none';
-      document.getElementById('auth-step2').style.display='block';
-      var shown=document.getElementById('auth-email-shown');
-      if(shown)shown.textContent=email;
-      document.getElementById('auth-otp-input').focus();
-    }
-  }).catch(function(e){
-    clearTimeout(otpTimer);
-    msg.style.color='#ef4444';msg.textContent=e.message||'Network error — try again';
-    btn.disabled=false;btn.textContent='Send code';
-  });
+  var t=setTimeout(function(){msg.style.color='#ef4444';msg.textContent='Timed out — check connection';btn.disabled=false;btn.textContent='Send code';},12000);
+  supabaseClient.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin,shouldCreateUser:true}})
+    .then(function(r){
+      clearTimeout(t);
+      if(r.error){msg.style.color='#ef4444';msg.textContent=r.error.message;btn.disabled=false;btn.textContent='Send code';}
+      else{document.getElementById('auth-step1').style.display='none';document.getElementById('auth-step2').style.display='block';var s=document.getElementById('auth-email-shown');if(s)s.textContent=email;document.getElementById('auth-otp-input').focus();}
+    }).catch(function(e){clearTimeout(t);msg.style.color='#ef4444';msg.textContent=e.message||'Error';btn.disabled=false;btn.textContent='Send code';});
 }
-
 function verifyOtp(){
   var code=document.getElementById('auth-otp-input')?document.getElementById('auth-otp-input').value.trim():'';
   var btn=document.getElementById('auth-verify-btn'),msg=document.getElementById('auth-otp-msg');
-  if(!code||code.length<6||code.length>8){msg.style.color='#ef4444';msg.textContent='Enter the code from your email (6-8 digits)';return;}
+  if(!code||code.length<6||code.length>8){msg.style.color='#ef4444';msg.textContent='Enter the 6-8 digit code from your email';return;}
   if(!supabaseClient){msg.style.color='#ef4444';msg.textContent='Auth not ready';return;}
   btn.disabled=true;btn.textContent='Verifying…';
-  var verifyTimer=setTimeout(function(){
-    msg.style.color='#ef4444';
-    msg.textContent='Request timed out — check your connection and try again';
-    btn.disabled=false;btn.textContent='Verify & sign in';
-  },12000);
-
-  // Try 'email' type first, fall back to 'magiclink' type
-  // Supabase sends different token types depending on template config
-  supabaseClient.auth.verifyOtp({
-    email:_otpEmail,
-    token:code,
-    type:'email'
-  }).then(function(r){
-    clearTimeout(verifyTimer);
-    if(r.error){
-      // Try magiclink type as fallback
-      return supabaseClient.auth.verifyOtp({
-        email:_otpEmail,
-        token:code,
-        type:'magiclink'
-      });
-    }
-    return r;
-  }).then(function(r){
-    clearTimeout(verifyTimer);
-    if(r && r.error){
-      msg.style.color='#ef4444';msg.textContent='Invalid code — please check your email and try again';
-      btn.disabled=false;btn.textContent='Verify & sign in';
-    } else if(r) {
-      msg.style.color='#22c55e';msg.textContent='✓ Signed in!';
-      setTimeout(function(){closePanel('auth');},800);
-    }
-  }).catch(function(e){
-    clearTimeout(verifyTimer);
-    msg.style.color='#ef4444';msg.textContent=e.message||'Error';
-    btn.disabled=false;btn.textContent='Verify & sign in';
-  });
+  var t=setTimeout(function(){msg.style.color='#ef4444';msg.textContent='Timed out — try again';btn.disabled=false;btn.textContent='Verify & sign in';},12000);
+  supabaseClient.auth.verifyOtp({email:_otpEmail,token:code,type:'email'})
+    .then(function(r){
+      clearTimeout(t);
+      if(r.error){
+        return supabaseClient.auth.verifyOtp({email:_otpEmail,token:code,type:'magiclink'});
+      }
+      return r;
+    })
+    .then(function(r){
+      clearTimeout(t);
+      if(r&&r.error){msg.style.color='#ef4444';msg.textContent='Invalid code — check your email';btn.disabled=false;btn.textContent='Verify & sign in';}
+      else if(r){msg.style.color='#22c55e';msg.textContent='✓ Signed in!';setTimeout(()=>closePanel('auth'),800);}
+    })
+    .catch(function(e){clearTimeout(t);msg.style.color='#ef4444';msg.textContent=e.message||'Error';btn.disabled=false;btn.textContent='Verify & sign in';});
 }
-
-function sendMagicLink(){ sendOtp(); }
-
+function sendMagicLink(){sendOtp();}
 function signOut(){
   if(supabaseClient)supabaseClient.auth.signOut();
-  currentUser=null;userIsPro=false;
-  localStorage.removeItem('sr_pro');localStorage.removeItem('sr_user');
+  currentUser=null;userIsPro=false;localStorage.removeItem('sr_pro');localStorage.removeItem('sr_user');
   updateMenuUser();renderAuthPanel();showToast(T('signOut'));
 }
 
-// ── FEEDBACK ───────────────────────────────────────────────────
+// ── FEEDBACK ────────────────────────────────────────────────────
 function submitFeedback(){
-  var name=document.getElementById('fb-name').value.trim();
-  var email=document.getElementById('fb-email').value.trim();
-  var msg=document.getElementById('fb-msg').value.trim();
+  var name=document.getElementById('fb-name').value.trim(),email=document.getElementById('fb-email').value.trim(),msg=document.getElementById('fb-msg').value.trim();
   var res=document.getElementById('fb-result'),btn=document.querySelector('#feedback-panel .fb-btn');
   if(!msg){res.style.color='#ef4444';res.textContent='Please write a message';return;}
   btn.disabled=true;btn.textContent=T('sending');
-  fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,message:msg,userEmail:currentUser?currentUser.email:'anonymous'})})
-    .then(function(r){if(!r.ok)throw new Error();res.style.color='#22c55e';res.textContent='✓ Thank you!';document.getElementById('fb-name').value='';document.getElementById('fb-email').value='';document.getElementById('fb-msg').value='';btn.textContent='Send feedback';btn.disabled=false;track('feedback_sent');})
-    .catch(function(){res.style.color='#ef4444';res.textContent='Could not send — please try again';btn.disabled=false;btn.textContent='Send feedback';});
+  fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,message:msg,userEmail:currentUser?currentUser.email:'anonymous'})})
+    .then(r=>{if(!r.ok)throw new Error();res.style.color='#22c55e';res.textContent='✓ Thank you!';document.getElementById('fb-name').value='';document.getElementById('fb-email').value='';document.getElementById('fb-msg').value='';btn.textContent='Send feedback';btn.disabled=false;track('feedback_sent');})
+    .catch(()=>{res.style.color='#ef4444';res.textContent='Could not send — please try again';btn.disabled=false;btn.textContent='Send feedback';});
 }
 
-// ── PANELS ─────────────────────────────────────────────────────
+// ── PANELS ──────────────────────────────────────────────────────
 function openMenu(){document.getElementById('menu-panel').classList.add('open');document.getElementById('menu-overlay').classList.add('open');}
 function closeMenu(){document.getElementById('menu-panel').classList.remove('open');document.getElementById('menu-overlay').classList.remove('open');}
 function openPanel(name){
@@ -1310,7 +783,7 @@ function closeAllPanels(){closeMenu();['voice','speed','filter','auth','feedback
 function openFavPanel(){renderFavs();document.getElementById('fav-panel').classList.add('open');}
 function closeFavPanel(){document.getElementById('fav-panel').classList.remove('open');}
 
-// ── VOICE / SPEED / FILTER PANELS ─────────────────────────────
+// ── VOICE / SPEED / FILTER ──────────────────────────────────────
 function renderVoicePanel(){
   document.getElementById('voice-list').innerHTML=VOICES.map((v,i)=>{
     var sel=JSON.stringify(selectedVoice)===JSON.stringify(v);
@@ -1324,10 +797,7 @@ function pickVoice(i){
   selectedVoice=VOICES[i];localStorage.setItem('sr_voice_cfg',JSON.stringify(VOICES[i]));
   rotateVoices=false;localStorage.setItem('sr_rotate','false');
   updateMenuLabels();closePanel('voice');showToast('Voice: '+VOICES[i].label);
-  if(curStory&&curStory.text&&curStory.text!=='⏳ Loading story…'){
-    cancelAudio();speaking=true;
-    tts(curStory.text,function(){speaking=false;if(tourOn){var cn=nearest();if(cn)setTimeout(function(){playLandmark(cn);},1200);}});
-  }
+  if(curStory&&curStory.text&&curStory.text!=='⏳ Loading story…'){cancelAudio();speaking=true;tts(curStory.text,function(){speaking=false;if(tourOn){var cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}});}
 }
 function renderSpeedPanel(){
   document.getElementById('speed-list').innerHTML=SPEEDS.map((s,i)=>{
@@ -1349,29 +819,83 @@ function toggleType(t,on){on?activeTypes.add(t):activeTypes.delete(t);}
 function selectAllTypes(){ALL_TYPES.forEach(t=>activeTypes.add(t));renderFilterPanel();}
 function clearAllTypes(){activeTypes.clear();renderFilterPanel();}
 function applyFilter(){
-  if(!activeTypes.size){showToast(T('apply'));return;}
+  if(activeTypes.size===0){showToast('Select at least one type');return;}
   localStorage.setItem('sr_type_filter',JSON.stringify([...activeTypes]));
   updateMenuLabels();syncAllMarkerVisibility();closePanel('filter');
   showToast(Object.values(markers).filter(m=>map.hasLayer(m)).length+' '+T('landmarks')+' ✓');
   track('filter_applied',{count:activeTypes.size});
 }
 function isTypeVisible(t){if(t==='area')return activeTypes.has('area')||activeTypes.has('neighbourhood');return activeTypes.has(t);}
-function syncAllMarkerVisibility(){
-  Object.values(markers).forEach(function(m){
-    var t=m.options._type||'other';
-    if(isTypeVisible(t)){if(!map.hasLayer(m))m.addTo(map);}else{if(map.hasLayer(m))map.removeLayer(m);}
-  });
-}
+function syncAllMarkerVisibility(){Object.values(markers).forEach(m=>{var t=m.options._type||'other';if(isTypeVisible(t)){if(!map.hasLayer(m))m.addTo(map);}else{if(map.hasLayer(m))map.removeLayer(m);}});}
 function updateMenuLabels(){
   var vl=document.getElementById('voice-label');if(vl)vl.textContent=rotateVoices?'🔄 Rotating':selectedVoice.label;
   var sp=SPEEDS.find(s=>s.val===voiceSpeed)||SPEEDS[2];
   var sl=document.getElementById('speed-label');if(sl)sl.textContent=sp.label.split(' ')[0]+' '+sp.val+'×';
   var rl=document.getElementById('rotate-label');if(rl)rl.textContent=rotateVoices?'On':'Off';
   var fl=document.getElementById('filter-label');if(fl)fl.textContent=activeTypes.size===ALL_TYPES.length?'All':activeTypes.size+' types';
-  var ll=document.getElementById('lang-menu-label');if(ll)ll.textContent=_lang.label.split(' ')[0]+' '+_lang.label.split(' ').slice(1).join(' ');
+  var ll=document.getElementById('lang-menu-label');if(ll)ll.textContent=_lang.label;
 }
 
-// ── UTILS / PAYWALL ────────────────────────────────────────────
+// ── LANGUAGE ────────────────────────────────────────────────────
+function openLangPanel(){renderLangPanel();document.getElementById('lang-panel').classList.add('open');document.getElementById('menu-overlay').classList.add('open');}
+function closeLangPanel(){document.getElementById('lang-panel').classList.remove('open');document.getElementById('menu-overlay').classList.remove('open');}
+function renderLangPanel(){
+  document.getElementById('lang-list').innerHTML=LANGUAGES.map((l,i)=>{
+    var sel=_lang.code===l.code;
+    return '<div class="pick-item'+(sel?' selected':'')+'" onclick="pickLang('+i+')">'
+      +'<div style="font-size:22px;width:32px;text-align:center;flex-shrink:0">'+l.label.split(' ')[0]+'</div>'
+      +'<div><div class="pick-name">'+l.label.split(' ').slice(1).join(' ')+'</div><div class="pick-desc">Stories & audio in '+l.name+'</div></div>'
+      +(sel?'<div class="pick-check">✓</div>':'')+'</div>';
+  }).join('');
+}
+function pickLang(i){
+  _lang=LANGUAGES[i];
+  localStorage.setItem('sr_lang',_lang.code);
+  // Voice switches to match language
+  selectedVoice=_lang.tts;
+  localStorage.setItem('sr_voice_cfg',JSON.stringify(_lang.tts));
+  // Clear story cache so stories regenerate in new language
+  Object.keys(localStorage).forEach(k=>{if(k.startsWith('sr_s_')||k.startsWith('sr_ls_'))localStorage.removeItem(k);});
+  closeLangPanel();
+  updateLangBtn();updateMenuLabels();applyTranslations();
+  showToast(T('language')+': '+_lang.label);
+  track('language_change',{lang:_lang.code});
+  if(curStory&&curStory.text){cancelAudio();speaking=false;if(tourOn)setTimeout(()=>{if(!speaking)playNearest();},500);}
+}
+function updateLangBtn(){var btn=document.getElementById('lang-btn');if(btn)btn.textContent=_lang.label.split(' ')[0];}
+
+// ── APPLY TRANSLATIONS ──────────────────────────────────────────
+function applyTranslations(){
+  var d=document;
+  function el(id){return d.getElementById(id);}
+  function set(id,t){var e=el(id);if(e)e.textContent=t;}
+  function setAttr(id,a,t){var e=el(id);if(e)e.setAttribute(a,t);}
+  set('splash-btn',T('openMap'));
+  var btnE=el('btn-explore');if(btnE)btnE.textContent=T('explore');
+  var btnR=el('btn-route');if(btnR)btnR.textContent=T('route');
+  var btnS=el('btn-stories');if(btnS)btnS.textContent=T('stories');
+  var tb=el('tour-btn');if(tb&&!tourOn)tb.textContent=T('startListening');
+  set('tm-walking',T('walking'));set('tm-driving',T('shortDrive'));set('tm-long',T('longDrive'));
+  set('replay-btn',T('replay'));set('share-btn',T('share'));set('stop-story-btn',T('stop'));set('hide-story-btn',T('hide'));
+  var sk=el('skip-btn');if(sk)sk.textContent=T('skip');
+  set('unhide-btn',T('show'));set('gen-story-btn',T('more'));
+  var sh=d.querySelector('#stories-header h3');if(sh)sh.textContent=T('storiesNearYou');
+  var fh=d.querySelector('#fav-panel-header h2');if(fh)fh.innerHTML='❤️ '+T('favourites');
+  setAttr('from-inp','placeholder','📍 From');setAttr('to-inp','placeholder','🏁 To');
+  var rb=d.querySelector('.r-btn');if(rb)rb.textContent=T('planRoute');
+  d.querySelectorAll('.mi').forEach(function(mi){
+    var icon=mi.querySelector('.mi-icon');if(!icon)return;
+    var ic=icon.textContent.trim();
+    var map2={'🔄':T('refreshLandmarks'),'❤️':T('favourites'),'🎙️':T('voice'),'⚡':T('speed'),'🏷️':T('landmarkTypes'),'👤':T('account'),'💬':T('sendFeedback'),'⭐':T('upgradePro'),'🌐':T('language')};
+    if(map2[ic])mi.childNodes.forEach(n=>{if(n.nodeType===3&&n.textContent.trim())n.textContent=map2[ic];});
+  });
+  var ca=el('cookie-accept');if(ca)ca.textContent=T('accept');
+  var cd=el('cookie-decline');if(cd)cd.textContent=T('decline');
+  var lh=d.querySelector('#lang-panel .sp-header h2');if(lh)lh.textContent=T('language');
+  d.documentElement.setAttribute('dir',_lang.code==='ar'?'rtl':'ltr');
+}
+
+// ── COOKIE / PAYWALL ────────────────────────────────────────────
 function acceptCookies(){localStorage.setItem('sr_cookie','accepted');document.getElementById('cookie-banner').classList.remove('visible');gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});}
 function declineCookies(){localStorage.setItem('sr_cookie','declined');document.getElementById('cookie-banner').classList.remove('visible');}
 function showCookieInfo(){alert('StoryRoute uses Google Analytics to count visits. No personal data is collected.');}
@@ -1383,8 +907,8 @@ function canPlay(){return isPro()||getCount()<FREE_LIMIT;}
 function showPaywall(){track('paywall_shown');document.getElementById('paywall').classList.add('visible');}
 function closePaywall(){document.getElementById('paywall').classList.remove('visible');}
 function startCheckout(plan){
-  plan=plan||'monthly';track('upgrade_click',{plan:plan});
-  fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:plan,email:currentUser?currentUser.email:''})})
+  plan=plan||'monthly';track('upgrade_click',{plan});
+  fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan,email:currentUser?currentUser.email:''})})
     .then(r=>r.json()).then(d=>{if(d.url)window.location.href=d.url;else showToast('Checkout error');}).catch(()=>showToast('Checkout error'));
 }
 function showToast(msg,dur){
@@ -1393,30 +917,26 @@ function showToast(msg,dur){
   t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),dur||3000);
 }
 
-// ── GPS ────────────────────────────────────────────────────────
+// ── GPS ─────────────────────────────────────────────────────────
 function getGPS(){
   setStatus(T('gettingLocation'));
   if(!navigator.geolocation){startAt(DUBLIN[0],DUBLIN[1],true);return;}
-  navigator.geolocation.getCurrentPosition(
-    p=>startAt(p.coords.latitude,p.coords.longitude,false),
-    ()=>startAt(DUBLIN[0],DUBLIN[1],true),
-    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
-  );
+  navigator.geolocation.getCurrentPosition(p=>startAt(p.coords.latitude,p.coords.longitude,false),()=>startAt(DUBLIN[0],DUBLIN[1],true),{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 }
 function startAt(lat,lng,isFallback){
-  userPos={lat:lat,lng:lng};hasRealGPS=!isFallback;
+  userPos={lat,lng};hasRealGPS=!isFallback;
   progMove=true;map.setView([lat,lng],15);setTimeout(()=>{progMove=false;},150);
   var dotHtml='<div style="width:14px;height:14px;background:#4a9eff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(74,158,255,.6)"></div>';
   var um=L.marker([lat,lng],{icon:L.divIcon({html:dotHtml,iconSize:[14,14],iconAnchor:[7,7],className:''})}).addTo(map);
   if(navigator.geolocation){
     navigator.geolocation.watchPosition(function(p){
-      var newLat=p.coords.latitude,newLng=p.coords.longitude;
-      userPos={lat:newLat,lng:newLng};um.setLatLng([newLat,newLng]);
+      userPos={lat:p.coords.latitude,lng:p.coords.longitude};
+      um.setLatLng([userPos.lat,userPos.lng]);
       if(!hasRealGPS){
         hasRealGPS=true;
-        if(haversine({lat:newLat,lng:newLng},{lat:map.getCenter().lat,lng:map.getCenter().lng})>500){
-          showToast(T('locationFound'),3000);
-          refreshLandmarks();progMove=true;map.setView([newLat,newLng],15);setTimeout(()=>{progMove=false;},150);return;
+        if(haversine(userPos,{lat:map.getCenter().lat,lng:map.getCenter().lng})>500){
+          showToast(T('locationFound'),3000);refreshLandmarks();
+          progMove=true;map.setView([userPos.lat,userPos.lng],15);setTimeout(()=>{progMove=false;},150);return;
         }
       }
       updateProgress();checkProxAlert();
@@ -1426,7 +946,7 @@ function startAt(lat,lng,isFallback){
   fetchVisibleBounds();
 }
 
-// ── TTS ────────────────────────────────────────────────────────
+// ── TTS ─────────────────────────────────────────────────────────
 function loadVoices(){
   var all=speechSynthesis.getVoices();if(!all.length)return;
   var pref=['Moira','Daniel','Karen','Samantha','Google UK English Female','Google UK English Male'];
@@ -1437,18 +957,15 @@ function loadVoices(){
 }
 if(typeof speechSynthesis!=='undefined'&&speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=loadVoices;
 function currentVoice(){return voicePool.length?voicePool[Math.floor(landmarkCount/2)%voicePool.length]:null;}
-function setBadge(label){
-  var el=document.getElementById('voice-badge');if(!el)return;
-  if(!label){el.style.display='none';return;}
-  el.style.display='inline-block';el.className=label==='⏳'?'loading':'on';el.textContent=label;
-}
+function setBadge(label){var el=document.getElementById('voice-badge');if(!el)return;if(!label){el.style.display='none';return;}el.style.display='inline-block';el.className=label==='⏳'?'loading':'on';el.textContent=label;}
 function cancelAudio(){try{speechSynthesis.cancel();}catch(e){}if(currentAudio){currentAudio.pause();currentAudio=null;}}
 function tts(text,onDone){
   var speed=voiceSpeed;cancelAudio();
-  var voice;
-  if(rotateVoices){var vrs=VOICES.filter(v=>v.hl!=='device');voice=vrs[landmarkCount%vrs.length];}else voice=selectedVoice;
-  setBadge(voice.label);
-  if(voice.hl==='device'){
+  var voice=rotateVoices?VOICES.filter(v=>v.hl!=='device')[landmarkCount%VOICES.filter(v=>v.hl!=='device').length]:selectedVoice;
+  // If selected language is non-English, force language voice (ignores rotation)
+  if(_lang.code!=='en')voice=_lang.tts;
+  setBadge(voice.label||'🌐');
+  if(!voice.hl||voice.hl==='device'){
     try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.rate=speed;u.volume=1;u.pitch=1;var v=currentVoice();if(v)u.voice=v;u.onend=onDone;u.onerror=()=>onDone();speechSynthesis.speak(u);}catch(e){onDone();}
     return;
   }
@@ -1457,17 +974,15 @@ function tts(text,onDone){
   if(voice.v)params.set('v',voice.v);
   fetch('https://api.voicerss.org/?'+params.toString())
     .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.blob();})
+    .then(blob=>{if(blob.size<1000)return blob.text().then(t=>{if(t.trim().startsWith('ERROR'))throw new Error(t.trim());return blob;});return blob;})
     .then(blob=>{
-      if(blob.size<1000)return blob.text().then(t=>{if(t.trim().startsWith('ERROR'))throw new Error(t.trim());return blob;});
-      return blob;
-    })
-    .then(blob=>{
-      if(blob.size<500)throw new Error('Empty');
+      if(blob.size<500)throw new Error('Empty audio');
       var url=URL.createObjectURL(blob);
       currentAudio=new Audio(url);currentAudio.playbackRate=speed;
-      currentAudio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;setBadge(voice.label);onDone();};
+      currentAudio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;setBadge(voice.label||'🌐');onDone();};
       currentAudio.onerror=()=>{URL.revokeObjectURL(url);currentAudio=null;deviceTTSFallback(text,onDone,speed);};
-      currentAudio.play().catch(()=>deviceTTSFallback(text,onDone,speed));setBadge(voice.label);
+      currentAudio.play().catch(()=>deviceTTSFallback(text,onDone,speed));
+      setBadge(voice.label||'🌐');
     })
     .catch(e=>{console.warn('VoiceRSS:',e.message);deviceTTSFallback(text,onDone,speed);});
 }
@@ -1483,23 +998,24 @@ function shareStory(){
   track('story_share',{title:curStory.title});
 }
 
-// ── PHOTOS ─────────────────────────────────────────────────────
+// ── PHOTOS ──────────────────────────────────────────────────────
 function fetchPhoto(title){
   if(photoCache[title]!==undefined)return Promise.resolve(photoCache[title]);
   var loc=currentCityName||currentCountry||'';
-  var queries=[title,loc?title+', '+loc:'',title.replace(/^(The |St\.? |Saint )/i,'')].filter(Boolean);
+  var queries=[title,loc?title+' '+loc:'',title.replace(/^(The |St\.?\s|Saint )/i,'')].filter(Boolean).filter((q,i,a)=>a.indexOf(q)===i);
   var idx=0;
   function tryNext(){
     if(idx>=queries.length){photoCache[title]=null;return Promise.resolve(null);}
     var q=queries[idx++];
     return fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q)+'&srlimit=1&format=json&origin=*')
-      .then(r=>r.json()).then(function(s){
+      .then(r=>r.json()).then(s=>{
         var pt=s&&s.query&&s.query.search&&s.query.search[0]?s.query.search[0].title:null;
         if(!pt)return tryNext();
         return fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(pt)+'&prop=pageimages&pithumbsize=600&pilicense=any&format=json&origin=*')
-          .then(r=>r.json()).then(function(d){
-            var pg=Object.values((d&&d.query&&d.query.pages)||{})[0];
-            if(!pg||!pg.thumbnail)return tryNext();
+          .then(r=>r.json()).then(d=>{
+            var pages=d&&d.query&&d.query.pages?d.query.pages:{};
+            var pg=Object.values(pages)[0];
+            if(!pg||!pg.thumbnail||!pg.thumbnail.source)return tryNext();
             var res={url:pg.thumbnail.source,credit:pt};photoCache[title]=res;return res;
           });
       }).catch(()=>tryNext());
@@ -1512,20 +1028,21 @@ function loadStoryPhoto(title){
   fetchPhoto(title).then(p=>{if(p){img.onload=()=>row.classList.add('loaded');img.onerror=()=>row.classList.remove('loaded');img.src=p.url;cred.textContent='📷 '+p.credit;}});
 }
 
-// ── CACHE ──────────────────────────────────────────────────────
+// ── CACHE ───────────────────────────────────────────────────────
 function saveLM(la,ln,a,pfx){pfx=pfx||'sr_lm_';try{localStorage.setItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2),JSON.stringify(a));}catch(e){}}
-function loadLM(la,ln,pfx){pfx=pfx||'sr_lm_';try{var d=localStorage.getItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2));var a=d?JSON.parse(d):null;return(a&&a.length)?a:null;}catch(e){return null;}}
+function loadLM(la,ln,pfx){pfx=pfx||'sr_lm_';try{var d=localStorage.getItem(pfx+la.toFixed(2)+'_'+ln.toFixed(2));var a=d?JSON.parse(d):null;return(a&&a.length&&a[0].lat)?a:null;}catch(e){return null;}}
 function saveStory(id,t){try{localStorage.setItem('sr_s_'+id,t);}catch(e){}}
 function loadStory(id){try{return localStorage.getItem('sr_s_'+id)||null;}catch(e){return null;}}
 function saveLongStory(k,t){try{localStorage.setItem('sr_ls_'+k,t);}catch(e){}}
 function loadLongStory(k){try{return localStorage.getItem('sr_ls_'+k)||null;}catch(e){return null;}}
 
-// ── FAVOURITES ─────────────────────────────────────────────────
+// ── FAVOURITES ──────────────────────────────────────────────────
 function loadFavs(){try{favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');}catch(e){favourites=[];}}
 function saveFavs(){try{localStorage.setItem('sr_favs',JSON.stringify(favourites));}catch(e){}}
 function isFaved(id){return favourites.some(f=>f.id===id);}
 function toggleFavourite(){
-  if(!curStory)return;var btn=document.getElementById('fav-btn');
+  if(!curStory)return;
+  var btn=document.getElementById('fav-btn');
   if(isFaved(curStory.id)){favourites=favourites.filter(f=>f.id!==curStory.id);btn.textContent='🤍';}
   else{favourites.push({id:curStory.id,title:curStory.title,text:curStory.text});btn.textContent='❤️';track('story_fav',{title:curStory.title});}
   saveFavs();
@@ -1533,135 +1050,119 @@ function toggleFavourite(){
 function renderFavs(){
   var el=document.getElementById('fav-list');
   if(!favourites.length){el.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:40px 20px;">'+T('noFavs').replace('\n','<br>')+'</div>';return;}
-  el.innerHTML=favourites.map((f,i)=>'<div class="fav-item"><div class="fav-title">'+f.title+'</div><div class="fav-text">'+f.text+'</div><div class="fav-actions"><button class="fav-play" onclick="playFav('+i+')">▶ Play</button><button class="fav-del" onclick="delFav('+i+')">🗑</button></div></div>').join('');
+  el.innerHTML=favourites.map((f,i)=>'<div class="fav-item"><div class="fav-title">'+f.title+'</div><div class="fav-text">'+f.text+'</div><div class="fav-actions"><button class="fav-play" onclick="playFav('+i+')">'+T('play')+'</button><button class="fav-del" onclick="delFav('+i+')">🗑</button></div></div>').join('');
 }
-function playFav(i){tts(favourites[i].text,function(){});closeFavPanel();}
+function playFav(i){tts(favourites[i].text,()=>{});closeFavPanel();}
 function delFav(i){favourites.splice(i,1);saveFavs();renderFavs();}
 
-// ── AI (stories only — NOT used for landmark discovery) ────────
-// ═══════════════════════════════════════════════════════════════
-// AI CALL — serialised queue so concurrent story requests don't
-// pile up and exhaust the Groq rate limit (30 req/min free tier).
-// Only one request runs at a time; others wait their turn.
-// ═══════════════════════════════════════════════════════════════
-var _aiQueue = Promise.resolve();
-var _lastAiCall = 0;
-var AI_MIN_GAP_MS = 1200; // at most ~50 req/min — safely under Groq's 30 RPM free limit
-
-function callAI(prompt){
-  _aiQueue = _aiQueue.then(function(){
-    var now = Date.now();
-    var wait = Math.max(0, _lastAiCall + AI_MIN_GAP_MS - now);
-    return sleep(wait).then(function(){
-      _lastAiCall = Date.now();
-      return fetch('/api/claude',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({messages:[{role:'user',content:prompt}]})
-      })
-      .then(function(r){
-        if(r.status===429){
-          _lastAiCall = Date.now() + 8000; // back off 8s on rate limit
-          throw new Error('rate_limited');
-        }
-        if(r.status===401||r.status===403){
-          throw new Error('api_banned'); // auth failure — no point retrying
-        }
-        if(!r.ok) throw new Error('HTTP '+r.status);
-        return r.json();
-      })
-      .then(function(d){
-        if(d.error) throw new Error(d.error);
-        var t=d&&d.content&&d.content[0]?d.content[0].text:'';
-        if(!t) throw new Error('Empty response');
-        return t;
-      });
-    });
-  });
-  // Return a promise that resolves/rejects with this specific call's result
-  var result = _aiQueue;
-  // Prevent queue errors from blocking future calls
-  _aiQueue = _aiQueue.catch(function(){});
-  return result;
-}
-// Geocode only used for route planning From/To inputs
+// ── GEOCODE ─────────────────────────────────────────────────────
 function geocode(q){
   return fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
     .then(r=>r.json()).then(d=>d.length?{lat:+d[0].lat,lng:+d[0].lon}:null).catch(()=>null);
 }
+function reverseGeocodePromise(lat,lng){
+  return fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
+    .then(r=>r.json()).then(function(r){
+      var city='',country='',area='';
+      if(r&&r.address){city=r.address.city||r.address.town||r.address.village||r.address.county||'';country=r.address.country||'';area=r.address.suburb||r.address.neighbourhood||r.address.quarter||r.address.village||'';}
+      currentCityName=city;currentCountry=country;if(area)currentAreaName=area;
+      return {city,country,area};
+    }).catch(()=>({city:currentCityName,country:currentCountry,area:currentAreaName}));
+}
 
-// ── OVERPASS → OSM TAG TO STORYROUTE TYPE ─────────────────────
-// Maps raw OpenStreetMap tags to our landmark type vocabulary
+// ── WIKIPEDIA + DDG ─────────────────────────────────────────────
+function fetchWikiExtract(name,city,country,area,osmWikiTag,osmWikidata,tw){
+  var key=name+'|'+(city||'')+'|'+(country||'');
+  if(_wikiCache[key]!==undefined)return Promise.resolve(_wikiCache[key]);
+  tw=tw||'';
+  // Source 1: OSM wikipedia= tag — direct article link, most accurate
+  if(osmWikiTag){
+    var parts=osmWikiTag.split(':');
+    var wLang=parts.length>1&&parts[0].length<=3?parts[0]:'en';
+    var wTitle=parts.length>1&&parts[0].length<=3?parts.slice(1).join(':'):osmWikiTag;
+    return fetch('https://'+wLang+'.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(wTitle)+'&prop=extracts&explaintext=true&exsectionformat=plain&format=json&origin=*')
+      .then(r=>r.json()).then(function(d){
+        var pages=d&&d.query&&d.query.pages;if(!pages)return null;
+        var page=Object.values(pages)[0];
+        if(!page||!page.extract||page.extract.length<200)return null;
+        var result={title:page.title,extract:page.extract.slice(0,5000).trim(),source:'Wikipedia'};
+        _wikiCache[key]=result;return result;
+      }).catch(()=>null)
+      .then(result=>{if(result)return result;return fetchWikiBySearch(name,city,country,area,key,tw);});
+  }
+  return fetchWikiBySearch(name,city,country,area,key,tw);
+}
+function fetchWikiBySearch(name,city,country,area,cacheKey,tw){
+  tw=tw||'';
+  var stripped=name.replace(/^(The |St\.?\s|Saint )/i,'');
+  var queries=[
+    tw&&city&&country?name+' '+tw+' '+city+' '+country:null,
+    city&&country?name+' '+city+' '+country:null,
+    tw&&city?name+' '+tw+' '+city:null,
+    area&&city?name+' '+area+' '+city:null,
+    city?name+' '+city:null,
+    country?name+' '+country:null,
+    name,
+    stripped!==name?stripped:null
+  ].filter(Boolean).filter((q,i,a)=>a.indexOf(q)===i);
+  var qi=0;
+  function tryWiki(){
+    if(qi>=queries.length)return fetchDDG(name,city,country,cacheKey);
+    var q=queries[qi++];
+    return fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q)+'&srlimit=3&format=json&origin=*')
+      .then(r=>r.json()).then(function(data){
+        var results=data&&data.query&&data.query.search;
+        if(!results||results.length===0)return tryWiki();
+        var nameLower=name.toLowerCase();
+        var best=results.find(r=>r.title.toLowerCase().indexOf(nameLower)!==-1)||results[0];
+        return fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(best.title)+'&prop=extracts&explaintext=true&exsectionformat=plain&format=json&origin=*')
+          .then(r=>r.json()).then(function(d){
+            var pages=d&&d.query&&d.query.pages;if(!pages)return tryWiki();
+            var page=Object.values(pages)[0];
+            if(!page||!page.extract||page.extract.length<300)return tryWiki();
+            var result={title:page.title,extract:page.extract.slice(0,5000).trim(),source:'Wikipedia'};
+            if(cacheKey)_wikiCache[cacheKey]=result;return result;
+          });
+      }).catch(()=>tryWiki());
+  }
+  return tryWiki();
+}
+function fetchDDG(name,city,country,cacheKey){
+  var q=name+(city?' '+city:'')+(country?' '+country:'');
+  return fetch('https://api.duckduckgo.com/?q='+encodeURIComponent(q)+'&format=json&no_html=1&skip_disambig=1&no_redirect=1')
+    .then(r=>r.json()).then(function(data){
+      var abstract=data&&data.Abstract;
+      if(!abstract||abstract.length<150){if(cacheKey)_wikiCache[cacheKey]=null;return null;}
+      var result={title:data.Heading||name,extract:abstract.slice(0,2000),source:data.AbstractSource||'Web'};
+      if(cacheKey)_wikiCache[cacheKey]=result;return result;
+    }).catch(()=>{if(cacheKey)_wikiCache[cacheKey]=null;return null;});
+}
+
+// ── OSM TYPE MAPPER ─────────────────────────────────────────────
 function osmToType(tags){
-  var h=tags.historic,t=tags.tourism,a=tags.amenity,l=tags.leisure,n=tags.natural,m=tags.man_made,w=tags.waterway,r=tags.railway,bu=tags.building;
-  if(h==='castle'||h==='fort'||h==='fortification')return 'castle';
-  if(h==='abbey'||h==='monastery')return 'abbey';
-  if(h==='church')return 'church';
-  if(h==='bridge')return 'bridge';
-  if(h==='gate')return 'gate';
-  if(h==='well')return 'well';
-  if(h==='mill'||h==='watermill'||h==='windmill')return 'building';
-  if(h==='harbour'||h==='dock')return 'harbour';
-  if(h==='railway_station')return 'railway';
-  if(h)return 'monument'; // all other historic tags
-  if(t==='museum'||t==='gallery')return 'museum';
-  if(t==='attraction'||t==='artwork'||t==='viewpoint'||t==='memorial'||t==='ruins')return 'monument';
-  if(t==='castle')return 'castle';
-  if(a==='pub'||a==='bar')return 'pub';
-  if(a==='place_of_worship')return tags.religion==='jewish'?'other':'church';
-  if(a==='cinema')return 'cinema';
-  if(a==='theatre'||a==='arts_centre')return 'museum';
-  if(a==='library')return 'hall';
-  if(a==='university'||a==='college'||a==='school')return 'school';
-  if(a==='marketplace')return 'market';
-  if(a==='harbour'||a==='ferry_terminal')return 'harbour';
-  if(l==='park'||l==='garden'||l==='nature_reserve')return 'park';
-  if(l==='stadium'||l==='sports_centre'||l==='pitch')return 'sport';
-  if(l==='beach'||n==='beach')return 'beach';
-  if(n==='peak'||n==='hill')return 'hill';
-  if(n==='water'||n==='bay'||n==='coastline')return 'nature';
-  if(m==='lighthouse')return 'tower';
-  if(m==='tower'||m==='campanile')return 'tower';
-  if(m==='bridge')return 'bridge';
-  if(m==='windmill'||m==='watermill')return 'building';
-  if(w==='canal')return 'canal';
-  if(w==='river'||w==='stream')return 'nature';
-  if(r==='station'||r==='halt')return 'railway';
-  if(bu==='cathedral'||bu==='church')return 'church';
-  if(bu==='castle')return 'castle';
-  if(bu==='hospital')return 'building';
-  if(bu==='school'||bu==='university')return 'school';
+  var checks=[[tags.historic,OSM_TYPE],[tags.tourism,OSM_TYPE],[tags.amenity,OSM_TYPE],[tags.leisure,OSM_TYPE],[tags.natural,OSM_TYPE],[tags.man_made,OSM_TYPE],[tags.railway,OSM_TYPE],[tags.waterway,OSM_TYPE]];
+  for(var i=0;i<checks.length;i++){var val=checks[i][0],m=checks[i][1];if(val&&m[val])return m[val];}
   return 'other';
 }
 
-// ── OVERPASS LANDMARK FETCH ────────────────────────────────────
-// Core architectural change: real OSM data with real coordinates.
-// No AI involved in landmark discovery — AI only generates stories.
+// ── FETCH LANDMARKS ─────────────────────────────────────────────
 function fetchVisibleBounds(){
   if(!map)return;
   var c=map.getCenter();
   fetchArea(c.lat,c.lng);
   fetchNeighbourhoods(c.lat,c.lng);
 }
-
 function fetchArea(lat,lng){
   var key=lat.toFixed(2)+'_'+lng.toFixed(2);
-  if(fetched.has(key))return;
-  fetched.add(key);
-
-  // Cached tile — place markers whose stories are already cached instantly,
-  // generate any missing stories in background
+  if(fetched.has(key))return;fetched.add(key);
   var cached=loadLM(lat,lng);
-  if(cached&&cached.length&&cached[0].lat){
-    reverseGeocode(lat,lng);
-    preloadAndPlace(cached, currentCityName, currentCountry, currentAreaName, false);
+  if(cached){
+    reverseGeocodePromise(lat,lng);
+    preloadAndPlace(cached,currentCityName,currentCountry,currentAreaName);
     return;
   }
   localStorage.removeItem('sr_lm_'+lat.toFixed(2)+'_'+lng.toFixed(2));
-
   setStatus(T('searchingLandmarks'));
-
-  // Reverse geocode FIRST — gives richer Wikipedia search context
   reverseGeocodePromise(lat,lng).then(function(loc){
     var r=1500;
     var q='[out:json][timeout:20];('
@@ -1680,595 +1181,276 @@ function fetchArea(lat,lng){
       +'way["name"]["man_made"~"lighthouse|tower|bridge"](around:'+r+','+lat+','+lng+');'
       +'way["name"]["waterway"="canal"](around:'+r+','+lat+','+lng+');'
       +');out center 40;';
-
     fetch(OVERPASS,{method:'POST',body:'data='+encodeURIComponent(q)})
-      .then(function(res){return res.json();})
-      .then(function(data){
-        var elements=data.elements||[];
-        var seen=new Set(), arr=[];
-        elements.forEach(function(el){
+      .then(res=>res.json()).then(function(data){
+        var skip=/^(McDonald|Starbucks|Subway|Costa|Caffe|Cafe|Coffee|Sandwich|Burger|KFC|Pizza|Tesco|Spar|Centra|Lidl|Aldi|Dunnes|SuperValu|Boots|Penneys|Primark|H&M|Zara)/i;
+        var seen=new Set(),arr=[];
+        (data.elements||[]).forEach(function(el){
           if(!el.tags||!el.tags.name)return;
           var name=el.tags.name.trim();
-          if(seen.has(name))return; seen.add(name);
+          if(seen.has(name)||skip.test(name))return;seen.add(name);
           var elat=el.lat||(el.center&&el.center.lat);
           var elng=el.lon||(el.center&&el.center.lon);
           if(!elat||!elng)return;
-          // Skip food/drink chains and generic commercial names
-          var skipPat=/^(McDonald|Starbucks|Subway|Costa|Caffe|Cafe|Coffee|Sandwich|Burger|KFC|Pizza|Tesco|Spar|Centra|Lidl|Aldi|Dunnes|SuperValu|Boots|Penneys|Primark|H&M|Zara|Marks|Spencer)/i;
-          if(skipPat.test(name))return;
           arr.push({title:name,type:osmToType(el.tags),lat:elat,lng:elng,osmWiki:el.tags.wikipedia||null,osmWikidata:el.tags.wikidata||null});
         });
         if(!arr.length){fetched.delete(key);setStatus(T('noLandmarks'));return;}
-        // Sort: historically rich types first so best landmarks appear soonest
-        var typePriority={castle:0,abbey:0,monument:1,church:1,bridge:1,museum:1,
-          pub:2,harbour:2,tower:2,railway:2,park:3,garden:3,other:4};
-        arr.sort(function(a,b){return (typePriority[a.type]||4)-(typePriority[b.type]||4);});
-        // Cap at 15 — beyond that the AI queue gets too long
+        var typePriority={castle:0,abbey:0,monument:1,church:1,bridge:1,museum:1,pub:2,harbour:2,tower:2,railway:2,park:3,garden:3,other:4};
+        arr.sort((a,b)=>(typePriority[a.type]||4)-(typePriority[b.type]||4));
         arr=arr.slice(0,15);
         saveLM(lat,lng,arr);
-        preloadAndPlace(arr, loc.city, loc.country, loc.area, true);
+        preloadAndPlace(arr,loc.city,loc.country,loc.area);
       })
-      .catch(function(err){
-        fetched.delete(key);
-        setStatus(T('loadingLandmarks'));
-        console.error('Overpass:',err);
-        setTimeout(function(){fetchArea(lat,lng);},5000);
-      });
+      .catch(function(err){fetched.delete(key);setStatus(T('loadingLandmarks'));console.error('Overpass:',err);setTimeout(()=>fetchArea(lat,lng),5000);});
   });
 }
-
-// Reverse geocode returning a promise with {city, country, area}
-function reverseGeocodePromise(lat,lng){
-  return fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',
-    {headers:{'User-Agent':'StoryRouteApp/1.0'}})
-    .then(function(r){return r.json();})
-    .then(function(r){
-      var city='',country='',area='';
-      if(r&&r.address){
-        city=r.address.city||r.address.town||r.address.village||r.address.county||'';
-        country=r.address.country||'';
-        area=r.address.suburb||r.address.neighbourhood||r.address.quarter||r.address.village||'';
-      }
-      currentCityName=city; currentCountry=country;
-      if(area) currentAreaName=area;
-      return {city:city,country:country,area:area};
-    })
-    .catch(function(){return {city:currentCityName,country:currentCountry,area:currentAreaName};});
-}
-
-// Pre-load story for each landmark BEFORE placing its marker.
-// Each marker pops onto the map the moment its story is ready — instantly on cache hit.
-function preloadAndPlace(landmarks, city, country, area, isNew){
-  var ready=0, total=landmarks.length;
-  setStatus(T('loadingStories')+' 0 / '+total);
-
-  var promises=landmarks.map(function(lm){
-    var id=lm.title.replace(/\W+/g,'_');
-
-    // Story already cached? Place marker immediately
-    var cached=loadStory(id);
-    if(cached){
-      lm.wikiExtract=lm.wikiExtract||null;
-      addSingleLM(lm);
-      ready++;
-      setStatus(T('loadingStories')+' '+ready+' / '+total);
-      if(ready===total) afterFetch();
-      return Promise.resolve();
-    }
-
-    // Fetch Wikipedia with full location context (parallel — not rate limited)
-    var _tw=({pub:'pub',bar:'pub',church:'church',castle:'castle',bridge:'bridge',museum:'museum',park:'park',abbey:'abbey',tower:'tower',railway:'railway station',harbour:'harbour',monument:'monument'})[lm.type]||'';
-    return fetchWikiExtract(lm.title, city, country, area, lm.osmWiki, lm.osmWikidata, _tw)
-      .then(function(wiki){
-        if(wiki){lm.wikiOk=true; lm.wikiExtract=wiki.extract; lm.sourceLabel=wiki.source||'Wikipedia';}
-        // Generate + translate story
-        return getStoryWithRetry(lm);
-      })
-      .then(function(story){
-        if(story&&story.length>15) saveStory(id, story);
-        addSingleLM(lm);
-        ready++;
-        setStatus(T('loadingStories')+' '+ready+' / '+total);
-        if(ready===total) afterFetch();
-      })
-      .catch(function(){
-        // Story failed — still show the landmark, tap will retry
-        addSingleLM(lm);
-        ready++;
-        if(ready===total) afterFetch();
-      });
-  });
-
-  return Promise.all(promises);
-}
-
-// Place a single landmark marker on the map
-function addSingleLM(lm){
-  if(!lm||!lm.title||!lm.lat||!lm.lng)return;
-  var id=lm.title.replace(/\W+/g,'_');
-  var ptype=ALL_TYPES.includes(lm.type)?lm.type:'other';
-  if(markers[id]){
-    if(isTypeVisible(ptype)){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
-    else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}
-    return;
-  }
-  if(!isTypeVisible(ptype))return;
-  var html='<div class="lm-dot" id="lm-'+id+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
-  var icon=L.divIcon({html:html,iconSize:[28,28],iconAnchor:[14,14],className:''});
-  var lmObj={id:id,title:lm.title,type:ptype,lat:+lm.lat,lng:+lm.lng};
-  var m=L.marker([+lm.lat,+lm.lng],{icon:icon,_title:lm.title,_type:ptype})
-    .addTo(map).bindTooltip(lm.title,{direction:'top'});
-  m.on('click',function(){track('marker_tap',{title:lm.title,type:ptype});onTapMarker(lmObj);});
-  markers[id]=m;
-}
-
-
 function fetchNeighbourhoods(lat,lng){
   var key='nb_'+lat.toFixed(2)+'_'+lng.toFixed(2);
   if(fetchedNb.has(key))return;fetchedNb.add(key);
   var cached=loadLM(lat,lng,'sr_nb_');
-  if(cached&&cached.length&&cached[0].lat&&cached[0].lng){addNeighbourhoods(cached);return;}
-
-  // Overpass query for named places (suburbs, districts, neighbourhoods)
-  var q='[out:json][timeout:10];('
-    +'node["place"~"suburb|quarter|neighbourhood|district|village|town|borough"](around:6000,'+lat+','+lng+');'
-    +');out 12;';
-
+  if(cached){addNeighbourhoods(cached);return;}
+  var q='[out:json][timeout:15];(node["place"~"suburb|neighbourhood|quarter|village|town|district"](around:5000,'+lat+','+lng+');way["place"~"suburb|neighbourhood|quarter|village|district"](around:5000,'+lat+','+lng+'););out center 15;';
   fetch(OVERPASS,{method:'POST',body:'data='+encodeURIComponent(q)})
-    .then(r=>r.json())
-    .then(function(data){
-      var elements=data.elements||[];
-      var seen=new Set();
-      var arr=[];
-      elements.forEach(function(el){
-        if(!el.tags||!el.tags.name)return;
-        var name=el.tags.name.trim();
-        if(seen.has(name))return;seen.add(name);
-        if(!el.lat||!el.lon)return;
-        arr.push({title:name,county:el.tags['addr:county']||'',lat:el.lat,lng:el.lon});
+    .then(r=>r.json()).then(function(data){
+      var seen=new Set(),arr=[];
+      (data.elements||[]).forEach(function(el){
+        var name=el.tags&&el.tags.name;if(!name||seen.has(name))return;seen.add(name);
+        var elat=el.lat||(el.center&&el.center.lat),elng=el.lon||(el.center&&el.center.lon);
+        if(!elat||!elng)return;
+        arr.push({title:name,lat:elat,lng:elng});
       });
       if(!arr.length)return;
-      saveLM(lat,lng,arr,'sr_nb_');
-      addNeighbourhoods(arr);
-    })
-    .catch(function(err){fetchedNb.delete(key);console.error('Overpass NB:',err);});
+      saveLM(lat,lng,arr,'sr_nb_');addNeighbourhoods(arr);
+    }).catch(err=>{fetchedNb.delete(key);console.error('fetchNb:',err);});
 }
 
-// Reverse geocode for city/country context used in story prompts only
-function reverseGeocode(lat,lng){
-  return fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
-    .then(r=>r.json())
-    .then(function(r){
-      if(r&&r.address){
-        currentCityName=r.address.city||r.address.town||r.address.village||r.address.county||'';
-        currentCountry=r.address.country||r.address.country_code||'';
+// ── STORY GENERATION ────────────────────────────────────────────
+// KEY DESIGN: Groq generates the story AND delivers it in the target language
+// in a single API call. No separate translation step — simpler, faster, correct.
+function buildStoryPrompt(p, place, extract, source){
+  var langLine = _lang.code==='en' ? '' : ' Write the entire story in '+_lang.name+'. ';
+  var typeHints = {
+    church:'Focus on founding date, architectural highlights, and one dramatic historical event.',
+    abbey:'Focus on founding date, monastic life, and one dramatic historical event.',
+    pub:'Focus on when it was established, famous regulars or events, and what makes it a local institution.',
+    bar:'Focus on when it was established, famous regulars or events, and what makes it a local institution.',
+    castle:'Focus on who built it, one key siege or battle, and its condition today.',
+    museum:'Focus on its founding, most remarkable exhibit, and why it matters.',
+    gallery:'Focus on its founding, most remarkable collection, and why it matters.',
+    bridge:'Focus on when and why it was built and one engineering or historical highlight.',
+    monument:'Focus on what it commemorates, who created it, and one striking detail.',
+    memorial:'Focus on what it commemorates, who created it, and one striking detail.',
+    park:'Focus on its origins, one memorable event here, and its character today.',
+    garden:'Focus on its origins, design, and its character today.',
+    railway:'Focus on when it opened, one memorable moment in its history, and its architecture.',
+    harbour:'Focus on the trade it served, its busiest era, and how it looks today.',
+    canal:'Focus on the trade it served, its busiest era, and how it looks today.',
+    tower:'Focus on its original purpose, one dramatic event, and what it symbolises.',
+    lighthouse:'Focus on its original purpose, the dangers it guarded against, and what it symbolises.',
+  };
+  var hint=typeHints[p.type]||'Focus on the most surprising historical fact and a vivid sensory detail.';
+
+  if(extract){
+    return 'You are a captivating storyteller and historian giving an audio tour. '
+      +'Your job is to tell the BEST STORY hidden in the source below — not summarise it. '
+      +'Find the most dramatic, surprising, or human moment: a siege, a scandal, a famous visitor, a ghost, a legend. '
+      +'Build the story around that moment, then weave in key facts. '
+      +'Topic: '+p.title+' in '+place+'. '+hint+' '
+      +'Rules: use specific names, dates, and numbers from the source; '
+      +'vivid present-tense language; DO NOT start with the name of the place; '
+      +'no cliches; 6-8 sentences, around 160 words. Spoken story only, no heading.'
+      +langLine
+      +'\n\nSOURCE ('+source+'):\n'+extract;
+  }
+
+  if(p.type==='pub'||p.type==='bar'){
+    return 'You are a local pub historian giving an audio tour. '
+      +'Tell the story of '+p.title+' in '+place+'. '
+      +'Cover: when it was established, any famous regulars or literary/political connections, notable events, its architectural character. '
+      +'If it is a lesser-known local, describe what pubs like this meant to this community and era. '
+      +'Rules: vivid present-tense; do not start with the pub name; no cliches; 6-8 sentences, 160 words.'
+      +langLine
+      +'\nIf you have no knowledge of this specific pub, reply only: UNKNOWN';
+  }
+
+  return 'You are a captivating storyteller giving an audio tour. '
+    +'Tell the BEST STORY you know about '+p.title+' ('+p.type+') in '+place+'. '
+    +'Find the most dramatic moment: a famous event, person, legend, or scandal. '
+    +hint+' '
+    +'Rules: specific names, dates, numbers; vivid present-tense; do not start with the place name; '
+    +'no cliches; 6-8 sentences, 160 words.'
+    +langLine
+    +'\nIf you have NO knowledge of this exact place, reply only: UNKNOWN';
+}
+
+function getStory(p){
+  var place=currentCityName&&currentCountry?currentCityName+', '+currentCountry:currentCityName||currentCountry||'this location';
+  if(p.isNb||p.type==='area'){
+    var langLine=_lang.code==='en'?'':' Write entirely in '+_lang.name+'.';
+    return callAI('You are a captivating storyteller. Tell a vivid story about the neighbourhood of '+p.title+' in '+place+'. '
+      +'Find the most interesting angle: its origin, a famous resident, a dramatic past event. '
+      +'Include real dates and names. Vivid, no cliches, around 120 words. Spoken story only.'+langLine);
+  }
+  var extractPromise=p.wikiExtract
+    ?Promise.resolve({extract:p.wikiExtract,source:p.sourceLabel||'Wikipedia'})
+    :fetchWikiExtract(p.title,currentCityName,currentCountry,currentAreaName,p.osmWiki,p.osmWikidata,({pub:'pub',bar:'pub',church:'church',castle:'castle',bridge:'bridge',museum:'museum',park:'park',abbey:'abbey',tower:'tower',railway:'railway station',harbour:'harbour',monument:'monument'})[p.type]||'')
+       .then(w=>w?{extract:w.extract,source:w.source}:{extract:null,source:null});
+  return extractPromise.then(function(info){
+    var prompt=buildStoryPrompt(p,place,info.extract,info.source);
+    return callAI(prompt).then(function(txt){
+      if(!txt||txt.trim().toUpperCase().startsWith('UNKNOWN')||txt.trim().length<30){
+        if(info.extract)return trimToStory(info.extract,5);
+        return 'You are standing at '+p.title+(place?', '+place:'')+'. Story coming soon — tap again to retry.';
       }
-    }).catch(()=>{});
+      return txt;
+    }).catch(function(){
+      if(info.extract)return trimToStory(info.extract,5);
+      return 'You are standing at '+p.title+(place?', '+place:'')+'. Story coming soon — tap again to retry.';
+    });
+  });
 }
 
-// Place landmark markers — all items have real Overpass coords, placed synchronously
-function addLMs(arr){
-  (arr||[]).forEach(function(lm){ addSingleLM(lm); });
+function getStoryWithRetry(p,attempt){
+  attempt=attempt||0;
+  return getStory(p).then(function(txt){
+    if(!txt||txt.trim().length<10)throw new Error('Too short');
+    return txt;
+  }).catch(function(err){
+    var msg=err&&err.message;
+    if(msg==='api_banned'){console.error('Groq API key issue');return p.wikiExtract?trimToStory(p.wikiExtract,5):null;}
+    if(attempt<2)return sleep(attempt===0?3000:6000).then(()=>getStoryWithRetry(p,attempt+1));
+    return p.wikiExtract?trimToStory(p.wikiExtract,5):null;
+  });
 }
+function trimToStory(extract,maxSentences){
+  var sentences=extract.replace(/[\r\n]+/g,' ').match(/[^.!?]{10,}[.!?]+/g)||[];
+  var out='',words=0;
+  for(var i=0;i<Math.min(sentences.length,maxSentences||5);i++){
+    var s=sentences[i].trim();out+=(out?' ':'')+s;words+=s.split(/\s+/).length;if(words>=100)break;
+  }
+  return out||extract.slice(0,500);
+}
+function hideLandmark(id){if(markers[id]){map.removeLayer(markers[id]);delete markers[id];}visited.add(id);}
 
-
+// ── PRELOAD AND PLACE ────────────────────────────────────────────
+// Landmark markers only appear AFTER their story is ready
+function preloadAndPlace(landmarks,city,country,area){
+  var ready=0,total=landmarks.length;
+  setStatus(T('loadingStories')+' 0 / '+total);
+  var promises=landmarks.map(function(lm){
+    var id=lm.title.replace(/\W+/g,'_');
+    var cached=loadStory(id);
+    if(cached){
+      addSingleLM(lm);
+      setStatus(T('loadingStories')+' '+(++ready)+' / '+total);
+      if(ready===total)afterFetch();
+      return Promise.resolve();
+    }
+    var tw=({pub:'pub',bar:'pub',church:'church',castle:'castle',bridge:'bridge',museum:'museum',park:'park',abbey:'abbey',tower:'tower',railway:'railway station',harbour:'harbour',monument:'monument'})[lm.type]||'';
+    return fetchWikiExtract(lm.title,city,country,area,lm.osmWiki,lm.osmWikidata,tw)
+      .then(function(wiki){
+        if(wiki){lm.wikiOk=true;lm.wikiExtract=wiki.extract;lm.sourceLabel=wiki.source;}
+        return getStoryWithRetry(lm);
+      })
+      .then(function(story){
+        if(story&&story.length>15)saveStory(id,story);
+        addSingleLM(lm);
+        setStatus(T('loadingStories')+' '+(++ready)+' / '+total);
+        if(ready===total)afterFetch();
+      })
+      .catch(function(){
+        addSingleLM(lm);
+        if(++ready===total)afterFetch();
+      });
+  });
+  return Promise.all(promises);
+}
+function addSingleLM(lm){
+  if(!lm||!lm.title||!lm.lat||!lm.lng)return;
+  var id=lm.title.replace(/\W+/g,'_');
+  var ptype=ALL_TYPES.includes(lm.type)?lm.type:'other';
+  if(markers[id]){if(isTypeVisible(ptype)){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}return;}
+  if(!isTypeVisible(ptype))return;
+  var html='<div class="lm-dot" id="lm-'+id+'">'+(TYPE_ICON[ptype]||'📍')+'</div>';
+  var icon=L.divIcon({html,iconSize:[28,28],iconAnchor:[14,14],className:''});
+  var lmObj={id,title:lm.title,type:ptype,lat:+lm.lat,lng:+lm.lng};
+  var m=L.marker([+lm.lat,+lm.lng],{icon,_title:lm.title,_type:ptype}).addTo(map).bindTooltip(lm.title,{direction:'top'});
+  m.on('click',()=>{track('marker_tap',{title:lm.title,type:ptype});onTapMarker(lmObj);});
+  markers[id]=m;
+}
+function addLMs(arr){(arr||[]).forEach(lm=>addSingleLM(lm));}
 function addNeighbourhoods(arr){
   arr.forEach(function(item){
     if(!item.title||!item.lat||!item.lng)return;
     var id='nb_'+item.title.replace(/\W+/g,'_');
-    if(markers[id]){
-      if(isTypeVisible('area')){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}
-      else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}
-      return;
-    }
+    if(markers[id]){if(isTypeVisible('area')){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}else{if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);}return;}
     if(!isTypeVisible('area'))return;
     var html='<div style="text-align:center"><div class="nb-dot" id="lm-'+id+'">🏙</div><div class="nb-label">'+item.title+'</div></div>';
-    var lm={id:id,title:item.title,type:'area',lat:item.lat,lng:item.lng,isNb:true};
-    var m=L.marker([item.lat,item.lng],{icon:L.divIcon({html:html,iconSize:[60,42],iconAnchor:[30,14],className:''}),_title:item.title,_type:'area'})
-      .addTo(map).bindTooltip(item.title+' — tap for story',{direction:'top'});
-    m.on('click',function(){track('marker_tap',{title:item.title,type:'area'});onTapMarker(lm);});
+    var icon=L.divIcon({html,iconSize:[60,42],iconAnchor:[30,14],className:''});
+    var lm={id,title:item.title,type:'area',lat:+item.lat,lng:+item.lng,isNb:true};
+    var m=L.marker([+item.lat,+item.lng],{icon,_title:item.title,_type:'area'}).addTo(map).bindTooltip(item.title+' — tap for story',{direction:'top'});
+    m.on('click',()=>{track('marker_tap',{title:item.title,type:'area'});onTapMarker(lm);});
     markers[id]=m;
   });
 }
-
 function afterFetch(){
   var n=Object.keys(markers).length;
   if(userPos){
     var best=null,bestD=Infinity;
-    Object.entries(markers).forEach(function(e){
-      if(visited.has(e[0]))return;
-      var ll=e[1].getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
-      if(d<bestD){bestD=d;best=e[1].options._title;}
-    });
-    if(best&&bestD<2000)setStatus(n+' landmarks · '+Math.round(bestD)+'m to '+best);
+    Object.entries(markers).forEach(([id,m])=>{if(visited.has(id))return;var ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<bestD){bestD=d;best=m.options._title;}});
+    if(best&&bestD<2000)setStatus(n+' '+T('landmarks')+' · '+Math.round(bestD)+'m to '+best);
     else setStatus(n+' '+T(n!==1?'landmarks':'landmark'));
   }else setStatus(n+' '+T(n!==1?'landmarks':'landmark'));
   if(tourOn&&!speaking)playNearest();
 }
-
 function refreshLandmarks(){
   fetched.clear();fetchedNb.clear();currentCityName='';currentCountry='';
-  // Clear all cached landmark data
-  Object.keys(localStorage).forEach(function(k){
-    if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_'))localStorage.removeItem(k);
-  });
+  Object.keys(localStorage).forEach(k=>{if(k.startsWith('sr_lm_')||k.startsWith('sr_nb_')||k.startsWith('sr_s_'))localStorage.removeItem(k);});
   Object.values(markers).forEach(m=>map.removeLayer(m));
   markers={};visited.clear();nxtStory=null;prefetchId=null;
-  document.getElementById('next-info').textContent='';
-  document.getElementById('skip-btn').disabled=true;
+  document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;
   setStatus(T('refreshing'));fetchVisibleBounds();
 }
-
-function setTravelMode(m){
-  travelMode=m;PROXIMITY_RADIUS=TRAVEL_MODES[m].radius;
-  document.querySelectorAll('.tm-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tm-'+m).classList.add('active');track('travel_mode',{mode:m});
-}
+function setTravelMode(m){travelMode=m;PROXIMITY_RADIUS=TRAVEL_MODES[m].radius;document.querySelectorAll('.tm-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tm-'+m).classList.add('active');track('travel_mode',{mode:m});}
 function checkProxAlert(){
   if(!userPos)return;
   var best=null,bestD=Infinity;
-  Object.entries(markers).forEach(function(e){
-    if(visited.has(e[0]))return;
-    var ll=e[1].getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
-    if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:e[1].options._title,dist:Math.round(d)};}
-  });
+  Object.entries(markers).forEach(([id,m])=>{if(visited.has(id))return;var ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:m.options._title,dist:Math.round(d)};}});
   var el=document.getElementById('prox-alert');
   if(best){document.getElementById('prox-text').textContent=best.name+' — '+best.dist+'m';el.classList.add('visible');clearTimeout(proxTimer);proxTimer=setTimeout(()=>el.classList.remove('visible'),5000);}
   else el.classList.remove('visible');
 }
 function updateProgress(){
   if(!routeCoords.length||!userPos)return;
-  var minD=Infinity,minI=0;
-  routeCoords.forEach(function(rc,i){var d=haversine(userPos,{lat:rc[0],lng:rc[1]});if(d<minD){minD=d;minI=i;}});
+  var minD=Infinity,minI=0;routeCoords.forEach((rc,i)=>{var d=haversine(userPos,{lat:rc[0],lng:rc[1]});if(d<minD){minD=d;minI=i;}});
   var pct=Math.round((minI/(routeCoords.length-1))*100);
-  document.getElementById('progress-fill').style.width=pct+'%';
-  document.getElementById('progress-label').textContent=pct+'%';
+  document.getElementById('progress-fill').style.width=pct+'%';document.getElementById('progress-label').textContent=pct+'%';
 }
 
-// ── STORY GENERATION ───────────────────────────────────────────
-// Rich, type-specific prompts. The system prompt instructs the model to write
-// compelling spoken-word audio — not generic filler text.
-// ═══════════════════════════════════════════════════════════════
-// WIKIPEDIA — fetch the real intro extract for a landmark.
-// Returns {title, extract, url} if a good article is found,
-// or null if nothing useful exists.
-// Landmarks with no Wikipedia article are hidden from the map.
-// ═══════════════════════════════════════════════════════════════
-var _wikiCache = {};
-
-function fetchWikiExtract(name, city, country, area, osmWikiTag, osmWikidata, tw) {
-  var key = name + '|' + (city||'') + '|' + (country||'');
-  if (_wikiCache[key] !== undefined) return Promise.resolve(_wikiCache[key]);
-
-  // ── SOURCE 1: OSM wikipedia= tag (most authoritative — direct article link) ──
-  // Format from OSM: "en:Christ Church Cathedral, Dublin" or "Christ Church Cathedral"
-  if (osmWikiTag) {
-    var parts = osmWikiTag.split(':');
-    var wLang  = parts.length > 1 && parts[0].length <= 3 ? parts[0] : 'en';
-    var wTitle = parts.length > 1 && parts[0].length <= 3 ? parts.slice(1).join(':') : osmWikiTag;
-    return fetch(
-      'https://' + wLang + '.wikipedia.org/w/api.php?action=query&titles=' +
-      encodeURIComponent(wTitle) +
-      '&prop=extracts&explaintext=true&exsectionformat=plain&format=json&origin=*'
-    )
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      var pages = d && d.query && d.query.pages;
-      if (!pages) return null;
-      var page = Object.values(pages)[0];
-      if (!page || !page.extract || page.extract.length < 200) return null;
-      var result = {
-        title: page.title,
-        extract: page.extract.slice(0, 5000).trim(),
-        source: 'Wikipedia (OSM-linked)'
-      };
-      _wikiCache[key] = result;
-      return result;
-    })
-    .catch(function(){ return null; })
-    .then(function(result){
-      if (result) return result;
-      // OSM tag fetch failed — continue to search fallback
-      return fetchWikiBySearch(name, city, country, area, key, tw);
-    });
-  }
-
-  // ── SOURCE 2 + 3: Wikipedia search then DuckDuckGo ───────────────────────
-  return fetchWikiBySearch(name, city, country, area, key, tw);
-}
-
-// Wikipedia search with full location context
-function fetchWikiBySearch(name, city, country, area, cacheKey, tw) {
-  tw=tw||'';
-  var stripped = name.replace(/^(The |St\.?\s|Saint )/i, '');
-  var queries = [
-    tw&&city&&country ? name+' '+tw+' '+city+' '+country : null,
-    city && country ? name + ' ' + city + ' ' + country : null,
-    tw&&city ? name+' '+tw+' '+city : null,
-    area && city    ? name + ' ' + area + ' ' + city     : null,
-    city            ? name + ' ' + city                   : null,
-    country         ? name + ' ' + country                : null,
-    name,
-    stripped !== name ? stripped : null
-  ].filter(Boolean).filter(function(q,i,a){ return a.indexOf(q)===i; });
-
-  var qi = 0;
-  function tryWiki() {
-    if (qi >= queries.length) {
-      // ── SOURCE 3: DuckDuckGo Instant Answers (Britannica, Fandom, etc.) ──
-      return fetchDDG(name, city, country, cacheKey);
-    }
-    var q = queries[qi++];
-    return fetch(
-      'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
-      encodeURIComponent(q) + '&srlimit=3&format=json&origin=*'
-    )
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      var results = data && data.query && data.query.search;
-      if (!results || results.length === 0) return tryWiki();
-      var nameLower = name.toLowerCase();
-      var best = results.find(function(r){
-        return r.title.toLowerCase().indexOf(nameLower) !== -1;
-      }) || results[0];
-      return fetch(
-        'https://en.wikipedia.org/w/api.php?action=query&titles=' +
-        encodeURIComponent(best.title) +
-        '&prop=extracts&explaintext=true&exsectionformat=plain&format=json&origin=*'
-      )
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        var pages = d && d.query && d.query.pages;
-        if (!pages) return tryWiki();
-        var page = Object.values(pages)[0];
-        if (!page || !page.extract || page.extract.length < 300) return tryWiki();
-        var result = {
-          title: page.title,
-          extract: page.extract.slice(0, 5000).trim(),
-          source: 'Wikipedia'
-        };
-        if (cacheKey) _wikiCache[cacheKey] = result;
-        return result;
-      });
-    })
-    .catch(function(){ return tryWiki(); });
-  }
-  return tryWiki();
-}
-
-// DuckDuckGo Instant Answers API — sources include Britannica, Fandom,
-// government sites, and others beyond Wikipedia.
-// Free, no key, CORS-enabled.
-function fetchDDG(name, city, country, cacheKey) {
-  var q = name + (city ? ' ' + city : '') + (country ? ' ' + country : '');
-  return fetch(
-    'https://api.duckduckgo.com/?q=' + encodeURIComponent(q) +
-    '&format=json&no_html=1&skip_disambig=1&no_redirect=1'
-  )
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    var abstract = data && data.Abstract;
-    // DDG returns empty abstract for disambiguation or unknown topics
-    if (!abstract || abstract.length < 150) {
-      if (cacheKey) _wikiCache[cacheKey] = null;
-      return null;
-    }
-    var result = {
-      title: data.Heading || name,
-      extract: abstract.slice(0, 1500),
-      source: data.AbstractSource || 'DuckDuckGo'
-    };
-    if (cacheKey) _wikiCache[cacheKey] = result;
-    return result;
-  })
-  .catch(function(){
-    if (cacheKey) _wikiCache[cacheKey] = null;
-    return null;
-  });
-}
-
-
-// ═══════════════════════════════════════════════════════════════
-// STORY GENERATION
-// 1. Fetch Wikipedia extract for the landmark
-// 2. If nothing found → return null (landmark gets hidden from map)
-// 3. If found → ask AI to turn the real facts into a vivid audio story
-// AI is grounded in Wikipedia facts so it cannot hallucinate
-// ═══════════════════════════════════════════════════════════════
-function getStory(p) {
-  var place = currentCityName && currentCountry
-    ? currentCityName + ', ' + currentCountry
-    : currentCityName || currentCountry || 'this location';
-
-  // ── Neighbourhoods: always AI ─────────────────────────────────────────────
-  if (p.isNb || p.type === 'area') {
-    return callAI(
-      'You are a captivating storyteller. Tell a vivid story about the neighbourhood of ' + p.title + ' in ' + place + '. ' +
-      'Find the most interesting angle: its origin story, a famous resident, a dramatic past event, what shaped its character. ' +
-      'Include real dates and names. Vivid language, no cliches, around 120 words. Spoken story only. ' +
-      'Spoken story only.'
-    ).catch(function(){ return wikiOrFallback(p, place, null); });
-  }
-
-  // ── All other landmarks: Wikipedia first, AI enhances, fallback always shows ─
-  var extractPromise = p.wikiExtract
-    ? Promise.resolve(p.wikiExtract)
-    : fetchWikiExtract(p.title, currentCityName, currentCountry, currentAreaName, p.osmWiki, p.osmWikidata, ({pub:'pub',bar:'pub',church:'church',castle:'castle',bridge:'bridge',museum:'museum',park:'park',abbey:'abbey',tower:'tower',railway:'railway station',harbour:'harbour',monument:'monument'})[p.type]||'').then(function(w){ return w ? w.extract : null; });
-
-  return extractPromise.then(function(extract) {
-    if (extract) {
-      // We have Wikipedia — try to enhance with AI, fall back to raw extract if AI fails
-      var typeHint = getTypeHint(p.type);
-      return callAI(
-        'You are a captivating storyteller and historian giving an audio tour. ' +
-        'Your job is NOT to summarise — it is to tell the BEST STORY hidden inside the source material below. ' +
-        'Find the most dramatic, surprising, or human moment: a siege, a scandal, a famous visitor, a near-demolition, a ghost, a legend. ' +
-        'Build the story around that moment, then weave in key facts. ' +
-        'Topic: ' + p.title + ' in ' + place + '. ' +
-        typeHint + ' ' +
-        'Rules: use specific names, dates, and numbers from the source; ' +
-        'vivid present-tense language as if speaking to someone standing there; ' +
-        'DO NOT start with the name of the place; vary your sentence length; no cliches; ' +
-        '6-8 sentences, around 160 words. Spoken story only, no heading. ' +
-        'SOURCE (' + (p.sourceLabel||'Wikipedia') + '):\n' + extract
-      ).catch(function(){
-        // AI failed — use the Wikipedia extract directly, trimmed to 3 sentences
-        return trimToStory(extract, 5);
-      });
-    }
-
-    // No Wikipedia — type-specific prompt
-    var noWikiPrompt;
-    if(p.type==='pub'||p.type==='bar'){
-      noWikiPrompt=
-        'You are a local pub historian. Tell the story of ' + p.title + ' in ' + place + '. ' +
-        'Cover: when established, famous regulars or literary connections, notable events, its character. ' +
-        'If this is a lesser-known local, describe what pubs like this meant to this community. ' +
-        'Vivid present-tense; do not start with the pub name; no cliches; 6-8 sentences, 160 words. ' +
-        'If you have no knowledge of this specific pub, reply only: UNKNOWN';
-    } else {
-      noWikiPrompt=
-        'You are a captivating storyteller giving an audio tour. ' +
-        'Tell the best story you know about ' + p.title + ' (' + p.type + ') in ' + place + '. ' +
-        'Find the most dramatic moment: a famous event, person, legend, or scandal. ' +
-        getTypeHint(p.type) + ' ' +
-        'Specific names, dates, numbers; vivid present-tense; do not start with the place name; ' +
-        'no cliches; 6-8 sentences, 160 words. Spoken story only. ' +
-        'If you have NO knowledge of this exact place, reply only: UNKNOWN';
-    }
-    return callAI(noWikiPrompt).then(function(txt) {
-      if (!txt || txt.trim().toUpperCase().startsWith('UNKNOWN') || txt.trim().length < 30)
-        return wikiOrFallback(p, place, null);
-      return txt;
-    }).catch(function(){
-      return wikiOrFallback(p, place, null);
-    });
-  });
-}
-
-// Returns the Wikipedia extract trimmed to N sentences, or a minimal fallback message.
-// NEVER returns null — the app always has something to say.
-function wikiOrFallback(p, place, extract) {
-  if (extract) return trimToStory(extract, 5);
-  // Minimal fallback using OSM data we already have — honest, never filler
-  var typeLabel = {
-    church:'church',abbey:'abbey',castle:'castle',pub:'pub',bar:'pub',
-    museum:'museum',gallery:'gallery',park:'park',bridge:'bridge',
-    monument:'monument',memorial:'memorial',tower:'tower',lighthouse:'lighthouse',
-    railway:'railway station',harbour:'harbour',canal:'canal',
-    school:'school',library:'library',market:'market'
-  }[p.type] || p.type;
-  return 'You are standing at ' + p.title + ', a ' + typeLabel + ' in ' + place + '. ' +
-    'Story details are loading — try tapping again in a moment.';
-}
-
-// Trim a Wikipedia extract to at most N sentences, targeting ~100 words
-function trimToStory(extract, maxSentences) {
-  var sentences = extract.replace(/[\r\n]+/g,' ').match(/[^.!?]{10,}[.!?]+/g) || [];
-  var out = '', words = 0;
-  for (var i = 0; i < Math.min(sentences.length, maxSentences || 3); i++) {
-    var s = sentences[i].trim();
-    out += (out ? ' ' : '') + s;
-    words += s.split(/\s+/).length;
-    if (words >= 80) break;
-  }
-  return out || extract.slice(0, 400);
-}
-
-function getTypeHint(type) {
-  switch(type){
-    case 'church': case 'abbey':       return 'Focus on founding date, one architectural highlight, and one dramatic historical event.';
-    case 'pub':    case 'bar':         return 'Focus on its age or origin, one famous patron or story, and what makes it a local landmark.';
-    case 'castle': case 'fort':        return 'Focus on who built it, one key battle or siege, and its condition today.';
-    case 'museum': case 'gallery':     return 'Focus on its founding, its most remarkable exhibit, and why it matters.';
-    case 'bridge':                     return 'Focus on when and why it was built and one engineering or historical detail.';
-    case 'monument': case 'memorial':  return 'Focus on what it commemorates, who created it, and one striking detail.';
-    case 'park':   case 'garden':      return 'Focus on its origins, one memorable event here, and its character today.';
-    case 'railway':                    return 'Focus on when it opened, one memorable moment, and its architecture.';
-    case 'harbour': case 'canal':      return 'Focus on what trade it served, its busiest era, and how it looks today.';
-    case 'tower':  case 'lighthouse':  return 'Focus on its original purpose, one dramatic event, and what it symbolises.';
-    default:                           return 'Focus on the most surprising historical fact and one vivid sensory detail.';
-  }
-}
-
-// Retry with backoff. NEVER returns null due to API failure.
-function getStoryWithRetry(p, attempt) {
-  attempt = attempt || 0;
-  return getStory(p).then(function(txt) {
-    if (!txt || txt.trim().length < 10) throw new Error('Too short');
-    // Translate into the selected language before caching/speaking
-    return translateStory(txt, _lang.storyLang);
-  }).catch(function(err) {
-    var msg = err && err.message;
-    if (msg === 'api_banned') {
-      console.error('Groq API key issue — check GROQ_API_KEY in Netlify env vars');
-      var place = currentCityName && currentCountry ? currentCityName+', '+currentCountry : currentCityName||'this area';
-      return p.wikiExtract ? trimToStory(p.wikiExtract, 3) : wikiOrFallback(p, place, null);
-    }
-    console.warn('Story attempt '+(attempt+1)+' failed for "'+p.title+'":', msg);
-    if (attempt < 2) {
-      var delay = attempt === 0 ? 3000 : 6000;
-      return sleep(delay).then(function(){ return getStoryWithRetry(p, attempt+1); });
-    }
-    var pl = currentCityName && currentCountry ? currentCityName+', '+currentCountry : currentCityName||'this area';
-    return p.wikiExtract ? trimToStory(p.wikiExtract, 3) : wikiOrFallback(p, pl, null);
-  });
-}
-
-
-// Translate a story from English into the active language using the AI queue.
-// Stories are always generated in English (Wikipedia sources are English),
-// then translated before being spoken. The translated version is what gets
-// cached and read aloud.
-function translateStory(englishText, langLabel){
-  if(_lang.code === 'en') return Promise.resolve(englishText);
-  return callAI(
-    'Translate the following audio tour story into ' + langLabel + '. ' +
-    'Keep the same vivid, spoken-word style. Keep all names, dates and numbers as-is. ' +
-    'Return only the translated text, nothing else.\n\n' + englishText
-  ).catch(function(){ return englishText; }); // fallback to English if translation fails
-}
-
-function hideLandmark(id) {
-  if (markers[id]) {
-    map.removeLayer(markers[id]);
-    delete markers[id];
-  }
-  visited.add(id); // prevent future attempts
-}
-
-
-// ── TOUR ───────────────────────────────────────────────────────
+// ── TOUR ────────────────────────────────────────────────────────
 function toggleTour(){if(!tourOn)startTour();else stopTour();}
 function startTour(){
   tourOn=true;document.getElementById('silent-audio').play().catch(()=>{});
   var btn=document.getElementById('tour-btn');btn.textContent=T('stopListening');btn.classList.add('stop');
-  document.getElementById('prox-alert').classList.remove('visible');
-  document.getElementById('travel-mode').classList.add('visible');
-  document.getElementById('story').style.bottom='132px';
+  document.getElementById('prox-alert').classList.remove('visible');document.getElementById('travel-mode').classList.add('visible');document.getElementById('story').style.bottom='132px';
   setStatus(T('tourActive'));track('tour_start',{mode:travelMode});playNearest();
 }
 function stopTour(){
   tourOn=false;speaking=false;nxtStory=null;prefetchId=null;curStory=null;cancelAudio();
   var sa=document.getElementById('silent-audio');sa.pause();sa.currentTime=0;
   var btn=document.getElementById('tour-btn');btn.textContent=T('startListening');btn.classList.remove('stop');
-  document.getElementById('story').style.display='none';
-  document.getElementById('story').style.bottom='74px';
-  document.getElementById('travel-mode').classList.remove('visible');
-  document.getElementById('skip-btn').disabled=true;
-  document.getElementById('next-info').textContent='';
+  document.getElementById('story').style.display='none';document.getElementById('story').style.bottom='74px';
+  document.getElementById('travel-mode').classList.remove('visible');document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';
   document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
-  track('tour_stop',{stories_heard:landmarkCount});
-  setStatus(Object.keys(markers).length+' landmarks');
+  track('tour_stop',{stories_heard:landmarkCount});setStatus(Object.keys(markers).length+' '+T('landmarks'));
 }
 function nearest(excl){
   excl=excl||[];if(!userPos)return null;
   var best=null,bestD=Infinity;
-  Object.entries(markers).forEach(function(e){
-    var id=e[0],m=e[1];
+  Object.entries(markers).forEach(([id,m])=>{
     if(visited.has(id)||excl.includes(id)||!map.hasLayer(m))return;
     var ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
-    if(d<=PROXIMITY_RADIUS&&d<bestD){bestD=d;best={id:id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,isNb:m.options._type==='area'};}
+    if(d<=PROXIMITY_RADIUS&&d<bestD){bestD=d;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,isNb:m.options._type==='area'};}
   });
   return best;
 }
@@ -2279,15 +1461,12 @@ function playLandmark(p){
   bumpCount();visited.add(p.id);speaking=true;landmarkCount++;
   dotVisited(p.id);setPulse(p.id);setStatus('📖 '+p.title);
   showStory(p.title,'⏳ Loading story…',p.type);
-  document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';
-  document.getElementById('skip-btn').disabled=true;
+  document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';document.getElementById('skip-btn').disabled=true;
   track('story_play',{title:p.title,type:p.type});
   var cached=loadStory(p.id);
   if(cached){finishPlay(p,cached);return;}
-  getStoryWithRetry(p).then(function(txt){
-    // story always present now
-    saveStory(p.id,txt);finishPlay(p,txt);
-  }).catch(function(){speaking=false;if(tourOn)setTimeout(playNearest,3000);});
+  getStoryWithRetry(p).then(txt=>{if(txt)saveStory(p.id,txt);finishPlay(p,txt||('You are standing at '+p.title+'.'));})
+    .catch(()=>{speaking=false;if(tourOn)setTimeout(playNearest,3000);});
 }
 function finishPlay(p,txt){
   if(!speaking)return;
@@ -2305,9 +1484,8 @@ function prefetchStory(p){
   var cached=loadStory(p.id);
   if(cached&&!visited.has(p.id)){nxtStory=Object.assign({},p,{text:cached});document.getElementById('next-info').innerHTML=T('nextUp')+'<b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;return;}
   getStoryWithRetry(p).then(function(txt){
-    // story always present now
-    if(!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory=Object.assign({},p,{text:txt});document.getElementById('next-info').innerHTML=T('nextUp')+'<b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}
-  }).catch(function(){prefetchId=null;document.getElementById('next-info').textContent='';});
+    if(txt&&!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory=Object.assign({},p,{text:txt});document.getElementById('next-info').innerHTML=T('nextUp')+'<b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}
+  }).catch(()=>{prefetchId=null;document.getElementById('next-info').textContent='';});
 }
 function onTapMarker(p){
   if(!speaking&&!tourOn){try{var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}}
@@ -2319,37 +1497,32 @@ function playLandmarkOnDemand(p){
   if(!visited.has(p.id)){visited.add(p.id);landmarkCount++;bumpCount();dotVisited(p.id);}
   setPulse(p.id);speaking=true;setStatus('📖 '+p.title);
   showStory(p.title,'⏳ Loading story…',p.type);
-  document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';
-  document.getElementById('skip-btn').disabled=true;
+  document.getElementById('fav-btn').textContent=isFaved(p.id)?'❤️':'🤍';document.getElementById('skip-btn').disabled=true;
   track('story_play',{title:p.title,type:p.type,mode:'tap'});
   var onDone=function(){
     speaking=false;document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
-    if(tourOn){var cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}
-    else setStatus(Object.keys(markers).length+' landmarks');
+    if(tourOn){var cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1200);}else setStatus(Object.keys(markers).length+' '+T('landmarks'));
   };
   var cached=loadStory(p.id);
   if(cached){curStory=Object.assign({},p,{text:cached});showStory(p.title,cached,p.type);tts(cached,onDone);return;}
-  getStoryWithRetry(p).then(function(txt){
-    // story always present now
-    saveStory(p.id,txt);curStory=Object.assign({},p,{text:txt});showStory(p.title,txt,p.type);tts(txt,onDone);
-  }).catch(function(){speaking=false;onDone();});
+  getStoryWithRetry(p)
+    .then(txt=>{var t=txt||('You are standing at '+p.title+'.');if(txt)saveStory(p.id,txt);curStory=Object.assign({},p,{text:t});showStory(p.title,t,p.type);tts(t,onDone);})
+    .catch(()=>{speaking=false;onDone();});
 }
 function stopCurrentStory(){
-  cancelAudio();speaking=false;nxtStory=null;prefetchId=null;
-  document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';
+  cancelAudio();speaking=false;nxtStory=null;prefetchId=null;document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';
   document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
-  if(tourOn)setTimeout(playNearest,1500);else setStatus(Object.keys(markers).length+' landmarks');
+  if(tourOn)setTimeout(playNearest,1500);else setStatus(Object.keys(markers).length+' '+T('landmarks'));
 }
 function hideStoryBody(){document.getElementById('story-body').style.display='none';document.getElementById('unhide-btn').style.display='inline-block';}
 function showStoryBody(){document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';}
 function skipStory(){
   if(!nxtStory)return;cancelAudio();speaking=false;
-  var s=nxtStory;nxtStory=null;prefetchId=null;
-  document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;
+  var s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;
   setTimeout(()=>playLandmark(s),300);
 }
 
-// ── STORIES MODE ───────────────────────────────────────────────
+// ── STORIES MODE ────────────────────────────────────────────────
 function openStoriesMode(){
   if(!userPos){showToast('Waiting for location…');return;}
   fetch('https://nominatim.openstreetmap.org/reverse?lat='+userPos.lat+'&lon='+userPos.lng+'&format=json',{headers:{'User-Agent':'StoryRouteApp/1.0'}})
@@ -2358,7 +1531,7 @@ function openStoriesMode(){
       var city=r.address?(r.address.city||r.address.town||r.address.county||''):'';
       var country=r.address?(r.address.country||r.address.country_code||''):'';
       currentAreaName=nb;currentCityName=city;currentCountry=country;
-      document.getElementById('stories-area-name').textContent=nb+(city?', '+city:'')+(country?', '+country:'');
+      document.getElementById('stories-area-name').textContent=nb+(city?', '+city:'');
       loadStoriesForArea();
     }).catch(()=>{document.getElementById('stories-area-name').textContent=T('nearby');loadStoriesForArea();});
 }
@@ -2373,18 +1546,16 @@ function loadStoriesForArea(){
     if(idx>=STORY_TYPES.length){document.getElementById('gen-story-btn').disabled=false;track('stories_mode_open',{area:currentAreaName});return;}
     var st=STORY_TYPES[idx++];var c=cached[idx-1];
     if(c){longStories.push(c);renderStoriesPanel();nextStory();return;}
-    callAI(st.prompt(currentAreaName,currentCityName)).then(function(txt){
+    callAI(st.prompt(currentAreaName,currentCityName,_lang.name)).then(txt=>{
       saveLongStory(areaKey+'_'+st.type,txt);longStories.push(Object.assign({},st,{text:txt,area:currentAreaName}));renderStoriesPanel();nextStory();
-    }).catch(()=>{console.error('Story gen failed');nextStory();});
+    }).catch(()=>{nextStory();});
   }
   nextStory();
 }
 function generateMoreStories(){
   var btn=document.getElementById('gen-story-btn');btn.disabled=true;btn.textContent='…';
   var st=STORY_TYPES[Math.floor(Math.random()*STORY_TYPES.length)];
-  callAI(st.prompt(currentAreaName,currentCityName)).then(function(txt){
-    longStories.push(Object.assign({},st,{text:txt,area:currentAreaName}));renderStoriesPanel();
-  }).catch(()=>showToast('Could not generate story'));
+  callAI(st.prompt(currentAreaName,currentCityName,_lang.name)).then(txt=>{longStories.push(Object.assign({},st,{text:txt,area:currentAreaName}));renderStoriesPanel();}).catch(()=>showToast('Could not generate story'));
   btn.disabled=false;btn.textContent=T('more');
 }
 function renderStoriesPanel(){
@@ -2393,7 +1564,7 @@ function renderStoriesPanel(){
     var words=s.text?s.text.split(' ').length:0,mins=Math.max(1,Math.round(words/130));
     var preview=s.text?(s.text.slice(0,140)+(s.text.length>140?'…':'')):'Loading…';
     var isPlaying=currentLongStoryIdx===i&&longSpeaking;
-    return '<div class="story-card"><div class="story-card-header"><div class="story-card-icon">'+s.icon+'</div><div class="story-card-meta"><div class="story-card-title">'+(s.area||currentAreaName)+'</div><div class="story-card-type"><span class="story-type-pill '+s.pill+'">'+s.label+'</span></div></div><div class="story-card-duration">~'+mins+' min</div></div><div class="story-card-preview" id="scp-'+i+'">'+preview+'</div><div class="story-card-btns"><button class="sc-play'+(isPlaying?' playing':'')+'" onclick="toggleLongStory('+i+')">'+(isPlaying?'⏹ Stop':'▶ Listen')+'</button><button class="sc-expand" onclick="expandStoryCard('+i+')">Read</button><button class="sc-fav" onclick="favLongStory('+i+')">🤍</button></div></div>';
+    return '<div class="story-card"><div class="story-card-header"><div class="story-card-icon">'+s.icon+'</div><div class="story-card-meta"><div class="story-card-title">'+(s.area||currentAreaName)+'</div><div class="story-card-type"><span class="story-type-pill '+s.pill+'">'+s.label+'</span></div></div><div class="story-card-duration">~'+mins+' min</div></div><div class="story-card-preview" id="scp-'+i+'">'+preview+'</div><div class="story-card-btns"><button class="sc-play'+(isPlaying?' playing':'')+'" onclick="toggleLongStory('+i+')">'+(isPlaying?'⏹ '+T('stop'):T('listen'))+'</button><button class="sc-expand" onclick="expandStoryCard('+i+')">'+T('read')+'</button><button class="sc-fav" onclick="favLongStory('+i+')">🤍</button></div></div>';
   }).join('');
 }
 function expandStoryCard(i){var el=document.getElementById('scp-'+i);if(!el||!longStories[i])return;el.textContent=longStories[i].text;el.classList.add('expanded');}
@@ -2401,22 +1572,19 @@ function toggleLongStory(i){
   if(longSpeaking&&currentLongStoryIdx===i){cancelAudio();longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();return;}
   if(!canPlay()){showPaywall();return;}
   bumpCount();cancelAudio();longSpeaking=true;currentLongStoryIdx=i;renderStoriesPanel();
-  var s=longStories[i];track('long_story_play',{type:s.type,area:s.area});
-  tts(s.text,function(){longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();});
+  tts(longStories[i].text,function(){longSpeaking=false;currentLongStoryIdx=-1;renderStoriesPanel();});
 }
 function favLongStory(i){
   if(!longStories[i])return;
   var s=longStories[i],id='ls_'+s.area.replace(/\W+/g,'_')+'_'+s.type;
-  if(!isFaved(id)){favourites.push({id:id,title:s.area+' — '+s.label,text:s.text});saveFavs();showToast('Added to favourites ❤️');}
+  if(!isFaved(id)){favourites.push({id,title:s.area+' — '+s.label,text:s.text});saveFavs();showToast('Added to favourites ❤️');}
 }
 
-// ── UI HELPERS ─────────────────────────────────────────────────
+// ── UI HELPERS ──────────────────────────────────────────────────
 function showStory(name,text,type){
-  document.getElementById('story-name').textContent=name;
-  document.getElementById('story-text').textContent=text;
+  document.getElementById('story-name').textContent=name;document.getElementById('story-text').textContent=text;
   document.getElementById('story-type-badge').textContent=(type&&type!=='other')?type:'';
-  document.getElementById('story-body').style.display='block';
-  document.getElementById('unhide-btn').style.display='none';
+  document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
   if(text!=='⏳ Loading story…')loadStoryPhoto(name);
 }
@@ -2430,19 +1598,16 @@ function setPulse(id){document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.
 function dotVisited(id){var el=document.getElementById('lm-'+id);if(el)el.classList.add('visited');}
 function setStatus(t){document.getElementById('status').textContent=t;}
 function toggleFromLoc(){
-  useCurrentLocFrom=!useCurrentLocFrom;
-  var inp=document.getElementById('from-inp'),btn=document.getElementById('from-loc-btn');
+  useCurrentLocFrom=!useCurrentLocFrom;var inp=document.getElementById('from-inp'),btn=document.getElementById('from-loc-btn');
   if(useCurrentLocFrom){inp.value='📍 My current location';inp.disabled=true;btn.classList.add('active');}
   else{inp.value='';inp.disabled=false;btn.classList.remove('active');}
 }
 
-// ── ROUTE ──────────────────────────────────────────────────────
+// ── ROUTE ───────────────────────────────────────────────────────
 function planRoute(){
   var to=document.getElementById('to-inp').value.trim();if(!to)return;
   var btn=document.querySelector('.r-btn');btn.disabled=true;setStatus('Planning…');
-  var getA;
-  if(useCurrentLocFrom&&userPos)getA=Promise.resolve({lat:userPos.lat,lng:userPos.lng});
-  else{var fv=document.getElementById('from-inp').value.trim();if(!fv){btn.disabled=false;alert('Enter a starting location.');return;}getA=geocode(fv);}
+  var getA=useCurrentLocFrom&&userPos?Promise.resolve({lat:userPos.lat,lng:userPos.lng}):geocode(document.getElementById('from-inp').value.trim());
   Promise.all([getA,geocode(to)]).then(function(res){
     var A=res[0],B=res[1];if(!A||!B){btn.disabled=false;alert('Could not find locations.');return;}
     var profile=travelMode==='walking'?'foot':'driving';
@@ -2454,161 +1619,28 @@ function planRoute(){
         routeCoords=coords.map(c=>[c[1],c[0]]);
         map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
         progMove=true;map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});setTimeout(()=>{progMove=false;},200);
-        document.getElementById('progress-wrap').classList.add('visible');
-        updateProgress();setStatus('Finding landmarks…');track('route_planned');
+        document.getElementById('progress-wrap').classList.add('visible');updateProgress();setStatus('Finding landmarks…');track('route_planned');
         var pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);
-        return pts.reduce(function(ch,pt){return ch.then(()=>{fetchArea(pt[1],pt[0]);fetchNeighbourhoods(pt[1],pt[0]);});},Promise.resolve());
+        return pts.reduce((ch,pt)=>ch.then(()=>fetchArea(pt[1],pt[0])),Promise.resolve());
       });
-  }).then(()=>{btn.disabled=false;setMode('explore');}).catch(()=>{btn.disabled=false;setStatus(T('noLandmarks'));});
+  }).then(()=>{btn.disabled=false;setMode('explore');}).catch(()=>{btn.disabled=false;setStatus('Route error');});
 }
 
-// ── SERVICE WORKER ─────────────────────────────────────────────
-function forceUpdate(){
-  if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));
-  caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).finally(()=>location.reload(true));
-}
+// ── SERVICE WORKER ──────────────────────────────────────────────
+function forceUpdate(){if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).finally(()=>location.reload(true));}
 function applyUpdate(){if(newWorker)newWorker.postMessage('SKIP_WAITING');}
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').then(function(reg){
     reg.update();
     reg.addEventListener('updatefound',function(){
       newWorker=reg.installing;
-      newWorker.addEventListener('statechange',function(){
-        if(newWorker.state==='installed'&&navigator.serviceWorker.controller)
-          document.getElementById('update-bar').classList.add('visible');
-      });
+      newWorker.addEventListener('statechange',function(){if(newWorker.state==='installed'&&navigator.serviceWorker.controller)document.getElementById('update-bar').classList.add('visible');});
     });
   });
   navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload());
 }
 
-// ── UTILS ──────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════
-// LANGUAGE
-// ═══════════════════════════════════════════════════════════════
-function openLangPanel(){
-  renderLangPanel();
-  document.getElementById('lang-panel').classList.add('open');
-  document.getElementById('menu-overlay').classList.add('open');
-}
-function closeLangPanel(){
-  document.getElementById('lang-panel').classList.remove('open');
-  document.getElementById('menu-overlay').classList.remove('open');
-}
-function renderLangPanel(){
-  document.getElementById('lang-list').innerHTML = LANGUAGES.map(function(l,i){
-    var sel = _lang.code===l.code;
-    return '<div class="pick-item'+(sel?' selected':'') +'" onclick="pickLang('+i+')">'
-      +'<div style="font-size:22px;width:32px;text-align:center;flex-shrink:0">'+l.label.split(' ')[0]+'</div>'
-      +'<div><div class="pick-name">'+l.label.split(' ').slice(1).join(' ')+'</div>'
-      +'<div class="pick-desc">Stories & audio in '+l.storyLang+'</div></div>'
-      +(sel?'<div class="pick-check">✓</div>':'')
-      +'</div>';
-  }).join('');
-}
-function pickLang(i){
-  _lang = LANGUAGES[i];
-  localStorage.setItem('sr_lang', _lang.code);
-  // Switch voice to match language (override voice selection)
-  selectedVoice = _lang.tts;
-  localStorage.setItem('sr_voice_cfg', JSON.stringify(_lang.tts));
-  // Clear story cache so stories regenerate in the new language
-  Object.keys(localStorage).forEach(function(k){
-    if(k.startsWith('sr_s_')||k.startsWith('sr_ls_')) localStorage.removeItem(k);
-  });
-  closeLangPanel();
-  showToast(T('language')+': '+_lang.label);
-  applyTranslations();
-  updateLangBtn();
-  track('language_change',{lang:_lang.code});
-  // If a story is playing, restart it in new language
-  if(curStory&&curStory.text){
-    cancelAudio();speaking=false;
-    if(tourOn) setTimeout(function(){if(!speaking)playNearest();},500);
-  }
-}
-function updateLangBtn(){
-  var btn=document.getElementById('lang-btn');
-  if(btn) btn.textContent=_lang.label.split(' ')[0]; // show flag emoji
-}
-
-// Apply translations to all static HTML elements
-function applyTranslations(){
-  var d=document;
-  function el(id){return d.getElementById(id);}
-  function set(id,t){var e=el(id);if(e)e.textContent=t;}
-  function setHTML(id,h){var e=el(id);if(e)e.innerHTML=h;}
-  function setAttr(id,a,t){var e=el(id);if(e)e.setAttribute(a,t);}
-
-  // Splash
-  set('splash-btn', T('openMap'));
-  // Header app name stays as StoryRoute (brand)
-  // Mode toggle
-  var btnE=el('btn-explore'); if(btnE)btnE.textContent=T('explore');
-  var btnR=el('btn-route');   if(btnR)btnR.textContent=T('route');
-  var btnS=el('btn-stories'); if(btnS)btnS.textContent=T('stories');
-  // Tour button — only if not currently running
-  var tb=el('tour-btn'); if(tb&&!tourOn)tb.textContent=T('startListening');
-  // Travel mode
-  var tw=el('tm-walking'); if(tw)tw.textContent=T('walking');
-  var td=el('tm-driving'); if(td)td.textContent=T('shortDrive');
-  var tl=el('tm-long');    if(tl)tl.textContent=T('longDrive');
-  // Story card buttons
-  set('replay-btn',    T('replay'));
-  set('share-btn',     T('share'));
-  set('stop-story-btn',T('stop'));
-  set('hide-story-btn',T('hide'));
-  set('unhide-btn',    T('show'));
-  var sk=el('skip-btn'); if(sk)sk.textContent=T('skip');
-  // Stories panel
-  set('gen-story-btn', T('more'));
-  set('stories-area-name', T('detectingArea'));
-  var sh=d.querySelector('#stories-header h3'); if(sh)sh.textContent=T('storiesNearYou');
-  // Fav panel header
-  var fh=d.querySelector('#fav-panel-header h2'); if(fh)fh.innerHTML='❤️ '+T('favourites');
-  // Route inputs
-  setAttr('from-inp','placeholder',T('from'));
-  setAttr('to-inp',  'placeholder',T('to'));
-  var rb=d.querySelector('.r-btn'); if(rb)rb.textContent=T('planRoute');
-  // Menu items
-  var mis=d.querySelectorAll('.mi');
-  var menuKeys=['refreshLandmarks','favourites','voice','speed','rotateVoices',
-    'landmarkTypes','account','sendFeedback','upgradePro'];
-  // Map by mi-icon content
-  mis.forEach(function(mi){
-    var icon=mi.querySelector('.mi-icon');
-    if(!icon)return;
-    var ic=icon.textContent.trim();
-    var map2={'🔄':T('refreshLandmarks'),'❤️':T('favourites'),'🎙️':T('voice'),
-      '⚡':T('speed'),'🏷️':T('landmarkTypes'),'👤':T('account'),
-      '💬':T('sendFeedback'),'⭐':T('upgradePro')};
-    if(map2[ic]){
-      // Replace text node (not the badge span)
-      mi.childNodes.forEach(function(n){
-        if(n.nodeType===3&&n.textContent.trim()){n.textContent=map2[ic];}
-      });
-    }
-  });
-  // Cookie banner
-  var cp=d.querySelector('#cookie-banner p');
-  if(cp)cp.innerHTML=T('cookie')+' <a onclick="showCookieInfo()">'+T('learnMore')+'</a>';
-  var ca=el('cookie-accept'); if(ca)ca.textContent=T('accept');
-  var cd=el('cookie-decline'); if(cd)cd.textContent=T('decline');
-  // Feedback placeholders
-  setAttr('fb-name','placeholder',T('yourName'));
-  setAttr('fb-email','placeholder',T('yourEmail'));
-  setAttr('fb-msg','placeholder',T('yourMessage'));
-  var fb=d.querySelector('#feedback-panel .fb-btn'); if(fb)fb.textContent=T('sendFeedbackBtn');
-  // Paywall
-  var pw1=d.querySelector('.pw-box h2'); if(pw1)pw1.textContent=T('paywall1');
-  var pw2=d.querySelector('.pw-box p');  if(pw2)pw2.textContent=T('paywall2');
-  var pm=d.querySelector('.pw-pro:not(.dark)'); if(pm)pm.textContent=T('perMonth');
-  // Language panel header
-  var lh=d.querySelector('#lang-panel .sp-header h2'); if(lh)lh.textContent=T('language');
-  // RTL support for Arabic
-  d.documentElement.setAttribute('dir', _lang.code==='ar'?'rtl':'ltr');
-}
-
+// ── UTILS ───────────────────────────────────────────────────────
 function haversine(a,b){var R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.pow(Math.sin(dLat/2),2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.pow(Math.sin(dLng/2),2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 </script>
 </body>
