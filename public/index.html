@@ -35,6 +35,10 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #splash-hint{font-size:11px;color:#bbb;}
 #splash-version{background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.3);border-radius:8px;padding:5px 16px;font-size:13px;font-weight:700;color:#f0a500;}
 #splash-force{padding:6px 16px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:12px;color:#bbb;cursor:pointer;touch-action:manipulation;}
+#splash-modeloop{margin-top:18px;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:#fff;border:1px solid rgba(240,165,0,0.35);border-radius:12px;font-size:13px;font-weight:600;color:#1a2240;text-decoration:none;box-shadow:0 2px 8px rgba(26,34,64,0.06);transition:transform 0.15s,box-shadow 0.15s;}
+#splash-modeloop:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(26,34,64,0.12);}
+#splash-modeloop .ml-tag{font-size:10px;font-weight:800;letter-spacing:0.5px;background:#f0a500;color:#fff;padding:2px 6px;border-radius:4px;text-transform:uppercase;}
+#splash-modeloop .ml-arrow{color:#f0a500;font-weight:800;}
 
 /* HEADER */
 #header{position:fixed;top:0;left:0;right:0;z-index:1010;padding:10px 16px;background:rgba(255,255,255,0.97);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
@@ -274,8 +278,13 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.2.4</div>
+  <div id="splash-version">v2.2.5</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
+  <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
+    <span class="ml-tag">Modeloop</span>
+    <span>Explore our other products</span>
+    <span class="ml-arrow">→</span>
+  </a>
 </div>
 
 <!-- HEADER -->
@@ -483,7 +492,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.2.4
+// STORYROUTE v2.2.5
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
