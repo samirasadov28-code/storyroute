@@ -202,6 +202,11 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .auth-msg{font-size:13px;text-align:center;min-height:18px;margin-bottom:6px;}
 .auth-divider{height:1px;background:rgba(0,0,0,0.08);margin:10px 0;}
 .auth-logout{width:100%;padding:11px;background:rgba(239,68,68,0.08);color:#ef4444;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.auth-btn-cancel{width:100%;padding:12px;background:#fff;color:#ef4444;border:1px solid rgba(239,68,68,0.4);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;margin-bottom:6px;}
+.auth-btn-cancel:disabled{background:#f4f4f4;color:#aaa;border-color:#e5e5e5;cursor:default;}
+.sub-cancel-hint{font-size:11px;color:#999;text-align:center;line-height:1.5;margin-bottom:10px;}
+.sub-cancel-notice{background:rgba(240,165,0,0.1);border:1px solid rgba(240,165,0,0.3);border-radius:10px;padding:11px 13px;font-size:12px;color:#8a5a00;line-height:1.55;margin-bottom:12px;}
+.sub-cancel-notice b{color:#1a2240;}
 .auth-pro-badge{background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.3);border-radius:10px;padding:12px 14px;text-align:center;margin-bottom:14px;}
 .auth-pro-badge .pro-icon{font-size:28px;margin-bottom:6px;}
 .auth-pro-badge .pro-text{font-size:14px;font-weight:700;color:#b36b00;}
@@ -278,7 +283,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.2.5</div>
+  <div id="splash-version">v2.3.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -492,7 +497,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.2.5
+// STORYROUTE v2.3.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -580,6 +585,7 @@ var longStories=[],currentLongStoryIdx=-1,longSpeaking=false;
 var currentAreaName='this area',currentCityName='',currentCountry='';
 var photoCache={};
 var supabaseClient=null,currentUser=null,userIsPro=false;
+var subCancelPending=false,subPeriodEnd=null;
 var hasRealGPS=false,progMove=false;
 var map;
 var _wikiCache={};
@@ -682,8 +688,14 @@ function loadProStatus(){
   if(!supabaseClient||!currentUser)return;
   // Annual plan holder — always Pro
   if(currentUser.email==='samir.asadov.28@gmail.com'){userIsPro=true;localStorage.setItem('sr_pro','true');updateMenuUser();return;}
-  supabaseClient.from('profiles').select('is_pro').eq('id',currentUser.id).single()
-    .then(r=>{userIsPro=r.data?r.data.is_pro:false;if(userIsPro){localStorage.setItem('sr_pro','true');showToast('⭐ Pro restored!');}updateMenuUser();})
+  supabaseClient.from('profiles').select('is_pro,subscription_cancel_at_period_end,current_period_end').eq('id',currentUser.id).single()
+    .then(r=>{
+      userIsPro=r.data?r.data.is_pro:false;
+      subCancelPending=r.data?!!r.data.subscription_cancel_at_period_end:false;
+      subPeriodEnd=r.data?r.data.current_period_end:null;
+      if(userIsPro){localStorage.setItem('sr_pro','true');showToast('⭐ Pro restored!');}
+      updateMenuUser();
+    })
     .catch(()=>{userIsPro=localStorage.getItem('sr_pro')==='true';});
 }
 function updateMenuUser(){
@@ -703,8 +715,19 @@ function renderAuthPanel(){
   var user=currentUser||(cachedUser?{email:cachedUser.email}:null);
   if(user){
     var isPro=userIsPro||localStorage.getItem('sr_pro')==='true';
+    var endTxt='';
+    if(subPeriodEnd){try{endTxt=new Date(subPeriodEnd).toLocaleDateString();}catch(e){}}
+    var cancelBlock='';
+    if(isPro){
+      if(subCancelPending){
+        cancelBlock='<div class="sub-cancel-notice">⏳ Your subscription is cancelled and will end'+(endTxt?' on <b>'+endTxt+'</b>':' at the end of the current billing period')+'. You keep Pro access until then. No refund will be issued.</div>';
+      }else{
+        cancelBlock='<button class="auth-btn-cancel" onclick="cancelSubscription()">Cancel subscription</button><div class="sub-cancel-hint">You\'ll keep Pro access until the end of your billing period. No refund.</div>';
+      }
+    }
     body.innerHTML='<div class="auth-pro-badge"><div class="pro-icon">'+(isPro?'⭐':'👤')+'</div><div class="pro-text">'+user.email+'</div><div class="pro-sub">'+(isPro?'Pro — unlimited stories everywhere':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
       +(isPro?'':'<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button><button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
+      +cancelBlock
       +'<div class="auth-divider"></div><button class="auth-logout" onclick="signOut()">'+T('signOut')+'</button>';
   }else{
     body.innerHTML=
@@ -918,6 +941,31 @@ function startCheckout(plan){
   plan=plan||'monthly';track('upgrade_click',{plan});
   fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan,email:currentUser?currentUser.email:''})})
     .then(r=>r.json()).then(d=>{if(d.url)window.location.href=d.url;else showToast('Checkout error');}).catch(()=>showToast('Checkout error'));
+}
+function cancelSubscription(){
+  if(!supabaseClient||!currentUser){showToast('Sign in required');return;}
+  if(!confirm('Cancel Pro subscription?\n\nYou will keep access until the end of your current billing period. No refund will be issued.'))return;
+  track('cancel_sub_click');
+  var btns=document.querySelectorAll('.auth-btn-cancel');btns.forEach(b=>{b.disabled=true;b.textContent='Cancelling…';});
+  supabaseClient.auth.getSession().then(function(r){
+    var token=r.data&&r.data.session?r.data.session.access_token:null;
+    if(!token){showToast('Session expired — sign in again');btns.forEach(b=>{b.disabled=false;b.textContent='Cancel subscription';});return;}
+    fetch('/api/cancel-subscription',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}})
+      .then(r=>r.json().then(d=>({ok:r.ok,d:d})))
+      .then(o=>{
+        if(o.ok&&o.d.success){
+          subCancelPending=true;
+          if(o.d.period_end_iso)subPeriodEnd=o.d.period_end_iso;
+          var endTxt=subPeriodEnd?new Date(subPeriodEnd).toLocaleDateString():'the end of your billing period';
+          showToast('✓ Subscription cancelled — Pro active until '+endTxt,5000);
+          renderAuthPanel();
+        }else{
+          showToast(o.d.error||'Cancel failed');
+          btns.forEach(b=>{b.disabled=false;b.textContent='Cancel subscription';});
+        }
+      })
+      .catch(()=>{showToast('Cancel error — check connection');btns.forEach(b=>{b.disabled=false;b.textContent='Cancel subscription';});});
+  });
 }
 function showToast(msg,dur){
   var t=document.createElement('div');

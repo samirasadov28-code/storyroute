@@ -7,6 +7,7 @@ export default async (req) => {
   };
 
   const priceId = PRICES[plan] || PRICES.monthly;
+  const origin = process.env.PUBLIC_SITE_URL || new URL(req.url).origin;
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
@@ -18,8 +19,8 @@ export default async (req) => {
       mode: 'subscription',
       'line_items[0][price]': priceId,
       'line_items[0][quantity]': '1',
-      success_url: 'https://YOUR-SITE.netlify.app/?upgraded=true',
-      cancel_url: 'https://YOUR-SITE.netlify.app/',
+      success_url: `${origin}/?upgraded=true`,
+      cancel_url: `${origin}/`,
       ...(email && { customer_email: email }),
     }),
   });
