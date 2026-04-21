@@ -41,6 +41,8 @@ export default async (req, context) => {
     });
   }
 
+  const wantStream = body.stream === true;
+
   // Groq's chat-completions endpoint follows OpenAI format: the system prompt must be
   // the first element of the messages array. A top-level `system` field is silently ignored.
   const SYSTEM_PROMPT = [
@@ -91,6 +93,7 @@ export default async (req, context) => {
             top_p: 0.95,
             presence_penalty: 0.4,
             frequency_penalty: 0.3,
+            stream: wantStream,
             messages: messagesWithSystem
           })
         });
@@ -110,6 +113,21 @@ export default async (req, context) => {
         return new Response(JSON.stringify({ content: [{ text: "" }], error: `Groq ${response.status}: ${errText}` }), {
           status: 200,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+
+      // Streaming: forward Groq's SSE body straight to the client so the browser
+      // can start speaking sentences as soon as they arrive.
+      if (wantStream) {
+        return new Response(response.body, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "X-Accel-Buffering": "no"
+          }
         });
       }
 

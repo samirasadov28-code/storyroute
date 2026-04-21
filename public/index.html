@@ -86,6 +86,8 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #story-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 #story-name{font-size:10px;font-weight:700;color:#f0a500;text-transform:uppercase;letter-spacing:1.2px;}
 #story-type-badge{font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(0,0,0,0.06);color:#777;margin-left:6px;}
+#mute-type-btn{display:none;margin-left:6px;padding:2px 8px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.04);color:#777;font-size:10px;cursor:pointer;touch-action:manipulation;}
+#mute-type-btn:active{background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.3);}
 #story-header-right{display:flex;align-items:center;gap:6px;}
 #unhide-btn{display:none;padding:3px 10px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.1);border-radius:6px;font-size:12px;color:#888;cursor:pointer;touch-action:manipulation;}
 #fav-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:0 2px;touch-action:manipulation;}
@@ -283,7 +285,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.4.0</div>
+  <div id="splash-version">v2.5.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -425,7 +427,7 @@ textarea.fb-input{height:120px;resize:none;}
 <!-- STORY CARD -->
 <div id="story">
   <div id="story-header">
-    <div style="display:flex;align-items:center;"><div id="story-name"></div><span id="story-type-badge"></span></div>
+    <div style="display:flex;align-items:center;"><div id="story-name"></div><span id="story-type-badge"></span><button id="mute-type-btn" onclick="muteCurrentType()" title="Mute all of this type for this session">🔇 mute</button></div>
     <div id="story-header-right">
       <button id="unhide-btn" onclick="showStoryBody()">Show ↑</button>
       <button id="fav-btn" onclick="toggleFavourite()">🤍</button>
@@ -497,7 +499,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.4.0
+// STORYROUTE v2.5.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -601,6 +603,8 @@ var rotateVoices=localStorage.getItem('sr_rotate')==='true';
 var _lang=(function(){var s=localStorage.getItem('sr_lang');return LANGUAGES.find(l=>l.code===s)||LANGUAGES[0];})();
 var _sf=JSON.parse(localStorage.getItem('sr_type_filter')||'null');
 var activeTypes=new Set(_sf?ALL_TYPES.filter(t=>_sf.includes(t)):ALL_TYPES);
+// Session-only type mutes — cleared on reload. Used by the "🔇 mute" button on the story card.
+var sessionMutedTypes=new Set();
 
 function track(n,p){try{gtag('event',n,p||{});}catch(e){}}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
@@ -629,6 +633,110 @@ function callAI(prompt){
   var result=_aiQueue;
   _aiQueue=_aiQueue.catch(function(){});
   return result;
+}
+
+// Streaming AI call — opens an SSE connection to Groq via /api/claude?stream=true.
+// Calls `onSentence(sentence)` as each complete sentence becomes available, and resolves
+// with the full concatenated text when the stream closes. `ctrl.cancel()` aborts.
+// Runs outside the _aiQueue because the whole point is it starts immediately; callers
+// should still avoid parallel streams.
+function callAIStream(prompt, onSentence, ctrl){
+  if(!('ReadableStream' in window)||!('TextDecoder' in window))return Promise.reject(new Error('no_stream'));
+  var ac=(ctrl&&ctrl.abort)?ctrl:new AbortController();
+  if(ctrl)ctrl.abort=function(){try{ac.abort();}catch(e){}};
+  return fetch('/api/claude',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({stream:true,messages:[{role:'user',content:prompt}]}),
+    signal:ac.signal
+  }).then(function(r){
+    if(r.status===429){_lastAiCall=Date.now()+8000;throw new Error('rate_limited');}
+    if(r.status===401||r.status===403)throw new Error('api_banned');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    if(!r.body)throw new Error('no_body');
+    var reader=r.body.getReader();
+    var dec=new TextDecoder('utf-8');
+    var buf='';         // unparsed SSE text from the network
+    var acc='';         // full story text accumulated so far
+    var pending='';     // text not yet emitted as a complete sentence
+    // Emit everything up to the last sentence terminator in `pending`.
+    // Keeps any trailing partial sentence in `pending` for next time.
+    function flush(force){
+      // Match chunks ending at sentence terminators followed by whitespace OR end-of-string when forced.
+      var re=/[^.!?…]+[.!?…]+["')\]]?(?:\s+|$)/g;
+      var last=0,m;
+      while((m=re.exec(pending))!==null){
+        var s=m[0].trim();
+        if(s.length>=12&&onSentence){try{onSentence(s);}catch(e){}}
+        last=re.lastIndex;
+      }
+      pending=pending.slice(last);
+      if(force&&pending.trim().length>=4&&onSentence){try{onSentence(pending.trim());}catch(e){}pending='';}
+    }
+    function pump(){
+      return reader.read().then(function(res){
+        if(res.done){flush(true);return acc;}
+        buf+=dec.decode(res.value,{stream:true});
+        // SSE events are separated by blank lines. Each event has lines starting with "data: ".
+        var parts=buf.split(/\n\n/);
+        buf=parts.pop();                          // keep the trailing partial event
+        for(var i=0;i<parts.length;i++){
+          var ev=parts[i];
+          var lines=ev.split('\n');
+          for(var j=0;j<lines.length;j++){
+            var line=lines[j];
+            if(line.indexOf('data:')!==0)continue;
+            var data=line.slice(5).trim();
+            if(!data||data==='[DONE]')continue;
+            try{
+              var obj=JSON.parse(data);
+              var delta=obj&&obj.choices&&obj.choices[0]&&(obj.choices[0].delta&&obj.choices[0].delta.content)||'';
+              if(delta){acc+=delta;pending+=delta;flush(false);}
+            }catch(e){/* partial JSON — ignore */}
+          }
+        }
+        return pump();
+      });
+    }
+    return pump();
+  });
+}
+
+// Speaks sentences sequentially via the device's best TTS voice. Returns an object with
+// `push(sentence)` to enqueue more, `end()` to signal stream completed (flushes queue,
+// then calls onDone when the last utterance finishes), and `cancel()` to stop immediately.
+// This is the piece that actually makes audio start within ~1s of the Groq request.
+function streamDeviceTTS(onDone){
+  var queue=[];
+  var playing=false,ended=false,cancelled=false;
+  var voice=currentVoice();
+  var speed=voiceSpeed||1.0;
+  setBadge('📱');
+  function playNext(){
+    if(cancelled)return;
+    if(!queue.length){
+      playing=false;
+      if(ended){try{onDone&&onDone();}catch(e){}}
+      return;
+    }
+    playing=true;
+    var text=queue.shift();
+    try{
+      var u=new SpeechSynthesisUtterance(text);
+      u.rate=speed*0.98;
+      u.volume=1;
+      u.pitch=1.02;
+      if(voice)u.voice=voice;
+      u.onend=playNext;
+      u.onerror=playNext;
+      speechSynthesis.speak(u);
+    }catch(e){playNext();}
+  }
+  return {
+    push:function(s){if(cancelled)return;queue.push(prepareForTTS(s));if(!playing)playNext();},
+    end:function(){ended=true;if(!playing&&!queue.length){try{onDone&&onDone();}catch(e){}}},
+    cancel:function(){cancelled=true;ended=true;queue.length=0;try{speechSynthesis.cancel();}catch(e){}}
+  };
 }
 
 // ── OPEN MAP ────────────────────────────────────────────────────
@@ -861,8 +969,31 @@ function applyFilter(){
   showToast(Object.values(markers).filter(m=>map.hasLayer(m)).length+' '+T('landmarks')+' ✓');
   track('filter_applied',{count:activeTypes.size});
 }
-function isTypeVisible(t){if(t==='area')return activeTypes.has('area')||activeTypes.has('neighbourhood');return activeTypes.has(t);}
+function isTypeVisible(t){
+  if(sessionMutedTypes.has(t))return false;
+  if(t==='area')return (activeTypes.has('area')||activeTypes.has('neighbourhood'))&&!sessionMutedTypes.has('area')&&!sessionMutedTypes.has('neighbourhood');
+  return activeTypes.has(t);
+}
 function syncAllMarkerVisibility(){Object.values(markers).forEach(m=>{var t=m.options._type||'other';if(isTypeVisible(t)){if(!map.hasLayer(m))m.addTo(map);}else{if(map.hasLayer(m))map.removeLayer(m);}});}
+// Mute every marker of curStory's type for the rest of this session. Cleared on reload.
+function muteCurrentType(){
+  if(!curStory||!curStory.type)return;
+  var t=curStory.type;
+  sessionMutedTypes.add(t);
+  // Hide all markers of this type immediately, including the one we're looking at.
+  syncAllMarkerVisibility();
+  // If the tour is running, jump to the next non-muted nearest landmark.
+  nxtStory=null;prefetchId=null;
+  document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;
+  var label=(TYPE_LABELS[t]||t).replace(/^[^\s]+\s/,''); // strip leading icon from "🏰 Castle"
+  showToast('🔇 Muted all '+label.toLowerCase()+' for this session');
+  track('type_muted',{type:t});
+  // Hide the current story card and, if we're touring, play the next eligible landmark.
+  cancelAudio();speaking=false;
+  document.getElementById('story').style.display='none';
+  if(tourOn){var cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),400);else setStatus(T('noRange'));}
+  else setStatus(Object.keys(markers).filter(id=>markers[id]&&map.hasLayer(markers[id])).length+' '+T('landmarks'));
+}
 function updateMenuLabels(){
   var vl=document.getElementById('voice-label');if(vl)vl.textContent=rotateVoices?'🔄 Rotating':selectedVoice.label;
   var sp=SPEEDS.find(s=>s.val===voiceSpeed)||SPEEDS[2];
@@ -1049,7 +1180,14 @@ function currentVoice(){
   return voicePool[0];
 }
 function setBadge(label){var el=document.getElementById('voice-badge');if(!el)return;if(!label){el.style.display='none';return;}el.style.display='inline-block';el.className=label==='⏳'?'loading':'on';el.textContent=label;}
-function cancelAudio(){try{speechSynthesis.cancel();}catch(e){}if(currentAudio){currentAudio.pause();currentAudio=null;}}
+// Module-level handle for the in-flight streaming story, so stop/skip can abort both the
+// network fetch AND the sentence-by-sentence speech queue cleanly.
+var activeStream=null;
+function cancelAudio(){
+  try{speechSynthesis.cancel();}catch(e){}
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+  if(activeStream){try{activeStream.cancel();}catch(e){}activeStream=null;}
+}
 // Normalise text for more natural TTS: force pauses after sentences + em-dashes, collapse whitespace.
 function prepareForTTS(text){
   if(!text)return '';
@@ -1332,20 +1470,74 @@ function fetchArea(lat,lng){
     fetch(OVERPASS,{method:'POST',body:'data='+encodeURIComponent(q)})
       .then(res=>res.json()).then(function(data){
         var skip=/^(McDonald|Starbucks|Subway|Costa|Caffe|Cafe|Coffee|Sandwich|Burger|KFC|Pizza|Domino|Nando|Pret|Greggs|Tesco|Spar|Centra|Lidl|Aldi|Dunnes|SuperValu|Boots|Penneys|Primark|H&M|Zara|Uniqlo|Gap|Next plc|TK Maxx|Shell|BP|Esso|Texaco|Circle K|Applegreen)/i;
-        var seen=new Set(),arr=[];
+        // 1) Collect every valid candidate (no dedup yet).
+        var all=[];
         (data.elements||[]).forEach(function(el){
           if(!el.tags||!el.tags.name)return;
           var name=el.tags.name.trim();
-          if(name.length<3||seen.has(name)||skip.test(name))return;seen.add(name);
+          if(name.length<3||skip.test(name))return;
           var elat=el.lat||(el.center&&el.center.lat);
           var elng=el.lon||(el.center&&el.center.lon);
           if(!elat||!elng)return;
-          // Distance from user — useful for ranking
           var d=haversine({lat:lat,lng:lng},{lat:elat,lng:elng});
-          arr.push({title:name,type:osmToType(el.tags),lat:elat,lng:elng,osmWiki:el.tags.wikipedia||null,osmWikidata:el.tags.wikidata||null,_d:d,_hasWiki:!!(el.tags.wikipedia||el.tags.wikidata)});
+          all.push({
+            title:name,
+            type:osmToType(el.tags),
+            lat:elat,lng:elng,
+            osmWiki:el.tags.wikipedia||null,
+            osmWikidata:el.tags.wikidata||null,
+            _d:d,
+            _hasWiki:!!(el.tags.wikipedia||el.tags.wikidata),
+            _el:el.type // 'node' | 'way' | 'relation'
+          });
         });
+
+        // 2) Dedup.
+        // OSM frequently publishes the same landmark as both a node and a way (or a relation).
+        // Merge two candidates if:
+        //   (a) they share a normalised name, OR
+        //   (b) they're within 40m of each other AND share the first-word prefix (catches
+        //       "St. Mary's Church" vs "St Mary's" vs "Saint Mary's (RC)").
+        // When merging, keep the one with a Wikipedia/Wikidata tag; if both or neither, prefer
+        // the richer type classification, then the one closer to the user.
+        function normName(s){
+          return String(s).toLowerCase()
+            .replace(/^(the|st\.?|saint|church of|our lady of)\s+/,'') // drop common prefixes
+            .replace(/\s+\(.*?\)\s*$/,'')                               // drop " (RC)" etc
+            .replace(/[^\p{L}\p{N}]+/gu,' ')
+            .trim();
+        }
+        function betterOf(a,b){
+          if(a._hasWiki!==b._hasWiki)return a._hasWiki?a:b;
+          if((a.type==='other')!==(b.type==='other'))return a.type==='other'?b:a;
+          // Prefer ways/relations over nodes when tied — they tend to carry richer tagging.
+          var rank={relation:0,way:1,node:2};
+          var ra=rank[a._el]==null?3:rank[a._el];
+          var rb=rank[b._el]==null?3:rank[b._el];
+          if(ra!==rb)return ra<rb?a:b;
+          return a._d<=b._d?a:b;
+        }
+        var arr=[];
+        all.forEach(function(cand){
+          var keyA=normName(cand.title);
+          var firstA=keyA.split(' ')[0]||keyA;
+          var hitIdx=-1;
+          for(var i=0;i<arr.length;i++){
+            var ex=arr[i];
+            var keyB=normName(ex.title);
+            if(!keyA||!keyB)continue;
+            if(keyA===keyB){hitIdx=i;break;}
+            var close=haversine({lat:ex.lat,lng:ex.lng},{lat:cand.lat,lng:cand.lng})<=40;
+            var firstB=keyB.split(' ')[0]||keyB;
+            if(close&&firstA.length>=3&&firstA===firstB){hitIdx=i;break;}
+          }
+          if(hitIdx<0){arr.push(cand);return;}
+          arr[hitIdx]=betterOf(arr[hitIdx],cand);
+        });
+
         if(!arr.length){fetched.delete(key);setStatus(T('noLandmarks'));return;}
-        // Rank: (1) landmarks with Wikipedia data first, (2) by type importance, (3) by distance.
+
+        // 3) Rank: Wikipedia-linked first, then by type importance, then by distance.
         var typePriority={castle:0,abbey:0,monument:1,church:1,bridge:1,museum:1,tower:1,harbour:1,railway:2,pub:2,cinema:2,market:2,park:3,garden:3,nature:3,beach:3,hill:3,gate:3,hall:3,estate:3,school:3,other:5};
         arr.sort(function(a,b){
           if(a._hasWiki!==b._hasWiki)return a._hasWiki?-1:1;
@@ -1355,7 +1547,7 @@ function fetchArea(lat,lng){
           return a._d-b._d;
         });
         // Keep up to 30 landmarks per tile so the user sees "more landmarks around me".
-        arr=arr.slice(0,30).map(function(x){delete x._d;delete x._hasWiki;return x;});
+        arr=arr.slice(0,30).map(function(x){delete x._d;delete x._hasWiki;delete x._el;return x;});
         saveLM(lat,lng,arr);
         preloadAndPlace(arr,loc.city,loc.country,loc.area);
       })
@@ -1633,6 +1825,59 @@ function nearest(excl){
   return best;
 }
 function playNearest(){if(!tourOn||speaking)return;var p=nearest();if(p)playLandmark(p);else setStatus(T('noRange'));}
+
+// Progressive story reveal: stream the Groq response and speak each sentence via device TTS
+// as it arrives. Audio typically starts within ~1s instead of waiting 5-10s for the full story.
+// Falls back to the existing batch path on any failure. Not used for:
+//   • cached stories (instant playback already)
+//   • area/neighbourhood stories (different prompt, different flow)
+//   • when the browser lacks ReadableStream / TextDecoder
+function canStreamStory(p){
+  return !p.isNb && p.type!=='area' && 'ReadableStream' in window && 'TextDecoder' in window;
+}
+function streamStoryInto(p, uiEl, onSpokenDone){
+  // Build the same prompt the batch path would, including any Wikipedia extract we can find.
+  var place=currentCityName&&currentCountry?currentCityName+', '+currentCountry:currentCityName||currentCountry||'this location';
+  var tw=({pub:'pub',bar:'pub',church:'church',castle:'castle',bridge:'bridge',museum:'museum',park:'park',abbey:'abbey',tower:'tower',railway:'railway station',harbour:'harbour',monument:'monument'})[p.type]||'';
+  return new Promise(function(resolve,reject){
+    var streamCtrl={abort:function(){}};
+    var speaker=streamDeviceTTS(function(){activeStream=null;try{onSpokenDone&&onSpokenDone();}catch(e){}});
+    var fullText='';
+    var firstSentenceSpoken=false;
+    var aborted=false;
+    var detach=function(){aborted=true;try{streamCtrl.abort();}catch(e){}try{speaker.cancel();}catch(e){}};
+    activeStream={cancel:detach};
+    var extractPromise=p.wikiExtract
+      ?Promise.resolve({extract:p.wikiExtract,source:p.sourceLabel||'Wikipedia'})
+      :fetchWikiExtract(p.title,currentCityName,currentCountry,currentAreaName,p.osmWiki,p.osmWikidata,tw)
+         .then(w=>w?{extract:w.extract,source:w.source}:{extract:null,source:null})
+         .catch(()=>({extract:null,source:null}));
+    extractPromise.then(function(info){
+      if(aborted)return;
+      var prompt=buildStoryPrompt(p,place,info.extract,info.source);
+      callAIStream(prompt,function onSentence(s){
+        // If the model replies with a bare "UNKNOWN" probe, abort and let the batch path retry.
+        if(!firstSentenceSpoken && /^\s*UNKNOWN\b/i.test(s)){
+          aborted=true;detach();reject(new Error('unknown'));return;
+        }
+        fullText+=(fullText?' ':'')+s;
+        if(uiEl)uiEl.textContent=fullText;
+        speaker.push(s);
+        firstSentenceSpoken=true;
+      },streamCtrl).then(function(finalText){
+        if(aborted)return;
+        if(!firstSentenceSpoken){reject(new Error('empty_stream'));return;}
+        // Prefer the fully-accumulated final text over the sentence-joined string (handles the
+        // tail sentence without trailing punctuation).
+        var canonical=(finalText&&finalText.length>fullText.length)?finalText.trim():fullText;
+        if(uiEl)uiEl.textContent=canonical;
+        speaker.end();
+        resolve({text:canonical});
+      }).catch(function(err){detach();reject(err);});
+    }).catch(function(err){detach();reject(err);});
+  });
+}
+
 function playLandmark(p){
   if(speaking||visited.has(p.id))return;
   if(!canPlay()){speaking=false;showPaywall();return;}
@@ -1643,6 +1888,32 @@ function playLandmark(p){
   track('story_play',{title:p.title,type:p.type});
   var cached=loadStory(p.id);
   if(cached){finishPlay(p,cached);return;}
+
+  var continueAfterTTS=function(){
+    speaking=false;if(!tourOn)return;
+    if(nxtStory){var s=nxtStory;nxtStory=null;prefetchId=null;document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;setTimeout(()=>playLandmark(s),1200);}
+    else{var cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),1500);else setTimeout(playNearest,2000);}
+  };
+
+  if(canStreamStory(p)){
+    var textEl=document.getElementById('story-text');textEl.textContent='';
+    // Stream: first sentence starts speaking as soon as Groq emits it (~1s).
+    streamStoryInto(p,textEl,continueAfterTTS).then(function(res){
+      curStory=Object.assign({},p,{text:res.text});
+      if(res.text&&res.text.length>15)saveStory(p.id,res.text);
+      // Prefetch the next story while the current one finishes speaking.
+      if(tourOn){var nxt=nearest([p.id]);if(nxt)prefetchStory(nxt);}
+      track('story_stream_ok',{title:p.title});
+    }).catch(function(err){
+      // Streaming failed (rate limit, model said UNKNOWN, network blip, etc.) — fall back to batch.
+      try{speechSynthesis.cancel();}catch(e){}
+      track('story_stream_fallback',{reason:err&&err.message||'unknown'});
+      getStoryWithRetry(p).then(txt=>{if(txt)saveStory(p.id,txt);finishPlay(p,txt||('You are standing at '+p.title+'.'));})
+        .catch(()=>{speaking=false;if(tourOn)setTimeout(playNearest,3000);});
+    });
+    return;
+  }
+
   getStoryWithRetry(p).then(txt=>{if(txt)saveStory(p.id,txt);finishPlay(p,txt||('You are standing at '+p.title+'.'));})
     .catch(()=>{speaking=false;if(tourOn)setTimeout(playNearest,3000);});
 }
@@ -1762,7 +2033,10 @@ function favLongStory(i){
 function showStory(name,text,type){
   document.getElementById('story-name').textContent=name;document.getElementById('story-text').textContent=text;
   var badge=document.getElementById('story-type-badge');
-  badge.textContent=(type&&type!=='other')?type:'';
+  var showType=(type&&type!=='other');
+  badge.textContent=showType?type:'';
+  var muteBtn=document.getElementById('mute-type-btn');
+  if(muteBtn)muteBtn.style.display=showType?'inline-block':'none';
   document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
   if(text!=='⏳ Loading story…')loadStoryPhoto(name);
