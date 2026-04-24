@@ -57,6 +57,7 @@ export default async (req, context) => {
     "• Speak directly to the listener: \"Look up and you'll see…\", \"Stand here long enough and…\".",
     "• Vary sentence length. Short punches for drama. Longer lines to paint atmosphere.",
     "• End with a lingering image or a question that makes the listener look again.",
+    "• Write for the ear: spell out all abbreviations (Saint not St., Doctor not Dr., Reverend not Rev.), avoid parentheses, avoid em-dashes. Every sentence must be complete and naturally speakable aloud.",
     "",
     "HARD BANS — these phrases will ruin the story:",
     "\"rich history\", \"storied past\", \"stood the test of time\", \"has seen it all\", \"nestled in\", \"steeped in\", \"timeless\", \"must-see\", \"hidden gem\", \"bustling\", \"iconic\", \"charming\", \"picturesque\".",
