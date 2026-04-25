@@ -285,7 +285,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.5.1</div>
+  <div id="splash-version">v2.6.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -499,7 +499,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.5.1
+// STORYROUTE v2.6.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -1838,6 +1838,20 @@ function stopTour(){
 }
 function nearest(excl){
   excl=excl||[];if(!userPos)return null;
+  // Route mode: among landmarks within PROXIMITY_RADIUS, return the one that
+  // comes earliest along the planned route polyline so the tour plays in order.
+  if(routeCoords.length>0){
+    var best=null,bestIdx=Infinity;
+    Object.entries(markers).forEach(([id,m])=>{
+      if(visited.has(id)||excl.includes(id)||!map.hasLayer(m))return;
+      var ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
+      if(d>PROXIMITY_RADIUS)return;
+      var idx=routeIndexOf(ll.lat,ll.lng);
+      if(idx<bestIdx){bestIdx=idx;best={id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,isNb:m.options._type==='area'};}
+    });
+    return best;
+  }
+  // Explore mode: return the haversine-nearest unvisited landmark within radius.
   var best=null,bestD=Infinity;
   Object.entries(markers).forEach(([id,m])=>{
     if(visited.has(id)||excl.includes(id)||!map.hasLayer(m))return;
@@ -2117,6 +2131,9 @@ if('serviceWorker' in navigator){
 
 // ── UTILS ───────────────────────────────────────────────────────
 function haversine(a,b){var R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.pow(Math.sin(dLat/2),2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.pow(Math.sin(dLng/2),2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+// Returns the index of the closest routeCoords point to (lat, lng).
+// O(n) over the polyline — fast enough for typical OSRM route lengths (<2000 pts).
+function routeIndexOf(lat,lng){var best=0,bestD=Infinity;for(var i=0;i<routeCoords.length;i++){var d=haversine({lat:lat,lng:lng},{lat:routeCoords[i][0],lng:routeCoords[i][1]});if(d<bestD){bestD=d;best=i;}}return best;}
 </script>
 </body>
 </html>
