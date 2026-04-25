@@ -92,7 +92,13 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 .rs-smeta{font-size:11px;color:#bbb;margin-top:1px;text-transform:capitalize;}
 .rs-rem{background:none;border:1px solid rgba(0,0,0,0.1);border-radius:6px;color:#bbb;font-size:13px;padding:5px 9px;cursor:pointer;flex-shrink:0;touch-action:manipulation;}
 .rs-rem:active{color:#ef4444;border-color:rgba(239,68,68,0.4);}
-#rs-start{margin:12px 16px 12px;padding:14px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-weight:800;font-size:17px;cursor:pointer;touch-action:manipulation;flex-shrink:0;box-shadow:0 3px 12px rgba(34,197,94,0.3);}
+.rs-chk{width:28px;height:28px;border-radius:50%;border:2px solid #22c55e;background:none;color:#22c55e;font-size:15px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;touch-action:manipulation;padding:0;}
+.rs-chk.off{border-color:#ddd;color:#ddd;}
+.rs-deselected .rs-sname,.rs-deselected .rs-smeta{opacity:0.4;}
+.rs-deselected .rs-sicon{opacity:0.3;}
+#rs-gmaps{margin:0 16px 4px;padding:12px;background:#fff;color:#4285f4;border:2px solid #4285f4;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;touch-action:manipulation;flex-shrink:0;}
+#rs-gmaps:active{background:#e8f0fe;}
+#rs-start{margin:4px 16px 12px;padding:14px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-weight:800;font-size:17px;cursor:pointer;touch-action:manipulation;flex-shrink:0;box-shadow:0 3px 12px rgba(34,197,94,0.3);}
 #rs-start:active{background:#16a34a;}
 
 /* ZOOM */
@@ -304,7 +310,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.7.0</div>
+  <div id="splash-version">v2.8.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -437,6 +443,7 @@ textarea.fb-input{height:120px;resize:none;}
     <button class="rs-back" onclick="closeRouteSummary()">← Edit route</button>
   </div>
   <div id="rs-stops"></div>
+  <button id="rs-gmaps" onclick="openInGoogleMaps()">🗺 Open in Google Maps ↗</button>
   <button id="rs-start" onclick="startRouteTour()">▶ Start Tour</button>
 </div>
 
@@ -528,7 +535,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.7.0
+// STORYROUTE v2.8.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -2135,9 +2142,10 @@ function sampleRouteEvery(intervalM){
   return pts;
 }
 // All non-skipped markers sorted by their position along the route polyline.
+// Returns ALL route stops sorted by polyline position; skipped ones included so they stay visible.
 function getRouteStops(){
   return Object.entries(markers)
-    .filter(([id,m])=>map.hasLayer(m)&&!routeSkipped.has(id))
+    .filter(([id,m])=>map.hasLayer(m))
     .map(([id,m])=>{var ll=m.getLatLng();return{id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,routeIdx:routeIndexOf(ll.lat,ll.lng)};})
     .sort((a,b)=>a.routeIdx-b.routeIdx);
 }
@@ -2151,23 +2159,42 @@ function renderRouteSummary(){
       var mins=Math.max(1,Math.round(d/83));
       html+='<div class="rs-walk">🚶 '+d+'m &nbsp;·&nbsp; ~'+mins+'min</div>';
     }
-    html+='<div class="rs-stop" id="rss-'+s.id+'">'+
+    var off=routeSkipped.has(s.id);
+    html+='<div class="rs-stop'+(off?' rs-deselected':'')+'" id="rss-'+s.id+'">'+
       '<div class="rs-sicon">'+(ICONS[s.type]||'📍')+'</div>'+
       '<div class="rs-info"><div class="rs-sname">'+s.title+'</div><div class="rs-smeta">'+s.type+'</div></div>'+
-      '<button class="rs-rem" onclick="removeRouteStop(\''+s.id+'\')">✕</button>'+
+      '<button class="rs-chk'+(off?' off':'')+'" onclick="toggleRouteStop(\''+s.id+'\')" title="'+(off?'Add to tour':'Remove from tour')+'">'+(off?'○':'✓')+'</button>'+
     '</div>';
   });
   document.getElementById('rs-stops').innerHTML=html||'<p style="padding:16px;color:#999;font-size:13px;">No landmarks found along this route.</p>';
-  var n=stops.length;
+  var n=stops.filter(s=>!routeSkipped.has(s.id)).length;
   document.getElementById('rs-start').textContent='▶ Start Tour · '+n+' stop'+(n===1?'':'s');
 }
 function showRouteSummary(){
   renderRouteSummary();
   document.getElementById('route-summary').classList.add('visible');
 }
-function removeRouteStop(id){
-  routeSkipped.add(id);
+function toggleRouteStop(id){
+  if(routeSkipped.has(id))routeSkipped.delete(id);else routeSkipped.add(id);
   renderRouteSummary();
+}
+function openInGoogleMaps(){
+  var selected=getRouteStops().filter(s=>!routeSkipped.has(s.id));
+  if(!selected.length){showToast('Select at least one stop first');return;}
+  var origin=selected[0].lat+','+selected[0].lng;
+  var dest=selected[selected.length-1].lat+','+selected[selected.length-1].lng;
+  var mid=selected.slice(1,selected.length-1);
+  // Google Maps URL supports max 9 waypoints
+  if(mid.length>9){
+    var step=mid.length/9;
+    mid=Array.from({length:9},(_,i)=>mid[Math.round(i*step)]);
+  }
+  var mode=travelMode==='walking'?'walking':'driving';
+  var url='https://www.google.com/maps/dir/?api=1&origin='+origin+'&destination='+dest+
+    (mid.length?'&waypoints='+mid.map(s=>s.lat+','+s.lng).join('|'):'')+
+    '&travelmode='+mode;
+  window.open(url,'_blank');
+  track('open_google_maps',{stops:selected.length});
 }
 function closeRouteSummary(){
   document.getElementById('route-summary').classList.remove('visible');
