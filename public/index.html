@@ -76,6 +76,25 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #progress-fill{height:100%;background:#f0a500;border-radius:3px;width:0%;transition:width .5s;}
 #progress-label{font-size:11px;color:#888;flex-shrink:0;}
 
+/* ROUTE SUMMARY */
+#route-summary{position:fixed;top:62px;bottom:74px;left:0;right:0;z-index:1003;background:#fff;display:none;flex-direction:column;}
+#route-summary.visible{display:flex;}
+.rs-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.08);flex-shrink:0;}
+.rs-title{font-weight:700;font-size:15px;color:#1a2240;}
+.rs-back{background:none;border:none;color:#f0a500;font-weight:700;font-size:14px;cursor:pointer;padding:4px 8px;touch-action:manipulation;}
+#rs-stops{flex:1;overflow-y:auto;padding:0 16px 8px;}
+.rs-walk{padding:8px 0 2px;color:#bbb;font-size:11px;display:flex;align-items:center;gap:6px;}
+.rs-stop{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.06);}
+.rs-stop:last-child{border-bottom:none;}
+.rs-sicon{font-size:20px;flex-shrink:0;width:28px;text-align:center;}
+.rs-info{flex:1;min-width:0;}
+.rs-sname{font-weight:600;font-size:14px;color:#1a2240;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rs-smeta{font-size:11px;color:#bbb;margin-top:1px;text-transform:capitalize;}
+.rs-rem{background:none;border:1px solid rgba(0,0,0,0.1);border-radius:6px;color:#bbb;font-size:13px;padding:5px 9px;cursor:pointer;flex-shrink:0;touch-action:manipulation;}
+.rs-rem:active{color:#ef4444;border-color:rgba(239,68,68,0.4);}
+#rs-start{margin:12px 16px 12px;padding:14px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-weight:800;font-size:17px;cursor:pointer;touch-action:manipulation;flex-shrink:0;box-shadow:0 3px 12px rgba(34,197,94,0.3);}
+#rs-start:active{background:#16a34a;}
+
 /* ZOOM */
 #zoom{position:fixed;bottom:240px;left:14px;z-index:1000;display:flex;flex-direction:column;gap:6px;}
 .zbtn{width:42px;height:42px;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.15);border-radius:8px;color:#333;font-size:22px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
@@ -285,7 +304,7 @@ textarea.fb-input{height:120px;resize:none;}
   <div id="splash-sub">Historical stories about the places around you.</div>
   <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.6.0</div>
+  <div id="splash-version">v2.7.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -411,6 +430,16 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
 </div>
 
+<!-- ROUTE SUMMARY -->
+<div id="route-summary">
+  <div class="rs-hd">
+    <span class="rs-title">📍 Route stops</span>
+    <button class="rs-back" onclick="closeRouteSummary()">← Edit route</button>
+  </div>
+  <div id="rs-stops"></div>
+  <button id="rs-start" onclick="startRouteTour()">▶ Start Tour</button>
+</div>
+
 <div id="prox-alert">📍 <span id="prox-text"></span></div>
 
 <div id="zoom">
@@ -499,7 +528,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.6.0
+// STORYROUTE v2.7.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -581,7 +610,7 @@ var userPos=null,tourOn=false,speaking=false;
 var curStory=null,nxtStory=null,prefetchId=null;
 var useCurrentLocFrom=false,routeCoords=[];
 var landmarkCount=0,favourites=[],proxTimer=null;
-var travelMode='walking',PROXIMITY_RADIUS=200;
+var travelMode='walking',PROXIMITY_RADIUS=200,routeSkipped=new Set();
 var voicePool=[],newWorker=null,currentAudio=null;
 var longStories=[],currentLongStoryIdx=-1,longSpeaking=false;
 var currentAreaName='this area',currentCityName='',currentCountry='';
@@ -1133,7 +1162,7 @@ function startAt(lat,lng,isFallback){
           progMove=true;map.setView([userPos.lat,userPos.lng],15);setTimeout(()=>{progMove=false;},150);return;
         }
       }
-      updateProgress();checkProxAlert();
+      updateProgress();checkProxAlert();updateWalkIndicator();
     },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
   }
   setStatus(isFallback?T('findingLocation'):T('loadingLandmarks'));
@@ -1843,7 +1872,7 @@ function nearest(excl){
   if(routeCoords.length>0){
     var best=null,bestIdx=Infinity;
     Object.entries(markers).forEach(([id,m])=>{
-      if(visited.has(id)||excl.includes(id)||!map.hasLayer(m))return;
+      if(visited.has(id)||excl.includes(id)||routeSkipped.has(id)||!map.hasLayer(m))return;
       var ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});
       if(d>PROXIMITY_RADIUS)return;
       var idx=routeIndexOf(ll.lat,ll.lng);
@@ -1967,9 +1996,9 @@ function prefetchStory(p){
   if(visited.has(p.id)||prefetchId===p.id||nxtStory)return;
   prefetchId=p.id;document.getElementById('next-info').innerHTML=T('preparing')+'<b>'+p.title+'</b>';
   var cached=loadStory(p.id);
-  if(cached&&!visited.has(p.id)){nxtStory=Object.assign({},p,{text:cached});document.getElementById('next-info').innerHTML=T('nextUp')+'<b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;return;}
+  if(cached&&!visited.has(p.id)){nxtStory=Object.assign({},p,{text:cached});document.getElementById('next-info').innerHTML=T('nextUp')+'<b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;updateWalkIndicator();return;}
   getStoryWithRetry(p).then(function(txt){
-    if(txt&&!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory=Object.assign({},p,{text:txt});document.getElementById('next-info').innerHTML=T('nextUp')+'<b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;}
+    if(txt&&!visited.has(p.id)&&tourOn){saveStory(p.id,txt);nxtStory=Object.assign({},p,{text:txt});document.getElementById('next-info').innerHTML=T('nextUp')+'<b>'+p.title+'</b>';document.getElementById('skip-btn').disabled=false;updateWalkIndicator();}
   }).catch(()=>{prefetchId=null;document.getElementById('next-info').textContent='';});
 }
 function onTapMarker(p){
@@ -2093,6 +2122,62 @@ function toggleFromLoc(){
 }
 
 // ── ROUTE ───────────────────────────────────────────────────────
+// Sample routeCoords every `intervalM` metres, always including the last point.
+function sampleRouteEvery(intervalM){
+  if(!routeCoords.length)return[];
+  var pts=[routeCoords[0]],acc=0;
+  for(var i=1;i<routeCoords.length;i++){
+    acc+=haversine({lat:routeCoords[i-1][0],lng:routeCoords[i-1][1]},{lat:routeCoords[i][0],lng:routeCoords[i][1]});
+    if(acc>=intervalM){pts.push(routeCoords[i]);acc=0;}
+  }
+  var last=routeCoords[routeCoords.length-1];
+  if(pts[pts.length-1]!==last)pts.push(last);
+  return pts;
+}
+// All non-skipped markers sorted by their position along the route polyline.
+function getRouteStops(){
+  return Object.entries(markers)
+    .filter(([id,m])=>map.hasLayer(m)&&!routeSkipped.has(id))
+    .map(([id,m])=>{var ll=m.getLatLng();return{id,title:m.options._title,type:m.options._type,lat:ll.lat,lng:ll.lng,routeIdx:routeIndexOf(ll.lat,ll.lng)};})
+    .sort((a,b)=>a.routeIdx-b.routeIdx);
+}
+function renderRouteSummary(){
+  var stops=getRouteStops();
+  var ICONS={castle:'🏰',abbey:'🕌',church:'⛪',pub:'🍺',bar:'🍺',museum:'🏛️',gallery:'🖼️',bridge:'🌉',monument:'🗿',tower:'🗼',memorial:'🕯️',park:'🌳',garden:'🌷',railway:'🚂',harbour:'⚓',canal:'🚢',lighthouse:'🔦',market:'🛒',cinema:'🎬',hall:'🏛️',street:'🛤️'};
+  var html='';
+  stops.forEach(function(s,i){
+    if(i>0){
+      var d=Math.round(haversine({lat:stops[i-1].lat,lng:stops[i-1].lng},{lat:s.lat,lng:s.lng}));
+      var mins=Math.max(1,Math.round(d/83));
+      html+='<div class="rs-walk">🚶 '+d+'m &nbsp;·&nbsp; ~'+mins+'min</div>';
+    }
+    html+='<div class="rs-stop" id="rss-'+s.id+'">'+
+      '<div class="rs-sicon">'+(ICONS[s.type]||'📍')+'</div>'+
+      '<div class="rs-info"><div class="rs-sname">'+s.title+'</div><div class="rs-smeta">'+s.type+'</div></div>'+
+      '<button class="rs-rem" onclick="removeRouteStop(\''+s.id+'\')">✕</button>'+
+    '</div>';
+  });
+  document.getElementById('rs-stops').innerHTML=html||'<p style="padding:16px;color:#999;font-size:13px;">No landmarks found along this route.</p>';
+  var n=stops.length;
+  document.getElementById('rs-start').textContent='▶ Start Tour · '+n+' stop'+(n===1?'':'s');
+}
+function showRouteSummary(){
+  renderRouteSummary();
+  document.getElementById('route-summary').classList.add('visible');
+}
+function removeRouteStop(id){
+  routeSkipped.add(id);
+  renderRouteSummary();
+}
+function closeRouteSummary(){
+  document.getElementById('route-summary').classList.remove('visible');
+  setMode('route');
+}
+function startRouteTour(){
+  document.getElementById('route-summary').classList.remove('visible');
+  setMode('explore');
+  startTour();
+}
 function planRoute(){
   var to=document.getElementById('to-inp').value.trim();if(!to)return;
   var btn=document.querySelector('.r-btn');btn.disabled=true;setStatus('Planning…');
@@ -2109,10 +2194,12 @@ function planRoute(){
         map.routeLine=L.polyline(routeCoords,{color:'#f0a500',weight:5,opacity:0.85}).addTo(map);
         progMove=true;map.fitBounds(map.routeLine.getBounds(),{padding:[60,60]});setTimeout(()=>{progMove=false;},200);
         document.getElementById('progress-wrap').classList.add('visible');updateProgress();setStatus('Finding landmarks…');track('route_planned');
-        var pts=Array.from({length:8},(_,i)=>coords[Math.floor(i*(coords.length-1)/7)]);
-        return pts.reduce((ch,pt)=>ch.then(()=>fetchArea(pt[1],pt[0])),Promise.resolve());
+        routeSkipped.clear();
+        var interval=Math.round(TRAVEL_MODES[travelMode].radius/2.5);
+        var pts=sampleRouteEvery(interval);
+        return pts.reduce((ch,pt)=>ch.then(()=>fetchArea(pt[0],pt[1])),Promise.resolve());
       });
-  }).then(()=>{btn.disabled=false;setMode('explore');}).catch(()=>{btn.disabled=false;setStatus('Route error');});
+  }).then(()=>{btn.disabled=false;showRouteSummary();}).catch(()=>{btn.disabled=false;setStatus('Route error');});
 }
 
 // ── SERVICE WORKER ──────────────────────────────────────────────
@@ -2131,6 +2218,16 @@ if('serviceWorker' in navigator){
 
 // ── UTILS ───────────────────────────────────────────────────────
 function haversine(a,b){var R=6371000,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.pow(Math.sin(dLat/2),2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.pow(Math.sin(dLng/2),2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function bearingTo(a,b){var dL=(b.lng-a.lng)*Math.PI/180,la=a.lat*Math.PI/180,lb=b.lat*Math.PI/180;return(Math.atan2(Math.sin(dL)*Math.cos(lb),Math.cos(la)*Math.sin(lb)-Math.sin(la)*Math.cos(lb)*Math.cos(dL))*180/Math.PI+360)%360;}
+function bearingArrow(deg){return['↑','↗','→','↘','↓','↙','←','↖'][Math.round(deg/45)%8];}
+// Shows distance + compass direction to the next queued landmark in #next-info.
+function updateWalkIndicator(){
+  if(!tourOn||!userPos||!nxtStory)return;
+  var d=Math.round(haversine(userPos,{lat:nxtStory.lat,lng:nxtStory.lng}));
+  var arrow=bearingArrow(bearingTo(userPos,{lat:nxtStory.lat,lng:nxtStory.lng}));
+  var el=document.getElementById('next-info');
+  if(el)el.innerHTML=T('nextUp')+'<b>'+nxtStory.title+'</b>&nbsp;&nbsp;'+arrow+' <span style="color:#1a2240;font-weight:700;">'+d+'m</span>';
+}
 // Returns the index of the closest routeCoords point to (lat, lng).
 // O(n) over the polyline — fast enough for typical OSRM route lengths (<2000 pts).
 function routeIndexOf(lat,lng){var best=0,bestD=Infinity;for(var i=0;i<routeCoords.length;i++){var d=haversine({lat:lat,lng:lng},{lat:routeCoords[i][0],lng:routeCoords[i][1]});if(d<bestD){bestD=d;best=i;}}return best;}
