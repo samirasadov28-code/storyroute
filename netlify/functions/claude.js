@@ -14,8 +14,7 @@ export default async (req, context) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  // FIX 1: Use Deno.env.get() — this is an Edge Function (Deno runtime), process.env is undefined
-  const apiKey = Deno.env.get("GROQ_API_KEY");
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ content: [{ text: "" }], error: "GROQ_API_KEY not set" }), {
       status: 200,
@@ -41,6 +40,36 @@ export default async (req, context) => {
     });
   }
 
+  const wantStream = body.stream === true;
+
+  // Groq's chat-completions endpoint follows OpenAI format: the system prompt must be
+  // the first element of the messages array. A top-level `system` field is silently ignored.
+  const SYSTEM_PROMPT = [
+    "You are a masterful audio-tour storyteller — part historian, part novelist, part tour guide who has walked every one of these streets.",
+    "Your job is to make the listener feel they have stumbled into a secret that only locals know.",
+    "",
+    "STYLE RULES:",
+    "• Open in the middle of a scene — with a sound, a smell, a gesture, an image, or a named person doing something. Never open with the place's name.",
+    "• Use ONE vivid sensory detail (what it would have looked, sounded, or smelled like in that era).",
+    "• Name at least one real person and one real year or date if the source material supports it. If it doesn't, describe a plausible archetype (\"a 19th-century dockworker\", \"the sisters who ran it\") without inventing fake names or dates.",
+    "• Include one moment of drama, scandal, tragedy, triumph, mystery, or dark humour — the kind of detail a listener will repeat later.",
+    "• Speak directly to the listener: \"Look up and you'll see…\", \"Stand here long enough and…\".",
+    "• Vary sentence length. Short punches for drama. Longer lines to paint atmosphere.",
+    "• End with a lingering image or a question that makes the listener look again.",
+    "• Write for the ear: spell out all abbreviations (Saint not St., Doctor not Dr., Reverend not Rev.), avoid parentheses, avoid em-dashes. Every sentence must be complete and naturally speakable aloud.",
+    "",
+    "HARD BANS — these phrases will ruin the story:",
+    "\"rich history\", \"storied past\", \"stood the test of time\", \"has seen it all\", \"nestled in\", \"steeped in\", \"timeless\", \"must-see\", \"hidden gem\", \"bustling\", \"iconic\", \"charming\", \"picturesque\".",
+    "No bullet points. No headings. No \"Imagine this:\". No \"Did you know…\". No encyclopedia summaries.",
+    "",
+    "LENGTH: 200–260 words. Always finish the story cleanly — never cut off mid-sentence. Pure spoken narrative only, no stage directions, no labels."
+  ].join("\n");
+
+  const messagesWithSystem = [
+    { role: "system", content: SYSTEM_PROMPT },
+    ...body.messages
+  ];
+
   // Retry up to 3 times with backoff on rate limit
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -59,10 +88,13 @@ export default async (req, context) => {
           },
           body: JSON.stringify({
             model: "llama-3.3-70b-versatile",
-            max_tokens: 1024,
-            temperature: 0.9,
-            system: "You are a masterful audio tour storyteller. You write rich, vivid, specific spoken-word stories for people walking past historic landmarks. Your stories are gripping, full of real names, dates, and surprising details. You never use filler phrases. You always write at least 180 words. You always complete your story — never cut it short.",
-            messages: body.messages
+            max_tokens: 1500,
+            temperature: 0.92,
+            top_p: 0.95,
+            presence_penalty: 0.4,
+            frequency_penalty: 0.3,
+            stream: wantStream,
+            messages: messagesWithSystem
           })
         });
       } finally {
@@ -81,6 +113,21 @@ export default async (req, context) => {
         return new Response(JSON.stringify({ content: [{ text: "" }], error: `Groq ${response.status}: ${errText}` }), {
           status: 200,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+
+      // Streaming: forward Groq's SSE body straight to the client so the browser
+      // can start speaking sentences as soon as they arrive.
+      if (wantStream) {
+        return new Response(response.body, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "X-Accel-Buffering": "no"
+          }
         });
       }
 
