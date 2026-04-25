@@ -14,8 +14,7 @@ export default async (req, context) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  // FIX 1: Use Deno.env.get() — this is an Edge Function (Deno runtime), process.env is undefined
-  const apiKey = Deno.env.get("GROQ_API_KEY");
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ content: [{ text: "" }], error: "GROQ_API_KEY not set" }), {
       status: 200,
