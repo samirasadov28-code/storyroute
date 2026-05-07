@@ -41,9 +41,13 @@ export default async (req, context) => {
   }
 
   const wantStream = body.stream === true;
+  const wantChat = body.chatMode === true;
 
   // Groq's chat-completions endpoint follows OpenAI format: the system prompt must be
   // the first element of the messages array. A top-level `system` field is silently ignored.
+  const CHAT_SYSTEM_PROMPT = body.chatContext ||
+    "You are a friendly, knowledgeable guide on StoryRoute, a walking audio-tour app. Answer conversationally in 1-3 short paragraphs. Be factual and specific. No bullet points, no headings.";
+
   const SYSTEM_PROMPT = [
     "You are a masterful audio-tour storyteller — part historian, part novelist, part tour guide who has walked every one of these streets.",
     "Your job is to make the listener feel they have stumbled into a secret that only locals know.",
@@ -66,7 +70,7 @@ export default async (req, context) => {
   ].join("\n");
 
   const messagesWithSystem = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: wantChat ? CHAT_SYSTEM_PROMPT : SYSTEM_PROMPT },
     ...body.messages
   ];
 
