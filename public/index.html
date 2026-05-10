@@ -39,6 +39,11 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #splash-modeloop:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(26,34,64,0.12);}
 #splash-modeloop .ml-tag{font-size:10px;font-weight:800;letter-spacing:0.5px;background:#f0a500;color:#fff;padding:2px 6px;border-radius:4px;text-transform:uppercase;}
 #splash-modeloop .ml-arrow{color:#f0a500;font-weight:800;}
+#splash-ai-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(26,34,64,0.06),rgba(240,165,0,0.08));border:1px solid rgba(240,165,0,0.35);border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;color:#1a2240;letter-spacing:0.2px;}
+#splash-ai-badge .ai-spark{font-size:14px;}
+#splash-ai-badge .ai-label{color:#f0a500;}
+#splash-features{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;}
+.splash-feat{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.08);border-radius:20px;font-size:11px;color:#666;font-weight:600;white-space:nowrap;}
 
 /* HEADER */
 #header{position:fixed;top:0;left:0;right:0;z-index:1010;padding:10px 16px;background:rgba(255,255,255,0.97);border-bottom:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
@@ -342,10 +347,16 @@ textarea.fb-input{height:120px;resize:none;}
 <div id="splash">
   <img id="splash-logo" src="/icon-512.png" onerror="this.style.display='none'">
   <div id="splash-title">Story<span>Route</span></div>
-  <div id="splash-sub">Historical stories about the places around you.</div>
-  <button id="splash-btn" onclick="openMap()" id="splash-btn">Open Map</button>
+  <div id="splash-ai-badge"><span class="ai-spark">✨</span><span class="ai-label">AI-Powered</span> Audio Tour</div>
+  <div id="splash-sub">AI-generated stories about the history and people of the places around you.</div>
+  <div id="splash-features">
+    <span class="splash-feat">🤖 AI Stories</span>
+    <span class="splash-feat">🔊 Voice Narration</span>
+    <span class="splash-feat">💬 AI Chat</span>
+  </div>
+  <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.9.0</div>
+  <div id="splash-version">v2.9.1</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -599,7 +610,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.9.0
+// STORYROUTE v2.9.1
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
