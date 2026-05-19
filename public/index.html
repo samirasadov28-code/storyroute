@@ -383,7 +383,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.10.1</div>
+  <div id="splash-version">v2.10.2</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -655,7 +655,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.10.1
+// STORYROUTE v2.10.2
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -2148,11 +2148,11 @@ function playLandmark(p){
     streamStoryInto(p,textEl,continueAfterTTS).then(function(res){
       curStory=Object.assign({},p,{text:res.text});
       if(res.text&&res.text.length>15)saveStory(p.id,res.text);
-      // Prefetch the next story while the current one finishes speaking.
       if(tourOn){var nxt=nearest([p.id]);if(nxt)prefetchStory(nxt);}
       track('story_stream_ok',{title:p.title});
     }).catch(function(err){
-      // Streaming failed (rate limit, model said UNKNOWN, network blip, etc.) — fall back to batch.
+      // If stop was pressed (speaking=false) the abort triggered this catch — do nothing.
+      if(!speaking)return;
       try{speechSynthesis.cancel();}catch(e){}
       track('story_stream_fallback',{reason:err&&err.message||'unknown'});
       getStoryWithRetry(p).then(txt=>{if(txt)saveStory(p.id,txt);finishPlay(p,txt||('You are standing at '+p.title+'.'));})
@@ -2185,7 +2185,12 @@ function prefetchStory(p){
 }
 function onTapMarker(p){
   if(!speaking&&!tourOn){try{var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);speechSynthesis.cancel();}catch(e){}}
-  if(speaking){setStatus(T('queuing')+' '+p.title);nxtStory=null;prefetchId=null;prefetchStory(p);return;}
+  if(speaking){
+    // Cancel whatever is playing and immediately start the tapped landmark.
+    cancelAudio();speaking=false;nxtStory=null;prefetchId=null;
+    document.getElementById('next-info').textContent='';document.getElementById('skip-btn').disabled=true;
+    document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
+  }
   playLandmarkOnDemand(p);
 }
 function playLandmarkOnDemand(p){
