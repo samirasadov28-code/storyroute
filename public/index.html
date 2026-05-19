@@ -307,6 +307,33 @@ textarea.fb-input{height:120px;resize:none;}
 .nb-dot.visited{opacity:0.25;filter:grayscale(1);}
 .nb-dot.playing{animation:lm-pulse 1.4s ease-in-out infinite;}
 .nb-label{font-size:10px;font-weight:700;color:#1a2240;text-align:center;margin-top:2px;white-space:nowrap;text-shadow:0 1px 3px rgba(255,255,255,0.9);}
+
+/* ONBOARDING */
+#ob-modal{position:fixed;inset:0;z-index:49999;background:rgba(0,0,0,0.55);display:none;align-items:flex-end;justify-content:center;}
+#ob-modal.open{display:flex;}
+#ob-card{background:#fff;border-radius:22px 22px 0 0;padding:28px 24px 36px;width:100%;max-width:480px;animation:obUp .35s cubic-bezier(0.32,0.72,0,1);}
+@keyframes obUp{from{transform:translateY(70px);opacity:0;}to{transform:none;opacity:1;}}
+#ob-icon{font-size:46px;text-align:center;margin-bottom:10px;}
+#ob-title{font-size:20px;font-weight:800;color:#1a2240;text-align:center;margin-bottom:8px;}
+#ob-body{font-size:14px;color:#666;line-height:1.65;text-align:center;margin-bottom:18px;}
+#ob-features{display:flex;flex-direction:column;gap:9px;margin-bottom:22px;}
+.ob-feat{display:flex;align-items:flex-start;gap:12px;padding:11px 13px;background:rgba(0,0,0,0.03);border-radius:12px;}
+.ob-feat-icon{font-size:22px;flex-shrink:0;width:28px;text-align:center;}
+.ob-feat-title{font-size:13px;font-weight:700;color:#1a2240;}
+.ob-feat-desc{font-size:12px;color:#888;margin-top:2px;line-height:1.45;}
+#ob-dots{display:flex;justify-content:center;gap:7px;margin-bottom:18px;}
+.ob-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,0.12);transition:background .2s,transform .2s;}
+.ob-dot.active{background:#f0a500;transform:scale(1.3);}
+#ob-next-btn{width:100%;padding:15px;background:#f0a500;color:#fff;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;touch-action:manipulation;box-shadow:0 4px 16px rgba(240,165,0,0.35);}
+#ob-next-btn:active{background:#d4920a;}
+#ob-bar{position:fixed;bottom:80px;left:12px;right:12px;z-index:1006;background:#1a2240;color:#fff;border-radius:14px;padding:13px 16px;display:none;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,0.25);animation:obUp .3s ease;}
+#ob-bar.open{display:flex;}
+#ob-bar-text{flex:1;font-size:13px;line-height:1.5;}
+#ob-bar-close{flex-shrink:0;padding:7px 13px;background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.ob-inline{background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.25);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;align-items:flex-start;gap:8px;animation:obFade .3s ease;}
+@keyframes obFade{from{opacity:0;}to{opacity:1;}}
+.ob-inline-text{flex:1;font-size:12px;color:#8a5a00;line-height:1.55;}
+.ob-inline-close{flex-shrink:0;background:none;border:none;font-size:17px;color:#b36b00;cursor:pointer;padding:0 2px;touch-action:manipulation;line-height:1;}
 .leaflet-tooltip{background:#fff;border:1px solid rgba(240,165,0,0.5);color:#222;font-size:12px;font-weight:600;padding:4px 9px;border-radius:6px;}
 #update-bar{position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#1a2240;color:#fff;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;}
 #update-bar.visible{display:flex;}
@@ -356,7 +383,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.9.2</div>
+  <div id="splash-version">v2.10.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -579,6 +606,24 @@ textarea.fb-input{height:120px;resize:none;}
   <button onclick="applyUpdate()" style="padding:8px 16px;background:#f0a500;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;touch-action:manipulation;">Update now</button>
 </div>
 
+<!-- ONBOARDING MODAL (steps 1 + 5) -->
+<div id="ob-modal">
+  <div id="ob-card">
+    <div id="ob-icon"></div>
+    <div id="ob-title"></div>
+    <div id="ob-body"></div>
+    <div id="ob-features"></div>
+    <div id="ob-dots"></div>
+    <button id="ob-next-btn" onclick="obNext()"></button>
+  </div>
+</div>
+
+<!-- ONBOARDING HINT BAR (step 2: explore walk hint) -->
+<div id="ob-bar">
+  <div id="ob-bar-text"></div>
+  <button id="ob-bar-close" onclick="obBarDismiss()">Got it</button>
+</div>
+
 <!-- FLOATING ACTION BUTTONS -->
 <button id="feedback-fab" onclick="openPanel('feedback')" aria-label="Send feedback">💬</button>
 <button id="chat-fab" onclick="toggleChat()" aria-label="Chat with AI">🤖</button>
@@ -610,7 +655,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.9.2
+// STORYROUTE v2.10.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -884,11 +929,12 @@ function openMap(){
   if(!consent)setTimeout(()=>document.getElementById('cookie-banner').classList.add('visible'),2500);
   else if(consent==='accepted')gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});
   if(location.search.includes('pro=unlock')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('✅ Pro unlocked!'),800);}
-  if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(()=>showToast('🎉 Welcome to Pro!'),800);}
+  if(location.search.includes('upgraded=true')){localStorage.setItem('sr_pro','true');history.replaceState({},'','/');setTimeout(showObPro,900);}
   if(!localStorage.getItem('sr_wiki_era')){
     Object.keys(localStorage).forEach(k=>{if(k.startsWith('sr_s_')||k.startsWith('sr_lm_')||k.startsWith('sr_nb_'))localStorage.removeItem(k);});
     localStorage.setItem('sr_wiki_era','1');
   }
+  setTimeout(showOb1,700);
   getGPS();
 }
 
@@ -1990,6 +2036,7 @@ function startTour(){
   var btn=document.getElementById('tour-btn');btn.textContent=T('stopListening');btn.classList.add('stop');
   document.getElementById('prox-alert').classList.remove('visible');document.getElementById('travel-mode').classList.add('visible');document.getElementById('story').style.bottom='132px';
   setStatus(T('tourActive'));track('tour_start',{mode:travelMode});playNearest();
+  setTimeout(showOb2,2500);
 }
 function stopTour(){
   tourOn=false;speaking=false;nxtStory=null;prefetchId=null;curStory=null;cancelAudio();
@@ -2239,7 +2286,7 @@ function showStory(name,text,type){
   if(muteBtn)muteBtn.style.display=showType?'inline-block':'none';
   document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
-  if(text!=='⏳ Loading story…')loadStoryPhoto(name);
+  if(text!=='⏳ Loading story…'){loadStoryPhoto(name);setTimeout(_obStoryHint,1200);}
 }
 function setMode(m){
   ['explore','route','stories'].forEach(x=>document.getElementById('btn-'+x).classList.toggle('active',x===m));
@@ -2301,6 +2348,7 @@ function renderRouteSummary(){
 function showRouteSummary(){
   renderRouteSummary();
   document.getElementById('route-summary').classList.add('visible');
+  setTimeout(_obRouteSummaryTip,400);
 }
 function toggleRouteStop(id){
   if(routeSkipped.has(id))routeSkipped.delete(id);else routeSkipped.add(id);
@@ -2387,6 +2435,87 @@ function updateWalkIndicator(){
 // Returns the index of the closest routeCoords point to (lat, lng).
 // O(n) over the polyline — fast enough for typical OSRM route lengths (<2000 pts).
 function routeIndexOf(lat,lng){var best=0,bestD=Infinity;for(var i=0;i<routeCoords.length;i++){var d=haversine({lat:lat,lng:lng},{lat:routeCoords[i][0],lng:routeCoords[i][1]});if(d<bestD){bestD=d;best=i;}}return best;}
+
+// ── ONBOARDING ──────────────────────────────────────────────────
+var _obStep=0,_obTimer=null,_obProMode=false;
+var OB1=[
+  {icon:'🗺️',title:'Welcome to StoryRoute',body:'An AI audio tour of wherever you are. Three ways to explore:',
+   feats:[{icon:'📍',t:'Explore',d:'Walk freely — AI stories play automatically as you approach landmarks.'},{icon:'🗺️',t:'Route',d:'Plan a walking tour between two points and discover stops along the way.'},{icon:'📖',t:'Stories',d:'Browse AI-generated stories about the area around you.'}]},
+  {icon:'🎧',title:'Stories play as you walk',body:'Tap Start Listening, then just move. When you get close to a landmark the story plays automatically — no tapping required.',feats:[]},
+  {icon:'🤖',title:'AI-powered, locally grounded',body:'Every story is generated by AI from real historical sources. Ask the chat widget anything, or save favourites to revisit later.',feats:[]}
+];
+var OB_PRO_FEATS=[
+  {icon:'∞',t:'Unlimited stories',d:'No daily cap — explore as long as you like.'},
+  {icon:'🗺️',t:'All travel modes',d:'Walking, short drive and long drive tours all unlocked.'},
+  {icon:'❤️',t:'Favourites forever',d:'Saved stories sync across all your devices.'},
+  {icon:'🤖',t:'AI Chat',d:'Ask about any place — history, people, hidden details.'}
+];
+
+function showOb1(){
+  if(localStorage.getItem('sr_ob1'))return;
+  _obProMode=false;_obStep=0;_obRender();
+  document.getElementById('ob-modal').classList.add('open');
+}
+function showObPro(){
+  _obProMode=true;
+  var el=document.getElementById;
+  el('ob-icon').textContent='⭐';
+  el('ob-title').textContent='Welcome to Pro!';
+  el('ob-body').textContent='You now have full access to everything StoryRoute offers.';
+  _obFillFeats(OB_PRO_FEATS);
+  el('ob-dots').innerHTML='';
+  el('ob-next-btn').textContent='Start Exploring →';
+  document.getElementById('ob-modal').classList.add('open');
+}
+function _obRender(){
+  var s=OB1[_obStep];
+  document.getElementById('ob-icon').textContent=s.icon;
+  document.getElementById('ob-title').textContent=s.title;
+  document.getElementById('ob-body').textContent=s.body;
+  _obFillFeats(s.feats);
+  var dots=document.getElementById('ob-dots');
+  dots.innerHTML='';
+  OB1.forEach(function(_,i){var d=document.createElement('div');d.className='ob-dot'+(_obStep===i?' active':'');dots.appendChild(d);});
+  document.getElementById('ob-next-btn').textContent=(_obStep===OB1.length-1)?"Let's Go! →":'Next →';
+}
+function _obFillFeats(feats){
+  var c=document.getElementById('ob-features');c.innerHTML='';
+  feats.forEach(function(f){
+    var d=document.createElement('div');d.className='ob-feat';
+    d.innerHTML='<div class="ob-feat-icon">'+f.icon+'</div><div><div class="ob-feat-title">'+f.t+'</div><div class="ob-feat-desc">'+f.d+'</div></div>';
+    c.appendChild(d);
+  });
+}
+function obNext(){
+  if(_obProMode){document.getElementById('ob-modal').classList.remove('open');return;}
+  if(_obStep<OB1.length-1){_obStep++;_obRender();}
+  else{document.getElementById('ob-modal').classList.remove('open');localStorage.setItem('sr_ob1','1');}
+}
+function showOb2(){
+  if(localStorage.getItem('sr_ob2'))return;
+  document.getElementById('ob-bar-text').textContent='Walk towards any landmark on the map — stories play automatically when you get close. 🎧';
+  document.getElementById('ob-bar').classList.add('open');
+  localStorage.setItem('sr_ob2','1');
+  _obTimer=setTimeout(obBarDismiss,10000);
+}
+function obBarDismiss(){clearTimeout(_obTimer);document.getElementById('ob-bar').classList.remove('open');}
+function _obRouteSummaryTip(){
+  if(localStorage.getItem('sr_ob3'))return;
+  var stops=document.getElementById('rs-stops');if(!stops)return;
+  var tip=document.createElement('div');tip.className='ob-inline';tip.style.margin='12px 16px 0';
+  tip.innerHTML='<div class="ob-inline-text">💡 Tap ✓ / ○ to include or skip stops. Use <b>Open in Google Maps</b> to navigate turn-by-turn.</div><button class="ob-inline-close" onclick="this.parentNode.remove()">✕</button>';
+  stops.parentNode.insertBefore(tip,stops);
+  localStorage.setItem('sr_ob3','1');
+}
+function _obStoryHint(){
+  if(localStorage.getItem('sr_ob4'))return;
+  if(document.getElementById('ob-story-tip'))return;
+  var anchor=document.getElementById('next-info');if(!anchor)return;
+  var tip=document.createElement('div');tip.id='ob-story-tip';tip.className='ob-inline';
+  tip.innerHTML='<div class="ob-inline-text">▶ <b>Replay</b> to hear again &nbsp;·&nbsp; ⏭ <b>Skip</b> to move on &nbsp;·&nbsp; ❤️ <b>Favourite</b> to save</div><button class="ob-inline-close" onclick="document.getElementById(\'ob-story-tip\').remove()">✕</button>';
+  anchor.parentNode.insertBefore(tip,anchor.nextSibling);
+  localStorage.setItem('sr_ob4','1');
+}
 
 // ── CHAT WIDGET ─────────────────────────────────────────────────
 var chatHistory=[];
