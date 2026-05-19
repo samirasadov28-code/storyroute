@@ -383,7 +383,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.10.0</div>
+  <div id="splash-version">v2.10.1</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="http://modeloop.net/Other-Products" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -655,7 +655,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.10.0
+// STORYROUTE v2.10.1
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -915,7 +915,7 @@ function openMap(){
   if(!map){
     map=L.map('map',{zoomControl:false,attributionControl:false}).setView(DUBLIN,15);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-    map.on('click',function(){document.getElementById('story').style.display='none';});
+    map.on('click',function(){document.getElementById('story').style.display='none';updateFabPos();});
     map.on('moveend',function(){
       if(progMove)return;
       clearTimeout(map._mvd);
@@ -1160,7 +1160,7 @@ function muteCurrentType(){
   track('type_muted',{type:t});
   // Hide the current story card and, if we're touring, play the next eligible landmark.
   cancelAudio();speaking=false;
-  document.getElementById('story').style.display='none';
+  document.getElementById('story').style.display='none';updateFabPos();
   if(tourOn){var cn=nearest();if(cn)setTimeout(()=>playLandmark(cn),400);else setStatus(T('noRange'));}
   else setStatus(Object.keys(markers).filter(id=>markers[id]&&map.hasLayer(markers[id])).length+' '+T('landmarks'));
 }
@@ -2036,14 +2036,14 @@ function startTour(){
   var btn=document.getElementById('tour-btn');btn.textContent=T('stopListening');btn.classList.add('stop');
   document.getElementById('prox-alert').classList.remove('visible');document.getElementById('travel-mode').classList.add('visible');document.getElementById('story').style.bottom='132px';
   setStatus(T('tourActive'));track('tour_start',{mode:travelMode});playNearest();
-  setTimeout(showOb2,2500);
+  setTimeout(showOb2,2500);updateFabPos();
 }
 function stopTour(){
   tourOn=false;speaking=false;nxtStory=null;prefetchId=null;curStory=null;cancelAudio();
   var sa=document.getElementById('silent-audio');sa.pause();sa.currentTime=0;
   var btn=document.getElementById('tour-btn');btn.textContent=T('startListening');btn.classList.remove('stop');
   document.getElementById('story').style.display='none';document.getElementById('story').style.bottom='74px';
-  document.getElementById('travel-mode').classList.remove('visible');document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';
+  document.getElementById('travel-mode').classList.remove('visible');updateFabPos();document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';
   document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
   track('tour_stop',{stories_heard:landmarkCount});setStatus(Object.keys(markers).length+' '+T('landmarks'));
 }
@@ -2287,6 +2287,7 @@ function showStory(name,text,type){
   document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';
   document.getElementById('story').style.display='block';
   if(text!=='⏳ Loading story…'){loadStoryPhoto(name);setTimeout(_obStoryHint,1200);}
+  updateFabPos();
 }
 function setMode(m){
   ['explore','route','stories'].forEach(x=>document.getElementById('btn-'+x).classList.toggle('active',x===m));
@@ -2349,6 +2350,7 @@ function showRouteSummary(){
   renderRouteSummary();
   document.getElementById('route-summary').classList.add('visible');
   setTimeout(_obRouteSummaryTip,400);
+  updateFabPos();
 }
 function toggleRouteStop(id){
   if(routeSkipped.has(id))routeSkipped.delete(id);else routeSkipped.add(id);
@@ -2375,6 +2377,7 @@ function openInGoogleMaps(){
 function closeRouteSummary(){
   document.getElementById('route-summary').classList.remove('visible');
   setMode('route');
+  updateFabPos();
 }
 function startRouteTour(){
   document.getElementById('route-summary').classList.remove('visible');
@@ -2497,8 +2500,32 @@ function showOb2(){
   document.getElementById('ob-bar').classList.add('open');
   localStorage.setItem('sr_ob2','1');
   _obTimer=setTimeout(obBarDismiss,10000);
+  updateFabPos();
 }
-function obBarDismiss(){clearTimeout(_obTimer);document.getElementById('ob-bar').classList.remove('open');}
+function obBarDismiss(){clearTimeout(_obTimer);document.getElementById('ob-bar').classList.remove('open');updateFabPos();}
+
+// Repositions the two FABs so they never overlap story card, ob-bar, or route-summary buttons.
+function updateFabPos(){
+  var chatFab=document.getElementById('chat-fab');
+  var fbFab=document.getElementById('feedback-fab');
+  if(!chatFab||!fbFab)return;
+  // Hide completely while the full-width route summary is open
+  var rsOpen=document.getElementById('route-summary').classList.contains('visible');
+  if(rsOpen){chatFab.style.display='none';fbFab.style.display='none';return;}
+  chatFab.style.display='flex';fbFab.style.display='flex';
+  // Base: 10px above the bottom bar (74px tall)
+  var b=84;
+  // If the onboarding hint bar is open, clear it (bar is ~46px tall at bottom:80px)
+  if(document.getElementById('ob-bar').classList.contains('open'))b=Math.max(b,80+46+6);
+  // If story card is visible, sit 8px above its top edge
+  var story=document.getElementById('story');
+  if(story&&story.style.display==='block'){
+    var storyBottom=parseInt(story.style.bottom)||74;
+    b=Math.max(b,storyBottom+story.offsetHeight+8);
+  }
+  chatFab.style.bottom=b+'px';
+  fbFab.style.bottom=b+'px';
+}
 function _obRouteSummaryTip(){
   if(localStorage.getItem('sr_ob3'))return;
   var stops=document.getElementById('rs-stops');if(!stops)return;

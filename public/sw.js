@@ -1,4 +1,4 @@
-const CACHE = 'storyroute-v2.10.0';
+const CACHE = 'storyroute-v2.10.1';
 const ASSETS = [
   '/',
   '/index.html',
