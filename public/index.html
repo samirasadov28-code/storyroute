@@ -441,13 +441,14 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.11.0</div>
+  <div id="splash-version">v2.11.1</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="https://asadov-stack.netlify.app/" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
     <span>Explore our other products</span>
     <span class="ml-arrow">→</span>
   </a>
+  <div style="margin-top:14px;font-size:11px;color:#9ca3af;"><a href="/privacy" style="color:#9ca3af;text-decoration:underline;">Privacy Policy</a></div>
 </div>
 
 <!-- HEADER -->
@@ -482,6 +483,7 @@ textarea.fb-input{height:120px;resize:none;}
     <div class="mi-divider"></div>
     <button class="mi" onclick="renderAuthPanel();openPanel('auth');closeMenu();"><span class="mi-icon">👤</span>Account / Pro<span class="mi-badge" id="account-label"></span></button>
     <button class="mi" onclick="openPanel('feedback');closeMenu();"><span class="mi-icon">💬</span>Send feedback</button>
+    <button class="mi" onclick="window.open('/privacy','_blank');closeMenu();"><span class="mi-icon">🔒</span>Privacy Policy</button>
     <div class="mi-divider"></div>
     <button class="mi" onclick="showPaywall();closeMenu();"><span class="mi-icon">⭐</span>Upgrade to Pro<span class="mi-badge" style="color:#22c55e;">Launch offer</span></button>
   </div>
@@ -652,7 +654,7 @@ textarea.fb-input{height:120px;resize:none;}
 
 <!-- COOKIE -->
 <div id="cookie-banner">
-  <p>We use cookies to understand how StoryRoute is used. <a onclick="showCookieInfo()">Learn more</a></p>
+  <p>We use cookies to understand how StoryRoute is used. <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></p>
   <div class="cookie-btns">
     <button id="cookie-accept" onclick="acceptCookies()">✓ Accept</button>
     <button id="cookie-decline" onclick="declineCookies()">✕ Decline</button>
@@ -713,7 +715,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.11.0
+// STORYROUTE v2.11.1
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
