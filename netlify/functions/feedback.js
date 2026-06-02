@@ -55,7 +55,7 @@ Sent from StoryRoute feedback form
       },
       body: JSON.stringify({
         from: 'StoryRoute <feedback@yourdomain.com>', // ← replace with your verified Resend domain
-        to: 'samir.asadov.28@gmail.com',
+        to: 'finmodelup@gmail.com',
         reply_to: email || undefined,
         subject: `StoryRoute feedback${name ? ' from ' + name : ''}`,
         text: emailBody
