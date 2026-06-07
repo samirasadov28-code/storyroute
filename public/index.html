@@ -441,7 +441,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.11.2</div>
+  <div id="splash-version">v2.11.3</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="https://asadov-stack.netlify.app/" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -715,7 +715,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.11.2
+// STORYROUTE v2.11.3
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -823,7 +823,7 @@ var _otpEmail='';
 // no rotation, and a natural 1.0x rate. Returning users keep whatever they saved.
 var selectedVoice=JSON.parse(localStorage.getItem('sr_voice_cfg')||'null')||VOICES[0];
 var voiceSpeed=parseFloat(localStorage.getItem('sr_speed'))||1.0;
-var rotateVoices=localStorage.getItem('sr_rotate')==='true';
+var rotateVoices=localStorage.getItem('sr_rotate')!=='false'; // on by default
 var _lang=(function(){var s=localStorage.getItem('sr_lang');return LANGUAGES.find(l=>l.code===s)||LANGUAGES[0];})();
 var _sf=JSON.parse(localStorage.getItem('sr_type_filter')||'null');
 var activeTypes=new Set(_sf?ALL_TYPES.filter(t=>_sf.includes(t)):ALL_TYPES);
@@ -1487,6 +1487,8 @@ function deviceTTSFallback(text,onDone,speed){
       try{speechSynthesis.pause();speechSynthesis.resume();}catch(e){}
     },10000);
     function speakNext(){
+      // Guard: if Stop was pressed (speaking=false) abandon the queue entirely.
+      if(!speaking){clearInterval(keepAlive);return;}
       if(i>=parts.length){clearInterval(keepAlive);onDone();return;}
       var u=new SpeechSynthesisUtterance(parts[i++].trim());
       u.rate=(speed||1.0)*0.98;
