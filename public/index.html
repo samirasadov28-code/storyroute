@@ -441,7 +441,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.11.5</div>
+  <div id="splash-version">v2.11.6</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="https://asadov-stack.netlify.app/" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -715,7 +715,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.11.5
+// STORYROUTE v2.11.6
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -1361,6 +1361,10 @@ function startAt(lat,lng,isFallback){
         }
       }
       updateProgress();checkProxAlert();updateWalkIndicator();
+      // Fetch landmarks for the user's actual position as they walk,
+      // independent of where the map is currently panned.
+      fetchArea(userPos.lat,userPos.lng);
+      fetchNeighbourhoods(userPos.lat,userPos.lng);
     },null,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
   }
   setStatus(isFallback?T('findingLocation'):T('loadingLandmarks'));
@@ -1783,7 +1787,7 @@ function fetchArea(lat,lng){
       +'way["name"]["building"~"'+BUILDING+'"](around:'+r+','+lat+','+lng+');'
       +'relation["name"]["historic"~"'+HIST+'"](around:'+r+','+lat+','+lng+');'
       +'relation["name"]["tourism"~"'+TOURISM+'"](around:'+r+','+lat+','+lng+');'
-      +');out center 120;';
+      +');out center 300;';
     fetch(OVERPASS,{method:'POST',body:'data='+encodeURIComponent(q)})
       .then(res=>res.json()).then(function(data){
         var skip=/^(McDonald|Starbucks|Subway|Costa|Caffe|Cafe|Coffee|Sandwich|Burger|KFC|Pizza|Domino|Nando|Pret|Greggs|Tesco|Spar|Centra|Lidl|Aldi|Dunnes|SuperValu|Boots|Penneys|Primark|H&M|Zara|Uniqlo|Gap|Next plc|TK Maxx|Shell|BP|Esso|Texaco|Circle K|Applegreen)/i;
