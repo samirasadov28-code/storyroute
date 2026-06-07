@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — StoryRoute</title>
+<meta name="description" content="StoryRoute Privacy Policy — how we collect, use, and protect your information.">
+<link rel="canonical" href="https://storyroute.netlify.app/privacy">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="theme-color" content="#f0a500">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#111827;color:#e5e7eb;line-height:1.7;min-height:100vh;}
+  a{color:#f0a500;text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  /* Nav */
+  .nav{display:flex;align-items:center;gap:12px;padding:14px 20px;background:#0f172a;border-bottom:1px solid rgba(240,165,0,0.15);position:sticky;top:0;z-index:10;}
+  .nav-logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;text-decoration:none;}
+  .nav-logo img{width:28px;height:28px;border-radius:6px;}
+  .nav-logo span span{color:#f0a500;}
+  .nav-back{margin-left:auto;font-size:13px;color:#9ca3af;padding:6px 12px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;transition:color .15s;}
+  .nav-back:hover{color:#fff;text-decoration:none;}
+
+  /* Page body */
+  .wrap{max-width:740px;margin:0 auto;padding:40px 20px 80px;}
+  .page-title{font-size:28px;font-weight:800;color:#fff;margin-bottom:6px;}
+  .effective{font-size:13px;color:#6b7280;margin-bottom:40px;}
+
+  h2{font-size:16px;font-weight:700;color:#f0a500;margin:36px 0 10px;text-transform:uppercase;letter-spacing:0.5px;}
+  p{margin-bottom:14px;color:#d1d5db;}
+  ul{margin:0 0 14px 20px;color:#d1d5db;}
+  ul li{margin-bottom:6px;}
+
+  .ai-box{background:rgba(240,165,0,0.07);border:1px solid rgba(240,165,0,0.2);border-radius:10px;padding:16px 18px;margin:14px 0;}
+  .ai-box p{margin:0;color:#d1d5db;}
+
+  /* Footer */
+  .pg-footer{margin-top:60px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.07);display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;}
+  .pg-footer span{font-size:12px;color:#6b7280;}
+  .pg-footer a{font-size:12px;color:#9ca3af;}
+  .pg-footer a:hover{color:#f0a500;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-logo" href="/">
+    <img src="/icons/icon-192.png" alt="StoryRoute">
+    <span>Story<span>Route</span></span>
+  </a>
+  <a class="nav-back" href="/">← Back to app</a>
+</nav>
+
+<div class="wrap">
+  <h1 class="page-title">Privacy Policy</h1>
+  <p class="effective">Effective date: 2 June 2026</p>
+
+  <p>This Privacy Policy explains how StoryRoute ("StoryRoute," "we," "us," or "our") collects, uses, and protects your information when you use the StoryRoute application and website at <a href="https://storyroute.netlify.app/">https://storyroute.netlify.app/</a> (the "Service"). By using the Service, you agree to the practices described here.</p>
+
+  <h2>Information we collect</h2>
+  <p><strong>Usage data.</strong> We automatically collect limited technical information such as device type, browser, general usage activity, and log data to operate, secure, and improve the Service.</p>
+  <p><strong>Account information.</strong> When you create an account, we collect your email address and any profile details you choose to provide (such as your subscription status).</p>
+  <p><strong>Payment information.</strong> If you subscribe to a paid plan, payments are processed by our third-party payment processor, Stripe. We do not collect or store your full payment card details on our servers; that information is handled directly by Stripe under its own terms and privacy policy.</p>
+  <p><strong>Location data.</strong> To provide walking-tour and landmark features, we request access to your device's precise location (via the browser Geolocation API). Location is processed in real time to identify nearby landmarks and generate relevant stories. We do not store your location on our servers. Landmark and place data is retrieved from OpenStreetMap via the Overpass API and from Nominatim for address look-ups; your approximate location is transmitted to those services solely to return nearby results.</p>
+  <p><strong>Analytics data.</strong> We use Google Analytics to understand aggregate usage and improve the Service. Google Analytics may collect your IP address and usage events. You can opt out via the cookie prompt shown on first visit or via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>.</p>
+
+  <h2>How we use your information</h2>
+  <p>We use the information we collect to:</p>
+  <ul>
+    <li>Provide, maintain, and personalise the Service (including story generation and route planning).</li>
+    <li>Process subscription payments and manage your account.</li>
+    <li>Generate AI-powered audio stories about landmarks near you.</li>
+    <li>Analyse aggregate usage to improve features, performance, and security.</li>
+    <li>Respond to your feedback or support requests.</li>
+    <li>Comply with legal obligations.</li>
+  </ul>
+
+  <h2>AI-generated content</h2>
+  <div class="ai-box">
+    <p>StoryRoute uses third-party artificial-intelligence services (Groq, running open-source large language models) to generate historical stories and power the in-app AI chat. When you request a story or send a chat message, the landmark name, location context, and your message text are transmitted to Groq solely to produce the result for you. Inputs are not used to train models. See <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener">Groq's Privacy Policy</a> for details.</p>
+  </div>
+
+  <h2>How we share information</h2>
+  <p>We do not sell your personal information. We share information only with the service providers listed below who help us operate the Service and who process data on our behalf under their own privacy and security obligations:</p>
+  <ul>
+    <li><strong>Netlify</strong> — hosting and serverless functions.</li>
+    <li><strong>Supabase</strong> — authentication and user profile database.</li>
+    <li><strong>Stripe</strong> — payment processing for Pro subscriptions.</li>
+    <li><strong>Groq</strong> — AI story generation and chat.</li>
+    <li><strong>OpenStreetMap / Overpass API / Nominatim</strong> — landmark and address data (your approximate location is sent to retrieve nearby results).</li>
+    <li><strong>Google Analytics</strong> — aggregate usage analytics (only if you accepted cookies).</li>
+    <li><strong>Resend</strong> — transactional email delivery (for feedback form responses).</li>
+  </ul>
+  <p>We may also disclose information where required by law or to protect the rights and safety of StoryRoute, its users, or the public.</p>
+
+  <h2>Data retention</h2>
+  <p>We retain account and profile information for as long as your account is active or as needed to provide the Service. If you delete your account, we will delete or anonymise your personal data within a reasonable period, except where retention is required by law. Analytics data is retained subject to Google Analytics' own retention settings.</p>
+
+  <h2>Your rights</h2>
+  <p>Depending on your location, you may have the right to access, correct, export, or delete your personal information, and to object to or restrict certain processing. To exercise these rights, contact us at <a href="mailto:finmodelup@gmail.com">finmodelup@gmail.com</a>. Users in the EU/EEA may also lodge a complaint with their local data-protection authority.</p>
+
+  <h2>Cookies</h2>
+  <p>We use a cookie-consent prompt on first visit. If you accept, Google Analytics cookies are set to collect aggregate usage data. If you decline, no analytics cookies are set. You can change your preference at any time by clearing your browser's local storage for this site.</p>
+
+  <h2>Security</h2>
+  <p>We use reasonable technical and organisational measures to protect your information, including HTTPS for all data in transit and access controls on our database. No method of transmission or storage is completely secure, and we cannot guarantee absolute security.</p>
+
+  <h2>Children's privacy</h2>
+  <p>StoryRoute is not directed to children under 13 (or the minimum age required in your jurisdiction), and we do not knowingly collect personal information from them. If you believe a child has provided us personal information, contact us at <a href="mailto:finmodelup@gmail.com">finmodelup@gmail.com</a> and we will delete it promptly.</p>
+
+  <h2>International users</h2>
+  <p>Your information may be processed and stored in countries other than your own (including the United States), which may have different data-protection laws. By using the Service you consent to such processing.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>We may update this Privacy Policy from time to time. Material changes will be posted on this page with a revised effective date. Continued use of the Service after changes are posted constitutes acceptance of the updated policy.</p>
+
+  <h2>Contact us</h2>
+  <p>If you have questions or concerns about this Privacy Policy, contact us at <strong><a href="mailto:finmodelup@gmail.com">finmodelup@gmail.com</a></strong>.</p>
+
+  <div class="pg-footer">
+    <span>© 2026 StoryRoute</span>
+    <a href="/">← Back to app</a>
+  </div>
+</div>
+
+</body>
+</html>
