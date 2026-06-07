@@ -441,7 +441,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.11.1</div>
+  <div id="splash-version">v2.11.2</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="https://asadov-stack.netlify.app/" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -715,7 +715,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.11.1
+// STORYROUTE v2.11.2
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -1509,13 +1509,13 @@ function shareStory(){
 }
 
 // ── PHOTOS ──────────────────────────────────────────────────────
-function fetchPhoto(title){
-  if(photoCache[title]!==undefined)return Promise.resolve(photoCache[title]);
+// Try title-based Wikipedia text search (location-qualified first for accuracy).
+function fetchPhotoByText(title,cacheKey){
   var loc=currentCityName||currentCountry||'';
-  var queries=[title,loc?title+' '+loc:'',title.replace(/^(The |St\.?\s|Saint )/i,'')].filter(Boolean).filter((q,i,a)=>a.indexOf(q)===i);
+  var queries=[loc?title+' '+loc:null,title,title.replace(/^(The |St\.?\s|Saint )/i,'')].filter(Boolean).filter((q,i,a)=>a.indexOf(q)===i);
   var idx=0;
   function tryNext(){
-    if(idx>=queries.length){photoCache[title]=null;return Promise.resolve(null);}
+    if(idx>=queries.length){photoCache[cacheKey]=null;return Promise.resolve(null);}
     var q=queries[idx++];
     return fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q)+'&srlimit=1&format=json&origin=*')
       .then(r=>r.json()).then(s=>{
@@ -1523,19 +1523,40 @@ function fetchPhoto(title){
         if(!pt)return tryNext();
         return fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(pt)+'&prop=pageimages&pithumbsize=600&pilicense=any&format=json&origin=*')
           .then(r=>r.json()).then(d=>{
-            var pages=d&&d.query&&d.query.pages?d.query.pages:{};
-            var pg=Object.values(pages)[0];
+            var pg=Object.values((d&&d.query&&d.query.pages)||{})[0];
             if(!pg||!pg.thumbnail||!pg.thumbnail.source)return tryNext();
-            var res={url:pg.thumbnail.source,credit:pt};photoCache[title]=res;return res;
+            var res={url:pg.thumbnail.source,credit:pt};photoCache[cacheKey]=res;return res;
           });
       }).catch(()=>tryNext());
   }
   return tryNext();
 }
+// Fetch a landmark photo. When a Wikidata QID is supplied (from OSM tags), look up the
+// Wikipedia article via its sitelink — exact match, not a text search guess.
+function fetchPhoto(title,wikidata){
+  var cacheKey=wikidata||title;
+  if(photoCache[cacheKey]!==undefined)return Promise.resolve(photoCache[cacheKey]);
+  if(wikidata){
+    return fetch('https://www.wikidata.org/w/api.php?action=wbgetentities&ids='+encodeURIComponent(wikidata)+'&props=sitelinks&sitefilter=enwiki&format=json&origin=*')
+      .then(r=>r.json()).then(function(d){
+        var enwiki=d.entities&&d.entities[wikidata]&&d.entities[wikidata].sitelinks&&d.entities[wikidata].sitelinks.enwiki;
+        var articleTitle=enwiki&&enwiki.title;
+        if(!articleTitle)return fetchPhotoByText(title,cacheKey);
+        return fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(articleTitle)+'&prop=pageimages&pithumbsize=600&pilicense=any&format=json&origin=*')
+          .then(r=>r.json()).then(function(d){
+            var pg=Object.values((d&&d.query&&d.query.pages)||{})[0];
+            if(pg&&pg.thumbnail&&pg.thumbnail.source){var res={url:pg.thumbnail.source,credit:articleTitle};photoCache[cacheKey]=res;return res;}
+            return fetchPhotoByText(title,cacheKey);
+          }).catch(()=>fetchPhotoByText(title,cacheKey));
+      }).catch(()=>fetchPhotoByText(title,cacheKey));
+  }
+  return fetchPhotoByText(title,cacheKey);
+}
 function loadStoryPhoto(title){
+  var wikidata=curStory&&curStory.osmWikidata||null;
   var row=document.getElementById('story-photo-row'),img=document.getElementById('story-photo-thumb'),cred=document.getElementById('story-photo-credit');
   row.classList.remove('loaded');img.src='';cred.textContent='';
-  fetchPhoto(title).then(p=>{if(p){img.onload=()=>row.classList.add('loaded');img.onerror=()=>row.classList.remove('loaded');img.src=p.url;cred.textContent='📷 '+p.credit;}});
+  fetchPhoto(title,wikidata).then(p=>{if(p){img.onload=()=>row.classList.add('loaded');img.onerror=()=>row.classList.remove('loaded');img.src=p.url;cred.textContent='📷 '+p.credit;}});
 }
 
 // ── CACHE ───────────────────────────────────────────────────────
@@ -2079,8 +2100,10 @@ function checkProxAlert(){
   var best=null,bestD=Infinity;
   Object.entries(markers).forEach(([id,m])=>{if(visited.has(id))return;var ll=m.getLatLng(),d=haversine(userPos,{lat:ll.lat,lng:ll.lng});if(d<PROXIMITY_RADIUS&&d<bestD){bestD=d;best={name:m.options._title,dist:Math.round(d)};}});
   var el=document.getElementById('prox-alert');
-  if(best){document.getElementById('prox-text').textContent=best.name+' — '+best.dist+'m';el.classList.add('visible');clearTimeout(proxTimer);proxTimer=setTimeout(()=>el.classList.remove('visible'),5000);}
-  else el.classList.remove('visible');
+  if(best){document.getElementById('prox-text').textContent=best.name+' — '+best.dist+'m';el.classList.add('visible');clearTimeout(proxTimer);proxTimer=setTimeout(()=>el.classList.remove('visible'),5000);
+    // Resume tour playback when user walks within range of a new landmark (even after Stop was pressed).
+    if(tourOn&&!speaking)playNearest();
+  }else el.classList.remove('visible');
 }
 function updateProgress(){
   if(!routeCoords.length||!userPos)return;
@@ -2208,6 +2231,7 @@ function playLandmark(p){
     streamStoryInto(p,textEl,continueAfterTTS).then(function(res){
       curStory=Object.assign({},p,{text:res.text});
       if(res.text&&res.text.length>15)saveStory(p.id,res.text);
+      loadStoryPhoto(p.title);
       if(tourOn){var nxt=nearest([p.id]);if(nxt)prefetchStory(nxt);}
       track('story_stream_ok',{title:p.title});
     }).catch(function(err){
@@ -2273,7 +2297,8 @@ function playLandmarkOnDemand(p){
 function stopCurrentStory(){
   cancelAudio();speaking=false;nxtStory=null;prefetchId=null;document.getElementById('skip-btn').disabled=true;document.getElementById('next-info').textContent='';
   document.querySelectorAll('.lm-dot,.nb-dot').forEach(d=>d.classList.remove('playing'));
-  if(tourOn)setTimeout(playNearest,1500);else setStatus(Object.keys(markers).length+' '+T('landmarks'));
+  // Don't auto-advance — let checkProxAlert resume when user walks to a new landmark.
+  setStatus(tourOn?T('tourActive'):Object.keys(markers).length+' '+T('landmarks'));
 }
 function hideStoryBody(){document.getElementById('story-body').style.display='none';document.getElementById('unhide-btn').style.display='inline-block';}
 function showStoryBody(){document.getElementById('story-body').style.display='block';document.getElementById('unhide-btn').style.display='none';}
