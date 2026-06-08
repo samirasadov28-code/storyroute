@@ -188,11 +188,11 @@ body{font-family:sans-serif;overflow:hidden;background:#f0f0f0;}
 #unhide-btn{display:none;padding:3px 10px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.1);border-radius:6px;font-size:12px;color:#888;cursor:pointer;touch-action:manipulation;}
 #fav-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:0 2px;touch-action:manipulation;}
 #story-body{display:block;}
-#story-photo-row{display:none;align-items:flex-start;gap:12px;margin-bottom:10px;}
+#story-photo-row{display:none;flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:10px;float:right;margin-left:10px;}
 #story-photo-row.loaded{display:flex;}
-#story-photo-thumb{width:80px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0;opacity:0;transition:opacity .3s;}
+#story-photo-thumb{width:90px;height:90px;object-fit:cover;border-radius:8px;opacity:0;transition:opacity .3s;}
 #story-photo-row.loaded #story-photo-thumb{opacity:1;}
-#story-photo-credit{font-size:9px;color:#ccc;margin-top:2px;}
+#story-photo-credit{font-size:9px;color:#ccc;}
 #story-text{font-size:14px;line-height:1.7;color:#222;margin-bottom:10px;}
 #story-btns{display:flex;gap:8px;flex-wrap:wrap;}
 #story-btns button{padding:10px 12px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;touch-action:manipulation;}
@@ -441,7 +441,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.11.8</div>
+  <div id="splash-version">v2.11.9</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="https://asadov-stack.netlify.app/" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -611,7 +611,8 @@ textarea.fb-input{height:120px;resize:none;}
     </div>
   </div>
   <div id="story-body">
-    <div id="story-photo-row"><img id="story-photo-thumb" alt=""><div><div id="story-text"></div><div id="story-photo-credit"></div></div></div>
+    <div id="story-text"></div>
+    <div id="story-photo-row"><img id="story-photo-thumb" alt=""><div id="story-photo-credit"></div></div>
     <div id="story-btns">
       <button id="replay-btn" onclick="replayStory()">▶ Replay</button>
       <button id="share-btn" onclick="shareStory()">↑ Share</button>
@@ -715,7 +716,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.11.8
+// STORYROUTE v2.11.9
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
