@@ -441,7 +441,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.11.9</div>
+  <div id="splash-version">v2.12.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="https://asadov-stack.netlify.app/" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -484,8 +484,7 @@ textarea.fb-input{height:120px;resize:none;}
     <button class="mi" onclick="renderAuthPanel();openPanel('auth');closeMenu();"><span class="mi-icon">👤</span>Account / Pro<span class="mi-badge" id="account-label"></span></button>
     <button class="mi" onclick="openPanel('feedback');closeMenu();"><span class="mi-icon">💬</span>Send feedback</button>
     <button class="mi" onclick="window.open('/privacy','_blank');closeMenu();"><span class="mi-icon">🔒</span>Privacy Policy</button>
-    <div class="mi-divider"></div>
-    <button class="mi" onclick="showPaywall();closeMenu();"><span class="mi-icon">⭐</span>Upgrade to Pro<span class="mi-badge" style="color:#22c55e;">Launch offer</span></button>
+    <!-- PAID_GATE: restore the divider + Upgrade to Pro button when re-enabling paywall -->
   </div>
 </div>
 
@@ -716,7 +715,7 @@ textarea.fb-input{height:120px;resize:none;}
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.11.9
+// STORYROUTE v2.12.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -1066,8 +1065,9 @@ function renderAuthPanel(){
         cancelBlock='<button class="auth-btn-cancel" onclick="cancelSubscription()">Cancel subscription</button><div class="sub-cancel-hint">You\'ll keep Pro access until the end of your billing period. No refund.</div>';
       }
     }
-    body.innerHTML='<div class="auth-pro-badge"><div class="pro-icon">'+(isPro?'⭐':'👤')+'</div><div class="pro-text">'+user.email+'</div><div class="pro-sub">'+(isPro?'Pro — unlimited stories everywhere':'Free plan — '+FREE_LIMIT+' stories/day')+'</div></div>'
-      +(isPro?'':'<button class="auth-btn" onclick="startCheckout(\'monthly\')" style="margin-bottom:8px;">⭐ €3.99 / month</button><button class="auth-btn dark" onclick="startCheckout(\'annual\')" style="margin-bottom:12px;">⭐ €29.99 / year</button>')
+    /* PAID_GATE: restore isPro checkout buttons: +(isPro?'':'<button ...monthly...><button ...annual...>') */
+    body.innerHTML='<div class="auth-pro-badge"><div class="pro-icon">👤</div><div class="pro-text">'+user.email+'</div><div class="pro-sub">Full access — free</div></div>'
+      +''
       +cancelBlock
       +'<div class="auth-divider"></div><button class="auth-logout" onclick="signOut()">'+T('signOut')+'</button>';
   }else{
@@ -1298,7 +1298,7 @@ function isPro(){return userIsPro||localStorage.getItem('sr_pro')==='true';}
 function todayKey(){return new Date().toDateString();}
 function getCount(){if(localStorage.getItem('sr_day')!==todayKey()){localStorage.setItem('sr_day',todayKey());localStorage.setItem('sr_n','0');}return parseInt(localStorage.getItem('sr_n')||'0');}
 function bumpCount(){localStorage.setItem('sr_n',String(getCount()+1));}
-function canPlay(){return isPro()||getCount()<FREE_LIMIT;}
+function canPlay(){return true;/* PAID_GATE: replace with: return isPro()||getCount()<FREE_LIMIT; */}
 function showPaywall(){track('paywall_shown');document.getElementById('paywall').classList.add('visible');}
 function closePaywall(){document.getElementById('paywall').classList.remove('visible');}
 function startCheckout(plan){
