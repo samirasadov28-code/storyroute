@@ -5,7 +5,7 @@
 //
 // Needs env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY.
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { createClient } from '@supabase/supabase-js';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
