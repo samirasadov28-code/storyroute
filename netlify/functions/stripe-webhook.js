@@ -9,7 +9,7 @@
 // 3. Also needs: STRIPE_SECRET_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 //    (Service role key is in Supabase → Settings → API — NOT the anon key)
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { createClient } from '@supabase/supabase-js';
 
 export default async (req) => {
   const sig = req.headers.get('stripe-signature');
