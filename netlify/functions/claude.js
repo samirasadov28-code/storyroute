@@ -95,12 +95,12 @@ export default async (req, context) => {
             "Authorization": `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            max_tokens: 1500,
+            model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+            max_tokens: 2500,
+            reasoning_effort: "low",
+            include_reasoning: false,
             temperature: 0.92,
             top_p: 0.95,
-            presence_penalty: 0.4,
-            frequency_penalty: 0.3,
             stream: wantStream,
             messages: messagesWithSystem
           })
