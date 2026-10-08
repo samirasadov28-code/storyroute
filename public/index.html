@@ -646,8 +646,7 @@ textarea.fb-input{height:120px;resize:none;}
     <h2>You've explored today's free stories</h2>
     <p>Upgrade for unlimited access — launch offer now on.</p>
     <ul class="pw-perks"><li>Unlimited stories every day</li><li>All travel modes</li><li>Favourites saved forever</li><li>Pro across all devices</li></ul>
-    <button class="pw-pro" onclick="startCheckout('monthly')">€3.99 / month</button>
-    <button class="pw-pro dark" onclick="startCheckout('annual')" style="margin-bottom:10px;">€29.99 / year <span style="font-size:12px;opacity:0.7;">— save 2 months</span></button>
+    <button class="pw-pro" onclick="startCheckout('lifetime')" style="margin-bottom:10px;">€3.99 one-off <span style="font-size:12px;opacity:0.8;">— lifetime access</span></button>
     <button class="pw-close" onclick="closePaywall()">Maybe later</button>
   </div>
 </div>
@@ -1302,7 +1301,7 @@ function canPlay(){return true;/* PAID_GATE: replace with: return isPro()||getCo
 function showPaywall(){track('paywall_shown');document.getElementById('paywall').classList.add('visible');}
 function closePaywall(){document.getElementById('paywall').classList.remove('visible');}
 function startCheckout(plan){
-  plan=plan||'monthly';track('upgrade_click',{plan});
+  plan=plan||'lifetime';track('upgrade_click',{plan});
   fetch('/api/create-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan,email:currentUser?currentUser.email:''})})
     .then(r=>r.json()).then(d=>{if(d.url)window.location.href=d.url;else showToast('Checkout error');}).catch(()=>showToast('Checkout error'));
 }

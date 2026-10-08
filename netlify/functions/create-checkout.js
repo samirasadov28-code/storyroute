@@ -1,12 +1,9 @@
 export default async (req) => {
-  const { plan, email } = await req.json();
+  const { email } = await req.json();
 
-  const PRICES = {
-    monthly: 'price_1TDCnoLtprV4p6afIJSw2eyJ',  // ← paste from Stripe
-    annual:  'price_1TF0ezLtprV4p6afZJegaIat',   // ← paste from Stripe
-  };
-
-  const priceId = PRICES[plan] || PRICES.monthly;
+  // One-off lifetime price (EUR 3.99), live Stripe account ModeLoop.
+  // Old monthly/annual prices stay in Stripe so existing subscribers keep working.
+  const priceId = 'price_1UOKtzLtprV4p6afniAVjlzz';
   const origin = process.env.PUBLIC_SITE_URL || new URL(req.url).origin;
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -16,7 +13,8 @@ export default async (req) => {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      mode: 'subscription',
+      mode: 'payment',
+      customer_creation: 'always',
       'line_items[0][price]': priceId,
       'line_items[0][quantity]': '1',
       success_url: `${origin}/?upgraded=true`,
