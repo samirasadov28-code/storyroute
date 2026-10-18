@@ -8,7 +8,7 @@ create table if not exists users (
 );
 
 create table if not exists profiles (
-  id uuid primary key references users(id) on delete cascade,
+  id uuid primary key,
   email text not null,
   is_pro boolean not null default false,
   stripe_customer_id text,
@@ -40,3 +40,9 @@ create table if not exists stripe_events_processed (
   event_id text primary key,
   processed_at timestamptz not null default now()
 );
+
+-- Upgrade path for databases created from the earlier Supabase-style schema.
+alter table profiles add column if not exists stripe_payment_intent_id text;
+alter table profiles add column if not exists updated_at timestamptz not null default now();
+alter table pending_pro add column if not exists stripe_payment_intent_id text;
+insert into users (id, email) select id, lower(email) from profiles where email is not null on conflict do nothing;
