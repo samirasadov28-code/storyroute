@@ -3,9 +3,9 @@
 // No refund is issued — access continues until current_period_end, then Stripe
 // fires customer.subscription.deleted and the webhook sets is_pro=false.
 //
-// Needs env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY.
+// Needs env vars: NEON_DATABASE_URL, SESSION_SECRET, STRIPE_SECRET_KEY.
 
-import { createClient } from '@supabase/supabase-js';
+import { sql, verifySession } from './_lib.js';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -15,26 +15,12 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 export default async (req) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
-  const authHeader = req.headers.get('authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-  if (!token) return json({ error: 'Not signed in' }, 401);
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
-  const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-  if (userErr || !userData?.user) return json({ error: 'Invalid session' }, 401);
-  const user = userData.user;
-
-  const { data: profile, error: profileErr } = await supabase
-    .from('profiles')
-    .select('is_pro, stripe_subscription_id, subscription_cancel_at_period_end')
-    .eq('id', user.id)
-    .single();
-
-  if (profileErr || !profile) return json({ error: 'Profile not found' }, 404);
+  const user = verifySession(req);
+  if (!user) return json({ error: 'Invalid session' }, 401);
+  const db = sql();
+  const rows = await db`select is_pro, stripe_subscription_id, subscription_cancel_at_period_end from profiles where id=${user.id}`;
+  const profile = rows[0];
+  if (!profile) return json({ error: 'Profile not found' }, 404);
   if (!profile.is_pro) return json({ error: 'No active Pro subscription' }, 400);
   if (profile.subscription_cancel_at_period_end) {
     return json({ error: 'Subscription already scheduled to cancel' }, 400);
@@ -65,13 +51,7 @@ export default async (req) => {
     ? new Date(sub.current_period_end * 1000).toISOString()
     : null;
 
-  await supabase
-    .from('profiles')
-    .update({
-      subscription_cancel_at_period_end: true,
-      current_period_end: periodEndIso,
-    })
-    .eq('id', user.id);
+  await db`update profiles set subscription_cancel_at_period_end=true, current_period_end=${periodEndIso}, updated_at=now() where id=${user.id}`;
 
   return json({
     success: true,

@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0"
+    "@neondatabase/serverless": "^0.10.4"
   },
   "devDependencies": {
     "sharp": "^0.34.5"
