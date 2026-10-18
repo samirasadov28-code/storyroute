@@ -441,7 +441,7 @@ textarea.fb-input{height:120px;resize:none;}
   </div>
   <button id="splash-btn" onclick="openMap()">Open Map</button>
   <div id="splash-hint">Allow location access when prompted</div>
-  <div id="splash-version">v2.12.0</div>
+  <div id="splash-version">v2.13.0</div>
   <button id="splash-force" onclick="forceUpdate()">🔄 Force update</button>
   <a id="splash-modeloop" href="https://asadov-stack.netlify.app/" target="_blank" rel="noopener noreferrer">
     <span class="ml-tag">Modeloop</span>
@@ -711,10 +711,34 @@ textarea.fb-input{height:120px;resize:none;}
 <!-- Leaflet first (sync, needed before map init) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <!-- FIX: Supabase async so it doesn't block JS parsing; initSupabase() retries if not ready -->
-<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="initSupabaseEarly()"></script>
+<script>
+// Minimal auth/profile client backed by our Neon functions (replaces the Supabase JS client).
+window.supabase={createClient:function(){
+  var KEY='sr_sb_session',listeners=[];
+  function load(){try{return JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){return null;}}
+  function save(s){try{if(s)localStorage.setItem(KEY,JSON.stringify(s));else localStorage.removeItem(KEY);}catch(e){}}
+  function emit(ev,s){listeners.forEach(function(f){try{f(ev,s);}catch(e){}});}
+  function post(path,body){return fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});});}
+  var auth={
+    onAuthStateChange:function(f){listeners.push(f);return {data:{subscription:{unsubscribe:function(){}}}};},
+    getSession:function(){return Promise.resolve({data:{session:load()}});},
+    signInWithOtp:function(o){return post('/api/auth-request',{email:o.email}).then(function(r){return {data:{},error:r.ok?null:{message:r.d.error||'Error'}};});},
+    verifyOtp:function(o){return post('/api/auth-verify',{email:o.email,code:o.token}).then(function(r){
+      if(!r.ok)return {data:{},error:{message:r.d.error||'Invalid code'}};
+      var s={access_token:r.d.token,user:r.d.user};save(s);emit('SIGNED_IN',s);return {data:{session:s,user:s.user},error:null};});},
+    signOut:function(){save(null);emit('SIGNED_OUT',null);return Promise.resolve({error:null});}
+  };
+  function from(){return {select:function(){return {eq:function(){return {single:function(){
+    var s=load();if(!s)return Promise.resolve({data:null,error:{message:'Not signed in'}});
+    return fetch('/api/profile',{headers:{Authorization:'Bearer '+s.access_token}}).then(function(r){
+      if(r.status===401){save(null);emit('SIGNED_OUT',null);return {data:null,error:{message:'Session expired'}};}
+      return r.json().then(function(d){return {data:d,error:null};});});}};}};}};}
+  return {auth:auth,from:from};
+}};
+</script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// STORYROUTE v2.12.0
+// STORYROUTE v2.13.0
 // ═══════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──────────────────────────────────────────────────
@@ -723,8 +747,6 @@ const FREE_LIMIT=20;
 const TRAVEL_MODES={walking:{radius:200},driving:{radius:10000},long:{radius:25000}};
 const VOICERSS_KEY='293997f94bec46f386498eb580855415';
 const OVERPASS='https://overpass-api.de/api/interpreter';
-const SUPABASE_URL='https://ruihamvwpzynerggufif.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1aWhhbXZ3cHp5bmVyZ2d1ZmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg1MTAsImV4cCI6MjA5MDA1NDUxMH0.G2gf88U1N4wp1p_xt-xlJfG3e9d3FTfN4qdu8hOfYmE';
 
 const TYPE_ICON={monument:'🏛',church:'⛪',castle:'🏰',street:'🛤',building:'🏢',bridge:'🌉',park:'🌿',museum:'🎭',person:'👤',nature:'🌊',pub:'🍺',beach:'🏖',estate:'🏡',school:'🏫',sport:'🏟',area:'🏙',legend:'🐉',history:'📜',market:'🛒',harbour:'⚓',tower:'🗼',abbey:'🕍',well:'💧',hill:'⛰️',island:'🏝️',gate:'🚪',hall:'🏤',cinema:'🎬',railway:'🚂',canal:'🚣',neighbourhood:'🏘',other:'📍'};
 const ALL_TYPES=['monument','church','castle','street','building','bridge','park','museum','person','nature','pub','beach','estate','school','sport','abbey','harbour','tower','market','gate','hall','cinema','railway','canal','well','hill','island','history','legend','area','neighbourhood','other'];
@@ -1000,7 +1022,7 @@ function openMap(){
 // ── SUPABASE ────────────────────────────────────────────────────
 function initSupabaseEarly(){
   try{
-    supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'sr_sb_session'}});
+    supabaseClient=supabase.createClient();
     supabaseClient.auth.onAuthStateChange(function(event,session){
       currentUser=session?session.user:null;
       if(currentUser){
@@ -1022,7 +1044,7 @@ function initSupabaseEarly(){
     });
   }catch(e){userIsPro=localStorage.getItem('sr_pro')==='true';}
 }
-function initSupabase(){if(!supabaseClient)setTimeout(initSupabase,300);else updateMenuUser();}
+function initSupabase(){if(!supabaseClient)initSupabaseEarly();updateMenuUser();}
 function loadProStatus(){
   if(!supabaseClient||!currentUser)return;
   // Annual plan holder — always Pro

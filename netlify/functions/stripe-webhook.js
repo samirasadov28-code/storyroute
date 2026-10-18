@@ -1,21 +1,26 @@
 // netlify/functions/stripe-webhook.js
-// Handles Stripe webhook events — unlocks Pro in Supabase after successful payment
+// Unlocks / revokes StoryRoute Pro in Neon from Stripe events.
+// Env: STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY, NEON_DATABASE_URL, STRIPE_PRICE_ID (optional override of the live price)
 //
-// Setup:
-// 1. Stripe dashboard → Developers → Webhooks → Add endpoint
-//    URL: https://YOUR-SITE.netlify.app/api/stripe-webhook
-//    Events: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted
-// 2. Copy the webhook signing secret → add to Netlify env vars as STRIPE_WEBHOOK_SECRET
-// 3. Also needs: STRIPE_SECRET_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-//    (Service role key is in Supabase → Settings → API — NOT the anon key)
+// Hardening vs the old Supabase version:
+//  - only grants Pro when the paid line item is StoryRoute's own price (other apps share this Stripe account)
+//  - requires payment_status === 'paid'
+//  - refunds (charge.refunded / full) revoke Pro
+//  - idempotent per Stripe event id
 
-import { createClient } from '@supabase/supabase-js';
+import { sql } from './_lib.js';
+
+const LIVE_PRICE_ID = 'price_1UOKtzLtprV4p6afniAVjlzz';
+const stripeGet = async (path) => {
+  const r = await fetch(`https://api.stripe.com/v1/${path}`, { headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` } });
+  return r.json();
+};
+const iso = (s) => (s ? new Date(s * 1000).toISOString() : null);
 
 export default async (req) => {
   const sig = req.headers.get('stripe-signature');
   const rawBody = await req.text();
 
-  // Verify the webhook came from Stripe
   let event;
   try {
     event = await verifyStripeWebhook(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
@@ -24,137 +29,88 @@ export default async (req) => {
     return new Response('Webhook Error: ' + err.message, { status: 400 });
   }
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY // service role bypasses RLS
-  );
+  const db = sql();
+  const claimed = await db`insert into stripe_events_processed (event_id) values (${event.id}) on conflict do nothing returning event_id`;
+  if (!claimed.length) return ok({ received: true, duplicate: true });
 
-  // ── Handle events ──────────────────────────────────────────
+  try {
+    await handle(db, event);
+  } catch (e) {
+    console.error('Webhook handler error:', e);
+    await db`delete from stripe_events_processed where event_id=${event.id}`; // let Stripe retry
+    return new Response('Handler error', { status: 500 });
+  }
+  return ok({ received: true });
+};
+
+const ok = (b) => new Response(JSON.stringify(b), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+async function handle(db, event) {
+  const priceId = process.env.STRIPE_PRICE_ID || LIVE_PRICE_ID;
+
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const email = session.customer_details?.email || session.customer_email;
-    const stripe_customer_id = session.customer || null;
-    const stripe_subscription_id = session.subscription || null;
+    if (session.payment_status !== 'paid') { console.log('Ignored: not paid', session.id); return; }
+    const items = await stripeGet(`checkout/sessions/${session.id}/line_items?limit=10`);
+    const isOurs = (items.data || []).some((li) => li.price && li.price.id === priceId);
+    if (!isOurs) { console.log('Ignored: session is not for StoryRoute price', session.id); return; }
 
-    if (!email) {
-      console.error('No email in checkout session');
-      return new Response('No email', { status: 400 });
+    const email = String(session.customer_details?.email || session.customer_email || '').toLowerCase();
+    if (!email) throw new Error('No email in checkout session');
+    const customer = session.customer || null;
+    const subscription = session.subscription || null;
+    const pi = session.payment_intent || null;
+    let periodEnd = null;
+    if (subscription) {
+      const sub = await stripeGet(`subscriptions/${subscription}`);
+      periodEnd = iso(sub.current_period_end);
     }
 
-    // Fetch period end from subscription (so UI can show billing-period end)
-    let current_period_end = null;
-    if (stripe_subscription_id) {
-      try {
-        const subRes = await fetch(`https://api.stripe.com/v1/subscriptions/${stripe_subscription_id}`, {
-          headers: { 'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}` }
-        });
-        const sub = await subRes.json();
-        if (sub.current_period_end) current_period_end = new Date(sub.current_period_end * 1000).toISOString();
-      } catch (e) { console.error('Failed to fetch subscription:', e); }
-    }
-
-    // Find user by email in Supabase auth
-    const { data: users, error: userErr } = await supabase.auth.admin.listUsers();
-    if (userErr) {
-      console.error('Error listing users:', userErr);
-      return new Response('Supabase error', { status: 500 });
-    }
-
-    const user = users?.users?.find(u => u.email === email);
-
-    if (user) {
-      // User is signed in — update their profile to Pro
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email,
-          is_pro: true,
-          stripe_customer_id,
-          stripe_subscription_id,
-          subscription_cancel_at_period_end: false,
-          current_period_end,
-        })
-        .eq('id', user.id);
-
-      if (error) console.error('Error updating profile:', error);
-      else console.log('Pro unlocked for user:', email);
+    const users = await db`select id from users where email=${email}`;
+    if (users.length) {
+      await db`insert into profiles (id, email, is_pro, stripe_customer_id, stripe_subscription_id, stripe_payment_intent_id,
+                 subscription_cancel_at_period_end, current_period_end)
+               values (${users[0].id}, ${email}, true, ${customer}, ${subscription}, ${pi}, false, ${periodEnd})
+               on conflict (id) do update set is_pro=true, stripe_customer_id=excluded.stripe_customer_id,
+                 stripe_subscription_id=excluded.stripe_subscription_id, stripe_payment_intent_id=excluded.stripe_payment_intent_id,
+                 subscription_cancel_at_period_end=false, current_period_end=excluded.current_period_end, updated_at=now()`;
+      console.log('Pro unlocked for', email);
     } else {
-      // User paid but hasn't signed in yet — store pending pro by email
-      // When they sign in, they'll need to be matched (see notes below)
-      const { error } = await supabase
-        .from('pending_pro')
-        .upsert({
-          email,
-          stripe_customer_id,
-          stripe_subscription_id,
-          current_period_end,
-          created_at: new Date().toISOString(),
-        });
-
-      if (error) console.error('Error storing pending pro:', error);
-      else console.log('Pending pro stored for:', email);
+      await db`insert into pending_pro (email, stripe_customer_id, stripe_subscription_id, stripe_payment_intent_id, current_period_end)
+               values (${email}, ${customer}, ${subscription}, ${pi}, ${periodEnd})
+               on conflict (email) do update set stripe_customer_id=excluded.stripe_customer_id,
+                 stripe_subscription_id=excluded.stripe_subscription_id, stripe_payment_intent_id=excluded.stripe_payment_intent_id,
+                 current_period_end=excluded.current_period_end`;
+      console.log('Pending pro stored for', email);
     }
+    return;
   }
 
-  // When a user cancels at period end, Stripe fires customer.subscription.updated.
-  // Mirror the cancel flag + period end on the profile so the UI reflects it.
+  // Full refund revokes Pro (one-off payments). Partial refunds keep access.
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object;
+    if (!charge.refunded || charge.amount_refunded < charge.amount) return;
+    const pi = charge.payment_intent;
+    if (!pi) return;
+    await db`update profiles set is_pro=false, updated_at=now() where stripe_payment_intent_id=${pi}`;
+    await db`delete from pending_pro where stripe_payment_intent_id=${pi}`;
+    console.log('Pro revoked for refunded payment', pi);
+    return;
+  }
+
+  // Legacy subscribers.
   if (event.type === 'customer.subscription.updated') {
-    const subscription = event.data.object;
-    const customerId = subscription.customer;
-    const customerRes = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
-      headers: { 'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}` }
-    });
-    const customer = await customerRes.json();
-    const email = customer.email;
-
-    if (email) {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const user = users?.users?.find(u => u.email === email);
-      if (user) {
-        await supabase.from('profiles').update({
-          subscription_cancel_at_period_end: !!subscription.cancel_at_period_end,
-          current_period_end: subscription.current_period_end
-            ? new Date(subscription.current_period_end * 1000).toISOString()
-            : null,
-        }).eq('id', user.id);
-        console.log('Subscription updated for:', email, 'cancel_at_period_end=', !!subscription.cancel_at_period_end);
-      }
-    }
+    const s = event.data.object;
+    await db`update profiles set subscription_cancel_at_period_end=${!!s.cancel_at_period_end},
+               current_period_end=${iso(s.current_period_end)}, updated_at=now() where stripe_subscription_id=${s.id}`;
+    return;
   }
-
   if (event.type === 'customer.subscription.deleted') {
-    // Subscription fully ended — revoke Pro
-    const subscription = event.data.object;
-    const customerId = subscription.customer;
-
-    // Get customer email from Stripe
-    const customerRes = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
-      headers: { 'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}` }
-    });
-    const customer = await customerRes.json();
-    const email = customer.email;
-
-    if (email) {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const user = users?.users?.find(u => u.email === email);
-      if (user) {
-        await supabase.from('profiles').update({
-          is_pro: false,
-          subscription_cancel_at_period_end: false,
-          stripe_subscription_id: null,
-          current_period_end: null,
-        }).eq('id', user.id);
-        console.log('Pro revoked for:', email);
-      }
-    }
+    const s = event.data.object;
+    await db`update profiles set is_pro=false, subscription_cancel_at_period_end=false, stripe_subscription_id=null,
+               current_period_end=null, updated_at=now() where stripe_subscription_id=${s.id}`;
   }
-
-  return new Response(JSON.stringify({ received: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
-};
+}
 
 // ── Stripe webhook signature verification ──────────────────
 // Stripe uses HMAC-SHA256 — we verify manually since no SDK

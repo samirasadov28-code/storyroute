@@ -3,7 +3,7 @@ export default async (req) => {
 
   // One-off lifetime price (EUR 3.99), live Stripe account ModeLoop.
   // Old monthly/annual prices stay in Stripe so existing subscribers keep working.
-  const priceId = 'price_1UOKtzLtprV4p6afniAVjlzz';
+  const priceId = process.env.STRIPE_PRICE_ID || 'price_1UOKtzLtprV4p6afniAVjlzz';
   const origin = process.env.PUBLIC_SITE_URL || new URL(req.url).origin;
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
