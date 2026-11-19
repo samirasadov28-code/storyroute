@@ -8,4 +8,18 @@
     <priority>1.0</priority>
     <mobile:mobile/>
   </url>
+  <url>
+    <loc>https://storyroute.netlify.app/privacy/</loc>
+    <lastmod>2026-11-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <mobile:mobile/>
+  </url>
+  <url>
+    <loc>https://storyroute.netlify.app/terms/</loc>
+    <lastmod>2026-11-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <mobile:mobile/>
+  </url>
 </urlset>
